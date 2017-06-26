@@ -5,11 +5,10 @@ type var = string
 type i = float
 
 (* unary arithmetic operators *)
-type unop = NEG | SQRT | ABS | COS | SIN | TAN | COT
-	  | ASIN | ACOS | ATAN | ACOT | LN | LOG | EXP
+type unop = NEG | ABS
 
 (* binary arithmetic operators *)
-type binop = ADD | SUB | MUL | DIV | POW | NROOT | MIN | MAX
+type binop = ADD | SUB | MUL | DIV | POW
 
 (* arithmetic comparison operators *)
 type cmpop =
@@ -17,16 +16,17 @@ type cmpop =
 
 (* numeric expressions *)
 type expr =
-  | Unary of unop * expr
-  | Binary of binop * expr * expr
-  | Var of var
-  | Cst of i
+  | FunCall of var * expr list
+  | Unary   of unop * expr
+  | Binary  of binop * expr * expr
+  | Var     of var
+  | Cst     of i
 
 (* boolean expressions *)
 type bexpr =
   | Cmp of cmpop * expr * expr
   | And of bexpr * bexpr
-  | Or of bexpr * bexpr
+  | Or  of bexpr * bexpr
   | Not of bexpr
 
 type typ = INT | REAL
@@ -128,7 +128,8 @@ let rec neg_bexpr = function
 
 (* checks if an expression contains a variable *)
 let rec has_variable = function
-  | Unary (u, e) -> has_variable e
+  | FunCall(name,args) -> List.exists has_variable args
+  | Unary (u, e)  -> has_variable e
   | Binary(b, e1, e2) -> has_variable e1 || has_variable e2
   | Var _ -> true
   | Cst _ -> false
@@ -157,18 +158,6 @@ let rec is_cons_linear = function
 
 let print_unop fmt = function
   | NEG -> Format.fprintf fmt "-"
-  | SQRT -> Format.fprintf fmt "sqrt"
-  | COS -> Format.fprintf fmt "cos"
-  | SIN -> Format.fprintf fmt "sin"
-  | TAN -> Format.fprintf fmt "tan"
-  | COT -> Format.fprintf fmt "cot"
-  | ASIN -> Format.fprintf fmt "asin"
-  | ACOS -> Format.fprintf fmt "acos"
-  | ATAN -> Format.fprintf fmt "atan"
-  | ACOT -> Format.fprintf fmt "acot"
-  | LN -> Format.fprintf fmt "ln"
-  | LOG -> Format.fprintf fmt "log"
-  | EXP -> Format.fprintf fmt "exp"
   | ABS -> Format.fprintf fmt "abs"
 
 let print_binop fmt = function
@@ -177,9 +166,6 @@ let print_binop fmt = function
   | MUL -> Format.fprintf fmt "*"
   | DIV -> Format.fprintf fmt "/"
   | POW -> Format.fprintf fmt "^"
-  | MIN -> Format.fprintf fmt "min"
-  | MAX -> Format.fprintf fmt "max"
-  | NROOT -> Format.fprintf fmt "nroot"
 
 let print_cmpop fmt = function
   | EQ -> Format.fprintf fmt "="
@@ -205,6 +191,13 @@ let print_assign fmt (a,b,c) =
   Format.fprintf fmt "%a %a=%a" print_typ a print_var b print_dom c
 
 let rec print_expr fmt = function
+  | FunCall(name,args) ->
+     let print_args fmt =
+       Format.pp_print_list
+         ~pp_sep:(fun fmt () -> Format.fprintf fmt ",")
+         print_expr fmt
+     in
+     Format.fprintf fmt "%s(%a)" name print_args args
   | Unary (NEG, e) ->
     Format.fprintf fmt "(- %a)" print_expr e
   | Unary (u, e) ->

@@ -45,11 +45,7 @@ module Make (Abs : AbstractCP) = struct
   include Boolean(Abs)
 
   let init (problem:Csp.prog) : Abs.t =
-    Csp.(List.fold_left (fun abs (t,v,d) ->
-      let c1,c2 = domain_to_constraints (t,v,d) in
-      let abs = Abs.add_var abs (t,v) in
-      Abs.filter (Abs.filter abs c1) c2
-    )  Abs.empty problem.init)
+    Csp.(List.fold_left Abs.add_var Abs.empty problem.init)
 
   type consistency = Full of Abs.t
 		     | Maybe of Abs.t * Csp.bexpr list
@@ -58,7 +54,7 @@ module Make (Abs : AbstractCP) = struct
   let print_debug tab obj abs =
     if !Constant.debug then
       match obj with
-      | Some obj -> 
+      | Some obj ->
          let (inf, sup) = Abs.forward_eval abs obj in
          Format.printf "%sabs = %a\tobjective = (%f, %f)@." tab Abs.print abs inf sup
       | None -> Format.printf "%sabs = %a@." tab Abs.print abs
@@ -79,7 +75,7 @@ module Make (Abs : AbstractCP) = struct
 	| _ ->  if minimize_test objv abs' then
                   (print_debug "\t*******=> sure:" objv abs'; Full abs')
                 else (
-                  print_debug "\t=> " objv abs'; 
+                  print_debug "\t=> " objv abs';
                   if !Constant.iter then
                     let ratio = (Abs.volume abs')/.(Abs.volume abs) in
                     if ratio > 0.9 || abs = abs' then

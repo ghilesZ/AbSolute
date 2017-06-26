@@ -177,13 +177,13 @@ module Make(B:BOUND) = struct
 
   let to_expr (((kl, l), (kh, h)):t) =
     match kl, kh with
-      | Strict, Strict -> ((Csp.GT, Csp.Cst(B.to_float_down l)), 
+      | Strict, Strict -> ((Csp.GT, Csp.Cst(B.to_float_down l)),
                            (Csp.LT, Csp.Cst(B.to_float_up h)))
-      | Strict, Large -> ((Csp.GT, Csp.Cst(B.to_float_down l)), 
+      | Strict, Large -> ((Csp.GT, Csp.Cst(B.to_float_down l)),
                           (Csp.LEQ, Csp.Cst(B.to_float_up h)))
-      | Large, Strict -> ((Csp.GEQ, Csp.Cst(B.to_float_down l)), 
+      | Large, Strict -> ((Csp.GEQ, Csp.Cst(B.to_float_down l)),
                           (Csp.LT, Csp.Cst(B.to_float_up h)))
-      | Large, Large -> ((Csp.GEQ, Csp.Cst(B.to_float_down l)), 
+      | Large, Large -> ((Csp.GEQ, Csp.Cst(B.to_float_down l)),
                          (Csp.LEQ, Csp.Cst(B.to_float_up h)))
 
    (************************************************************************)
@@ -435,7 +435,7 @@ module Make(B:BOUND) = struct
     match itv' with
     | Bot -> Bot
     | Nb i -> fst (div i i_ln10)
-    
+
 
   (* interval min *)
   let min ((l1, u1):t) ((l2, u2):t) = failwith "todo min"
@@ -443,7 +443,43 @@ module Make(B:BOUND) = struct
 
   (* interval max *)
   let max ((l1, u1):t) ((l2, u2):t) = failwith "todo max"
-    (* validate (B.max l1 l2, B.max u1 u2) *)
+  (* validate (B.max l1 l2, B.max u1 u2) *)
+
+  (** runtime functions **)
+  let eval_fun name args : t bot =
+    let arity_1 (f: t -> t) : t bot =
+      match args with
+      | [i] -> Nb (f i)
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    let arity_1_bot (f: t -> t bot) : t bot =
+       match args with
+       | [i] ->
+          (match f i with
+          | Bot -> Bot
+          | Nb i -> Nb i)
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    let arity_2 (f: t -> t -> t) : t bot  =
+      match args with
+      | [i1;i2] -> Nb (f i1 i2)
+      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+    in
+    let arity_2_bot (f: t -> t -> t bot) : t bot  =
+      match args with
+      | [i1;i2] ->
+         (match f i1 i2 with
+          | Bot -> Bot
+          | Nb(i) -> Nb i)
+      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+    in
+    match name with
+    | "cos"   -> arity_1 cos
+    | "sin"   -> arity_1 sin
+    | "sqrt"  -> arity_1_bot sqrt
+    | "max"   -> arity_2 max
+    | "nroot" -> arity_2_bot n_root
+    | s -> failwith (Format.sprintf "unknown eval function : %s" s)
 
   (************************************************************************)
   (* FILTERING (TEST TRANSFER FUNCTIONS) *)
@@ -572,6 +608,31 @@ module Make(B:BOUND) = struct
 
   (* r = max (i1, i2) *)
   let filter_max i1 i2 r = failwith "todo filter_max"
+
+  let filter_fun name args r : (t list) bot =
+    let arity_1 (f: t -> t -> t bot) : (t list) bot =
+      match args with
+      | [i] ->
+         (match f i r with
+         | Bot -> Bot
+         | Nb i -> Nb [i])
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    let arity_2 (f: t -> t -> t -> (t*t) bot) : (t list) bot  =
+      match args with
+      | [i1;i2] ->
+         (match f i1 i2 r with
+          | Bot -> Bot
+          | Nb(i1,i2) -> Nb[i1;i2])
+      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+    in
+    match name with
+    | "cos"  -> arity_1 filter_cos
+    | "sin"  -> arity_1 filter_sin
+    | "sqrt" -> arity_1 filter_sqrt
+    | "max"  -> arity_2 filter_max
+    | s -> failwith (Format.sprintf "unknown filter function : %s" s)
+
 
   let filter_bounds (l,h) = failwith "todo filter_bound"
 

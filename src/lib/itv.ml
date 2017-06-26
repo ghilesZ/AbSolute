@@ -108,7 +108,7 @@ module Itv(B:BOUND) = struct
     | _ -> Format.fprintf fmt "[%f;%f]" (B.to_float_down l) (B.to_float_up h)
 
   let to_expr ((l, h):t) =
-    ((Csp.GEQ, Csp.Cst(B.to_float_down l)), 
+    ((Csp.GEQ, Csp.Cst(B.to_float_down l)),
      (Csp.LEQ, Csp.Cst(B.to_float_up h)))
 
   (************************************************************************)
@@ -485,7 +485,7 @@ module Itv(B:BOUND) = struct
           Nb (B.min (B.neg (B.root_down il p)) (B.neg (B.root_down ih p)), B.max (B.root_up il p) (B.root_up ih p))
       | _ -> failwith "can only handle stricly positive roots"
     else failwith  "cant handle non_singleton roots"
-    
+
 
   (* interval min *)
   let min ((l1, u1):t) ((l2, u2):t) =
@@ -494,6 +494,43 @@ module Itv(B:BOUND) = struct
   (* interval max *)
   let max ((l1, u1):t) ((l2, u2):t) =
     validate (B.max l1 l2, B.max u1 u2)
+
+  (** runtime functions **)
+  let eval_fun name args : t bot =
+    let arity_1 (f: t -> t) : t bot =
+      match args with
+      | [i] -> Nb (f i)
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    let arity_1_bot (f: t -> t bot) : t bot =
+       match args with
+       | [i] ->
+          (match f i with
+          | Bot -> Bot
+          | Nb i -> Nb i)
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    let arity_2 (f: t -> t -> t) : t bot  =
+      match args with
+      | [i1;i2] -> Nb (f i1 i2)
+      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+    in
+    let arity_2_bot (f: t -> t -> t bot) : t bot  =
+      match args with
+      | [i1;i2] ->
+         (match f i1 i2 with
+          | Bot -> Bot
+          | Nb(i) -> Nb i)
+      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+    in
+    match name with
+    | "cos"   -> arity_1 cos
+    | "sin"   -> arity_1 sin
+    | "sqrt"  -> arity_1_bot sqrt
+    | "max"   -> arity_2 max
+    | "nroot" -> arity_2_bot n_root
+    | s -> failwith (Format.sprintf "unknown eval function : %s" s)
+
 
 
   (************************************************************************)
@@ -720,6 +757,33 @@ module Itv(B:BOUND) = struct
   let filter_max (l1, u1) (l2, u2) (lr, ur) =
     merge_bot2 (check_bot ((B.min l1 lr), (B.min u1 ur))) (check_bot ((B.min l2 lr), (B.min u2 ur)))
 
+  let filter_fun name args r : (t list) bot =
+    let arity_1 (f: t -> t -> t bot) : (t list) bot =
+      match args with
+      | [i] ->
+         (match f i r with
+         | Bot -> Bot
+         | Nb i -> Nb [i])
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    let arity_2 (f: t -> t -> t -> (t*t) bot) : (t list) bot  =
+      match args with
+      | [i1;i2] ->
+         (match f i1 i2 r with
+          | Bot -> Bot
+          | Nb(i1,i2) -> Nb[i1;i2])
+      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+    in
+    match name with
+    | "cos"  -> arity_1 filter_cos
+    | "sin"  -> arity_1 filter_sin
+    | "tan"  -> arity_1 filter_tan
+    | "sqrt" -> arity_1 filter_sqrt
+    | "exp"  -> arity_1 filter_exp
+    | "ln"   -> arity_1 filter_ln
+    | "max"  -> arity_2 filter_max
+    | "min"  -> arity_2 filter_min
+    | s -> failwith (Format.sprintf "unknown filter function : %s" s)
 
   let filter_bounds (l,h) =
     let inf = B.ceil l

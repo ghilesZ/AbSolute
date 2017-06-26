@@ -1,5 +1,6 @@
 (* numeric expressions *)
 type expr =
+  | FunCall of Csp.var * expr list
   | Unary of Csp.unop * expr
   | Binary of Csp.binop * expr * expr
   | Var of Csp.var
@@ -37,6 +38,7 @@ let get env name i =
 
 (*replaces the param by the expression they represent*)
 let rec substitute env = function
+  | FunCall (name,args) -> FunCall(name,List.map (substitute env) args)
   | Unary (Csp.NEG, Cst i) -> Cst (-.i)
   | Unary (u, e)-> Unary (u,substitute env e)
   | Binary (b, e1, e2)->
@@ -87,6 +89,7 @@ let evaluate env expr =
 
 (* to csp expr conversion *)
 let rec to_csp = function
+  | FunCall (name,args) -> Csp.FunCall (name, List.map to_csp args)
   | Unary (Csp.NEG, Cst i)-> Csp.Cst (-.i)
   | Unary (u, e)-> Csp.Unary (u,to_csp e)
   | Binary (b, e1, e2)->

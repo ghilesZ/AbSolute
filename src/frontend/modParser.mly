@@ -33,21 +33,6 @@
 %token NOT
 %token INT
 %token REAL
-%token COS
-%token SIN
-%token TAN
-%token COT
-%token ASIN
-%token ACOS
-%token ATAN
-%token ACOT
-%token LN
-%token LOG
-%token EXP
-%token NROOT
-%token MIN
-%token MAX
-%token SQRT
 %token INIT
 %token OBJ
 %token CONSTR
@@ -101,10 +86,10 @@ const:
   | MINUS FLOAT {(-.$2)}
 
 bexpr:
-  | expr cmp expr                   {Cmp ($2, $1, $3)}
-  | bexpr OR bexpr                  {Or  ($1,$3)}
-  | bexpr AND bexpr                 {And ($1,$3)}
-  | NOT bexpr                       {Not ($2)}
+  | expr cmp expr                   { Cmp ($2, $1, $3) }
+  | bexpr OR bexpr                  { Or  ($1,$3) }
+  | bexpr AND bexpr                 { And ($1,$3) }
+  | NOT bexpr                       { Not ($2) }
   | LPAREN bexpr RPAREN             { $2 }
 
 
@@ -112,20 +97,13 @@ expr:
   | LPAREN expr RPAREN              { $2 }
   | binop_expr                      { $1 }
   | MINUS expr %prec unary_minus    { Unary (Csp.NEG, $2) }
-  | COS       expr                  { Unary (Csp.COS, $2) }
-  | SIN       expr                  { Unary (Csp.SIN, $2) }
-  | TAN       expr                  { Unary (Csp.TAN, $2) }
-  | COT       expr                  { Unary (Csp.COT, $2) }
-  | ASIN      expr                  { Unary (Csp.ASIN, $2) }
-  | ACOS      expr                  { Unary (Csp.ACOS, $2) }
-  | ATAN      expr                  { Unary (Csp.ATAN, $2) }
-  | ACOT      expr                  { Unary (Csp.ACOT, $2) }
-  | LN        expr                  { Unary (Csp.LN, $2) }
-  | LOG       expr                  { Unary (Csp.LOG, $2) }
-  | EXP       expr                  { Unary (Csp.EXP, $2) }
-  | SQRT      expr                  { Unary (Csp.SQRT,$2) }
+  | ID LPAREN args RPAREN       { FunCall($1,$3)      }
   | PIPE expr PIPE                  { Unary (Csp.ABS, $2) }
   | leaf                            { $1 }
+
+args:
+  | expr                {[$1]}
+  | expr COMMA args {$1::$3}
 
 leaf:
   | FLOAT                           { Cst $1 }
@@ -144,12 +122,6 @@ binop_expr2:
 binop_expr3:
   | expr PLUS  expr   {Binary(Csp.ADD,$1,$3)}
   | expr MINUS expr   {Binary(Csp.SUB,$1,$3)}
-  | binop_expr4       {$1}
-
-binop_expr4:
-  | MIN LPAREN expr COMMA expr RPAREN    {Binary (Csp.MIN,$3,$5)}
-  | MAX LPAREN expr COMMA expr RPAREN    {Binary (Csp.MAX,$3,$5)}
-  | NROOT LPAREN expr COMMA expr RPAREN  {Binary (Csp.NROOT,$3,$5)}
 
 cmp:
   | LT                      { Csp.LT }

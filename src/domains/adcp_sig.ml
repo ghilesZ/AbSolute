@@ -11,21 +11,13 @@ module type AbstractCP = sig
   (* abstract elements *)
   type t
 
-  (* (\* expression and constraint conversion *\) *)
-  (* type expr *)
-  (* type cmp *)
-
-  (* val translate_expr : Csp.expr -> expr *)
-
-  (* val translate_cons : Csp.expr * Csp.cmpop * Csp.expr -> expr * cmpop * expr *)
-
   (*** INSTANCIATION ***)
 
   (* returns an empty element *)
   val empty : t
 
   (* adds an unconstrained variable to the environnement *)
-  val add_var : t -> typ * var -> t
+  val add_var : t -> typ * var * dom -> t
 
   (*** PREDICATES ***)
 
