@@ -16,8 +16,6 @@ module Box (I:ITV) = struct
 
   (* interval and bound inheritance *)
   module I = I
-  module B = I.B
-  type bound = B.t
   type i = I.t
 
   (* maps from variables *)
@@ -50,7 +48,7 @@ module Box (I:ITV) = struct
 
   let float_bounds a v =
     let ((l,h), _) = find v a in
-    (B.to_float_down l),(B.to_float_up h)
+    I.of_floats l h
 
   let to_expr abs =
     Env.fold (fun v x lexp ->
@@ -100,14 +98,14 @@ module Box (I:ITV) = struct
   (* ------ *)
 
   (* diameter *)
-  let diameter (a:t) : bound =
-    Env.fold (fun _ x v -> B.max (I.range x) v) a B.zero
+  let diameter (a:t) =
+    Env.fold (fun _ x v -> max (I.range x) v) a 0.
 
   (* variable with maximal range *)
   let max_range (a:t) : var * i =
     Env.fold
       (fun v i (vo,io) ->
-        if B.gt (I.range i) (I.range io) then v,i else vo,io
+        if (I.range i) > (I.range io) then v,i else vo,io
       ) a (Env.min_binding a)
 
   (* variable with maximal range if real or with smallest range if integer *)
@@ -116,18 +114,18 @@ module Box (I:ITV) = struct
       (fun v i (vo,io) ->
         if is_integer v then
           let r = I.range i in
-          if (B.neq B.zero r) && (B.gt (I.range io) r) then v,i else vo,io
+          if (0. <> r) && ((I.range io) > r) then v,i else vo,io
         else
           vo,io
       ) a (max_range a)
 
   let is_small (a:t) : bool =
     let (v,i) = max_range a in
-    (B.to_float_up (I.range i) <= !Constant.precision)
+    (I.range i) <= !Constant.precision
 
   let volume (a:t) : float =
-    let vol_bound = Env.fold (fun _ x v -> B.mul_down (I.range x) v) a B.one in
-    B.to_float_up vol_bound
+    let vol_bound = Env.fold (fun _ x v -> (I.range x) *. v) a 1. in
+    vol_bound
 
 
   (* split *)

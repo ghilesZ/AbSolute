@@ -8,7 +8,6 @@
 open Bot
 open Bound_sig
 
-
 module Itv(B:BOUND) = struct
 
   (************************************************************************)
@@ -56,10 +55,6 @@ module Itv(B:BOUND) = struct
 
   let zero_one : t = B.zero, B.one
 
-  let minus_one_zero : t = B.minus_one, B.zero
-
-  let minus_one_one : t = B.minus_one, B.one
-
   let positive : t = B.zero, B.inf
 
   let negative : t = B.minus_inf, B.zero
@@ -78,7 +73,7 @@ module Itv(B:BOUND) = struct
 
   let of_float (x:float) = of_floats x x
 
-  let hull (x:B.t) (y:B.t) = B.min x y, B.max x y
+  let float_hull (x:float) (y:float) = min x y, max x y
 
 
 
@@ -142,8 +137,8 @@ module Itv(B:BOUND) = struct
   let subseteq ((l1,h1):t) ((l2,h2):t) : bool =
     B.geq l1 l2 && B.leq h1 h2
 
-  let contains ((l,h):t) (x:B.t) : bool =
-    B.leq l x && B.leq x h
+  let contains_float ((l,h):t) (x:float) : bool =
+    B.leq l (B.of_float_down x) && B.leq (B.of_float_up x) h
 
   let intersect ((l1,h1):t) ((l2,h2):t) : bool =
     B.leq l1 h2 && B.leq l2 h1
@@ -252,8 +247,9 @@ module Itv(B:BOUND) = struct
     B.neg h, B.neg l
 
   let abs ((l,h):t) : t =
-    if contains (l,h) B.zero then B.zero, B.max (B.abs l) (B.abs h)
-    else hull (B.abs l) (B.abs h)
+    if contains_float (l,h) 0. then B.zero, B.max (B.abs l) (B.abs h)
+    else if B.gt (B.abs l) (B.abs h) then of_bounds (B.abs h) (B.abs l)
+    else of_bounds (B.abs l) (B.abs h)
 
   let add ((l1,h1):t) ((l2,h2):t) : t =
     B.add_down l1 l2, B.add_up h1 h2
@@ -285,7 +281,7 @@ module Itv(B:BOUND) = struct
     and neg = (lift_bot (div_sign i1)) (meet i2 negative) in
     (* joins the result *)
     join_bot2 join pos neg,
-    contains i2 B.zero
+    contains_float i2 0.
 
   (* interval square root *)
   let sqrt ((l,h):t) : t bot =
@@ -300,142 +296,7 @@ module Itv(B:BOUND) = struct
   let ( /@ ) = div
 
   (* deprecated : use the interval version instead*)
-  let pi_half = B.of_float_up 1.57079632
-  let pi = B.of_float_up 3.14159265
-  let two_pi = B.of_float_up 6.28318
   let ln10 = B.of_float_up 2.3025850
-
-  (*the two closest floating boundaries of pi*)
-  let pi_up = B.of_float_up 3.14159265358979356
-  let pi_down = B.of_float_down 3.14159265358979312
-
-  (* it improves soundness to use those *)
-  let i_pi:t= pi_down, pi_up
-  let i_pi_half = i_pi /@ (of_int 2) |> fst |> debot
-  let i_two_pi = i_pi +@ i_pi
-  let i_three_half_of_pi = (i_two_pi +@ i_pi) /@ (of_int 2) |> fst |> debot
-
-  type quadrant = | One
-		  | Two
-		  | Three
-		  | Four
-		  | AroundPiHalf
-		  | AroundPi
-		  | AroundThreePiHalf
-		  | AroundTwoPi
-
-  let might_intersect a b =
-    match a,b with
-    | x,y when x=y -> true
-    | AroundPiHalf,One | AroundPiHalf,Two
-    | AroundPi,Two | AroundPi,Three
-    | AroundThreePiHalf, Three | AroundThreePiHalf, Four
-    | AroundTwoPi, Four | AroundTwoPi, One
-    | One, AroundTwoPi | One,AroundPiHalf
-    | Two, AroundPiHalf | Two, AroundPi
-    | Three, AroundPi | Three, AroundThreePiHalf
-    | Four,AroundThreePiHalf | Four, AroundTwoPi -> true
-    | _ -> false
-
-  (* Returns the quadrant in which the bound is. the value must be in [0, 2pi[ *)
-  let quadrant value =
-    if contains i_pi_half value then AroundPiHalf
-    else if contains i_pi value then AroundPi
-    else if contains i_three_half_of_pi value then AroundThreePiHalf
-    else if contains i_two_pi value then AroundTwoPi
-    else if B.leq value (fst i_pi_half) then One
-    else if B.leq value pi_down then Two
-    else if B.leq value (fst i_three_half_of_pi) then Three
-    else Four
-
-  (* A bound is scaled to the range [0, 2pi[ *)
-  let scale_to_two_pi value =
-    let q = B.floor (B.div_up value two_pi) in
-    B.sub_up value (B.mul_up two_pi q)
-
-  (* The interval is scaled to the range [0, 2pi[ *)
-  let scale_to_two_pi_itv ((l,h):t) =
-    if B.geq l B.zero && B.lt h two_pi then (l,h)
-    else (scale_to_two_pi l, scale_to_two_pi h)
-
-  (* interval sin *)
-  let sin (l,h) =
-    let diam = range (l,h) in
-    if B.geq diam (B.add_down pi_down pi_down) then minus_one_one
-    else
-      let (l',h') = scale_to_two_pi_itv (l,h) in
-      let q_inf = quadrant l'
-      and q_sup = quadrant h'
-      and diam = range (l,h) in
-      if might_intersect q_inf q_sup && B.geq diam pi then minus_one_one else
-      match q_inf, q_sup with
-      | One, One | Four, One | Four, Four | _,AroundPiHalf -> (B.sin_down l',B.sin_up h')
-      | Two, Two | Two, Three | Three, Three | AroundPiHalf,_ -> (B.sin_down h',B.sin_up l')
-      | Three, Two | One, Four -> minus_one_one
-      | One, Two | Four, Three -> (B.min (B.sin_down l') (B.sin_down h'),B.one)
-      | Two, One | Three, Four -> (B.minus_one,B.max (B.sin_up l') (B.sin_up h'))
-      | One, Three -> (B.sin_down h',B.one)
-      | Two, Four | _,AroundThreePiHalf -> (B.minus_one,B.sin_up l')
-      | Three, One | AroundThreePiHalf,_ -> (B.minus_one,B.sin_up h')
-      | Four, Two -> (B.sin_down l',B.one)
-      | _ -> failwith ("Should not occur")
-
-  (* interval cos *)
-  let cos itv = sin (itv +@ i_pi_half)
-
-  (* interval tan *)
-  let tan itv =
-    let diam = range itv in
-    if B.geq diam pi then top
-    else
-      let (l',h') = scale_to_two_pi_itv itv in
-      let diam = range itv
-      and q_inf = quadrant l'
-      and q_sup = quadrant h' in
-      (* Format.printf "%s ; || = %s ; (%i, %i)\n" (to_string (l',h')) (B.to_string diam) q_inf q_sup; *)
-      if q_inf = q_sup && B.geq diam pi then top
-      else
-        match q_inf, q_sup with
-        | One,One | Two,Two | Three,Three | Four,Four | Two,Three | Four,One ->
-	  (B.tan_down l',B.tan_up h')
-        | (One | Two | Three | Four), (One | Two | Three | Four) -> top
-        | _ -> failwith ("Should not occur")
-
-  (* interval cot *)
-  let cot itv =
-    let itv' = tan (itv +@ i_pi_half) in
-    neg itv'
-
-  (* interval arcsin *)
-  let asin (l,h) =
-    if B.lt h B.minus_one || B.gt l B.one then Bot
-    else
-      let is_minus_one = B.lt l B.minus_one
-      and is_plus_one = B.gt h B.one in
-      match (is_minus_one, is_plus_one) with
-      | true, true -> Nb ((B.neg pi_half), pi_half)
-      | true, false -> Nb ((B.neg pi_half), (B.asin_up h))
-      | false, true -> Nb ((B.asin_down l), pi_half)
-      | false, false -> Nb ((B.asin_down l), (B.asin_up h))
-
-  (* interval acos *)
-  let acos (l,h) =
-    if B.lt h B.minus_one || B.gt l B.one then Bot
-    else
-      let is_minus_one = B.lt l B.minus_one
-      and is_plus_one = B.gt h B.one in
-      match (is_minus_one, is_plus_one) with
-      | true, true -> Nb (B.zero, pi)
-      | true, false -> Nb ((B.acos_down h), pi)
-      | false, true -> Nb (B.zero, (B.acos_up l))
-      | false, false -> Nb ((B.acos_down h), (B.acos_up l))
-
-  (* interval atan *)
-  let atan (l,h) =
-    (B.atan_down l,B.atan_up h)
-
-  (* interval acot *)
-  let acot itv = (atan (neg itv)) +@ (i_pi_half)
 
   (* interval exp *)
   let exp (l,h) = (B.exp_down l,B.exp_up h)
@@ -497,11 +358,6 @@ module Itv(B:BOUND) = struct
 
   (** runtime functions **)
   let eval_fun name args : t bot =
-    let arity_1 (f: t -> t) : t bot =
-      match args with
-      | [i] -> Nb (f i)
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
-    in
     let arity_1_bot (f: t -> t bot) : t bot =
        match args with
        | [i] ->
@@ -524,8 +380,6 @@ module Itv(B:BOUND) = struct
       | _ -> failwith (Format.sprintf "%s expect two arguments" name)
     in
     match name with
-    | "cos"   -> arity_1 cos
-    | "sin"   -> arity_1 sin
     | "sqrt"  -> arity_1_bot sqrt
     | "max"   -> arity_2 max
     | "nroot" -> arity_2_bot n_root
@@ -611,16 +465,16 @@ module Itv(B:BOUND) = struct
   (* r = i1*i2 => (i1 = r/i2 \/ i2=r=0) /\ (i2 = r/i1 \/ i1=r=0) *)
   let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
     merge_bot2
-      (if contains r B.zero && contains i2 B.zero then Nb i1
+      (if contains_float r 0. && contains_float i2 0. then Nb i1
       else match fst (div r i2) with Bot -> Bot | Nb x -> meet i1 x)
-      (if contains r B.zero && contains i1 B.zero then Nb i2
+      (if contains_float r 0. && contains_float i1 0. then Nb i2
       else match fst (div r i1) with Bot -> Bot | Nb x -> meet i2 x)
 
   (* r = i1/i2 => i1 = i2*r /\ (i2 = i1/r \/ i1=r=0) *)
   let filter_div (i1:t) (i2:t) (r:t) : (t*t) bot =
     merge_bot2
       (meet i1 (mul i2 r))
-      (if contains r B.zero && contains i1 B.zero then Nb i2
+      (if contains_float r 0. && contains_float i1 0. then Nb i2
       else match fst (div i1 r) with Bot -> Bot | Nb x -> meet i2 x)
 
   (* r = sqrt i => i = r*r or i < 0 *)
@@ -628,104 +482,6 @@ module Itv(B:BOUND) = struct
     let rr = B.mul_down rl rl, B.mul_up rh rh in
     if B.sign il >= 0 then meet i rr
     else meet i (B.minus_inf, snd rr)
-
-  let compute_itv itv itv' i i' =
-    let aux =
-      if i mod 2 = 0 then add itv' (mul (of_bound pi) (of_int i))
-      else sub (mul (of_bound pi) (of_int i')) itv'
-    in meet itv aux
-
-  (* r = sin i => i = arcsin r *)
-  let filter_sin i r =
-    let asin_r = asin r in
-    let (aux, _) = div (add i (of_bound pi_half)) (of_bound pi) in
-    match (aux, asin_r) with
-    | Bot, _ | _, Bot -> Bot
-    | Nb (p1,p2), Nb ((l,h) as a_r) ->
-      let idx = ref ((int_of_float (B.to_float_up (B.floor p1))) - 1) in
-      let itv = ref (compute_itv i a_r !idx !idx) in
-      while !idx < (int_of_float (B.to_float_down p2)) && is_Bot !itv do
-        idx := !idx + 1;
-        itv := compute_itv i a_r !idx !idx;
-      done;
-      if (is_Bot !itv) then Bot
-      else
-        let idx = ref ((int_of_float (B.to_float_up (B.floor p2))) + 1) in
-        let itv' = ref (compute_itv i a_r !idx !idx) in
-        while !idx > (int_of_float (B.to_float_down p1)) && is_Bot !itv' do
-          idx := !idx - 1;
-          itv' := compute_itv i a_r !idx !idx;
-        done;
-        (Bot.join_bot2 join !itv !itv')
-
-
-  (* r = cos i => i = arccos r *)
-  let filter_cos (i:t) (r:t) : t bot =
-    let acos_r = acos r in
-    let (aux, _) = div i (of_bound pi) in
-    match (aux, acos_r) with
-    | Bot, _ | _, Bot -> Bot
-    | Nb (p1,p2), Nb ((l,h) as a_r) ->
-      let idx = ref ((int_of_float (B.to_float_up (B.floor p1))) - 1) in
-      let itv = ref (compute_itv i a_r !idx (!idx+1)) in
-      while !idx < (int_of_float (B.to_float_down p2)) && is_Bot !itv do
-        idx := !idx + 1;
-        itv := compute_itv i a_r !idx (!idx+1);
-      done;
-      if (is_Bot !itv) then
-        Bot
-      else
-        let idx = ref ((int_of_float (B.to_float_up (B.floor p2))) + 1) in
-        let itv' = ref (compute_itv i a_r !idx (!idx+1)) in
-        while !idx > (int_of_float (B.to_float_down p1)) && is_Bot !itv' do
-          idx := !idx - 1;
-          itv' := compute_itv i a_r !idx (!idx+1);
-        done;
-        (Bot.join_bot2 join !itv !itv')
-
-  (* r = tan i => i = arctan r *)
-  let filter_tan i r =
-    let atan_r = atan r in
-    let (aux, _) = div (add i (of_bound pi_half)) (of_bound pi) in
-    Format.printf "atan = %s\n aux = %s\n" (to_string atan_r) (Bot.bot_to_string to_string aux);
-    match aux with
-    | Bot -> Bot
-    | Nb (p1,p2) ->
-      let idx = ref ((int_of_float (B.to_float_up (B.floor p1))) - 1) in
-      let itv = ref (meet i (add atan_r (mul (of_bound pi) (of_int !idx)))) in
-      while !idx < (int_of_float (B.to_float_down p2)) && is_Bot !itv do
-        idx := !idx + 1;
-        itv := meet i (add atan_r (mul (of_bound pi) (of_int !idx)));
-      done;
-      if (is_Bot !itv) then
-        Bot
-      else
-        let idx = ref ((int_of_float (B.to_float_up (B.floor p2))) + 1) in
-        let itv' = ref (meet i (add atan_r (mul (of_bound pi) (of_int !idx)))) in
-        while !idx > (int_of_float (B.to_float_down p1)) && is_Bot !itv' do
-          idx := !idx - 1;
-          itv' := meet i (add atan_r (mul (of_bound pi) (of_int !idx)));
-        done;
-        Bot.join_bot2 join !itv !itv'
-
-  (* r = cot i => i = arccot r *)
-  let filter_cot i r = failwith "todo filter_cot"
-
-  (* r = asin i => i = sin r *)
-  let filter_asin i r =
-    meet i (sin r)
-
-  (* r = acos i => i = cos r *)
-  let filter_acos i r =
-    meet i (cos r)
-
-  (* r = atan i => i = tan r *)
-  let filter_atan i r =
-    meet i (tan r)
-
-  (* r = acot i => i = cot r *)
-  let filter_acot i r =
-    meet i (cot r)
 
   (* r = exp i => i = ln r *)
   let filter_exp i r =
@@ -775,12 +531,6 @@ module Itv(B:BOUND) = struct
       | _ -> failwith (Format.sprintf "%s expect two arguments" name)
     in
     match name with
-    | "cos"  -> arity_1 filter_cos
-    | "acos" -> arity_1 filter_acos
-    | "sin"  -> arity_1 filter_sin
-    | "asin" -> arity_1 filter_asin
-    | "tan"  -> arity_1 filter_tan
-    | "atan" -> arity_1 filter_atan
     | "sqrt" -> arity_1 filter_sqrt
     | "exp"  -> arity_1 filter_exp
     | "ln"   -> arity_1 filter_ln

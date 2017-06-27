@@ -20,8 +20,6 @@ module type ITV = sig
   (************************************************************************)
 
   (* interval bound (possibly -oo or +oo) *)
-  module B : BOUND
-  type bound = B.t
 
   (* an interval is a pair of bounds (lower,upper);
      intervals are always non-empty: lower <= upper;
@@ -39,27 +37,21 @@ module type ITV = sig
   val minus_one: t      (* {-1} *)
   val top: t            (* [-oo,+oo] *)
   val zero_one: t       (* [0,1] *)
-  val minus_one_zero: t (* [-1,0] *)
-  val minus_one_one: t  (* [-1,1] *)
   val positive: t       (* [0,+oo] *)
   val negative: t       (* [-oo,0] *)
 
-  (* approximation of pi *)
-  val i_pi:t
-
-  val of_bounds: bound -> bound -> t
   val of_ints: int -> int -> t
   (* val of_rats: Q.t -> Q.t -> t *)
   val of_floats: float -> float -> t
   (* [a,b] *)
 
-  val of_bound: bound -> t
+
   val of_int: int -> t
   (* val of_rat: Q.t -> t *)
   val of_float: float -> t
   (* {a} *)
 
-  val hull: bound -> bound -> t
+  val float_hull: float -> float -> t
   (* [min a b, max a b] *)
 
   (************************************************************************)
@@ -97,7 +89,7 @@ module type ITV = sig
 
   val equal: t -> t -> bool
   val subseteq: t -> t -> bool
-  val contains: t -> bound -> bool
+  val contains_float: t ->float -> bool
   val intersect: t -> t -> bool
   val is_bounded: t -> bool
   val is_singleton: t -> bool
@@ -108,18 +100,18 @@ module type ITV = sig
   (* ------ *)
 
   (* length of the intersection (>= 0) *)
-  val overlap: t -> t -> bound
+  val overlap: t -> t -> float
 
-  val range: t -> bound
-  val magnitude: t -> bound
+  val range: t -> float
+  val magnitude: t -> float
 
 
   (* split *)
   (* ----- *)
 
-  val mean: t -> bound list
-  val split: t -> bound list -> (t bot) list
-  val split_integer: t -> bound list -> (t bot) list
+  val mean: t -> float list
+  val split: t -> float list -> (t bot) list
+  val split_integer: t -> float list -> (t bot) list
 
   (* pruning *)
   (* ------- *)
