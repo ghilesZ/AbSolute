@@ -776,8 +776,11 @@ module Itv(B:BOUND) = struct
     in
     match name with
     | "cos"  -> arity_1 filter_cos
+    | "acos" -> arity_1 filter_acos
     | "sin"  -> arity_1 filter_sin
+    | "asin" -> arity_1 filter_asin
     | "tan"  -> arity_1 filter_tan
+    | "atan" -> arity_1 filter_atan
     | "sqrt" -> arity_1 filter_sqrt
     | "exp"  -> arity_1 filter_exp
     | "ln"   -> arity_1 filter_ln

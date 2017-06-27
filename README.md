@@ -1,10 +1,10 @@
-# AbSolute
+# Simplified/Stable version of AbSolute
 
 AbSolute is a constraint solver based on abstract domains. It implements the solving method presented in: ["A Constraint Solver Based on Abstract Domains"](https://hal.archives-ouvertes.fr/hal-00785604/file/Pelleau_Mine_Truchet_Benhamou.pdf).
 
 ### Solving example:
 
-```c          
+```c
 /* simple example with sinus and cosinus */
 init{
   real x = [-10;10];
@@ -20,14 +20,14 @@ constraints{
 
 You can see other examples of problems in the **problem** directory
 
-### Build 
-A simple **make** will do the job. 
+### Build
+A simple **make** will do the job.
 ##### warning:
 For some reason, having both packages **libapron** and **libapron-dev** installed will make the building of absolute fail.
 Therefore, the easiest way to deal with apron is to install it with **and only with** opam : https://opam.ocaml.org/packages/
 
 ### Use
-```sh 
+```sh
 ./solver.opt problem
 ```
 

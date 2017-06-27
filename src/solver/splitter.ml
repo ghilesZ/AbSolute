@@ -69,10 +69,10 @@ module Make (Abs : AbstractCP) = struct
     try
       let abs' = List.fold_left filter abs constrs in
       if Abs.is_bottom abs' then Empty else
-	let unsat = List.filter (fun c -> not (sat_cons abs' c)) constrs in
-	match unsat with
-	| [] -> print_debug "\t=> sure:" objv abs'; Full abs'
-	| _ ->  if minimize_test objv abs' then
+	      let unsat = List.filter (fun c -> not (sat_cons abs' c)) constrs in
+	      match unsat with
+	      | [] -> print_debug "\t=> sure:" objv abs'; Full abs'
+	      | _ ->  if minimize_test objv abs' then
                   (print_debug "\t*******=> sure:" objv abs'; Full abs')
                 else (
                   print_debug "\t=> " objv abs';
@@ -104,5 +104,37 @@ module Make (Abs : AbstractCP) = struct
     in aux abs constrs true [] []
 
   let split abs cstrs = Abs.split abs
-(* TODO: add other splits *)
+  (* TODO: add other splits *)
+
+  (********* OTHER IMPLEM***********)
+  type topology = {sols:Abs.t; complementary: (Csp.bexpr list) * (Abs.t list)}
+
+  (* using elimination technique *)
+  let prune_topo (abs:Abs.t) (compl:Abs.t list) =
+    let rec aux abs c_list is_sure sures unsures =
+      match c_list with
+      | [] -> if is_sure then (abs::sures),unsures else sures,(abs::unsures)
+      | h::tl ->
+	       try
+	         let s,u = Abs.prune abs h in
+	         let s',u' = List.fold_left (fun (sures,unsures) elm ->
+	           aux elm tl is_sure sures unsures)
+	           (sures,unsures) s
+	         in
+	         aux u tl false s' u'
+	       with Bot.Bot_found -> aux abs tl is_sure sures unsures
+    in aux abs compl true [] []
+
+  let build_topology abs constrs : topology =
+    let abs' = List.fold_left filter abs constrs in
+    let complementary =
+      List.fold_left
+        (fun (acc1,acc2) c ->
+          try
+            let one_comp = filter abs (Csp.neg_bexpr c) in
+            (c::acc1),(one_comp::acc2)
+          with Bot.Bot_found -> acc1,acc2
+        ) ([],[]) constrs
+    in {sols=abs';complementary}
+
 end

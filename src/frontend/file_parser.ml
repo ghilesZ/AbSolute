@@ -78,9 +78,9 @@ let parse (filename:string option) : prog =
   let fileparser =
     let ext = Filename.extension filename in
     if ext = ".mod" then begin
-        (* Format.printf "mod file detected. parsing with mod parser\n%!"; *)
-        (fun lex -> ModParser.stmts ModLexer.token lex |> ModCsp.toCsp)
-      end else Parser.file Lexer.token
+        failwith "no mod file accepted with this version of absolute"
+      end
+    else Parser.file Lexer.token
   in
   try
     lex.lex_curr_p <- { lex.lex_curr_p with pos_fname = filename; };

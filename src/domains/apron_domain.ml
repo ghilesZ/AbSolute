@@ -138,11 +138,28 @@ module MAKE(AP:ADomain) = struct
 
   let empty = A.top man (Environment.make [||] [||])
 
+  let join a b = A.join man a b
+
+  let filter b (e1,c,e2) =
+    (*Format.printf "%a\n" A.print b;*)
+    let env = A.env b in
+    let c = T.cmp_expr_to_tcons (e1,c,e2) env in
+    if Tconsext.get_typ c = Tconsext.DISEQ then
+      let lin = Tconsext.to_lincons b.A.env c in
+      let l1,l2 = Linconsext.splitdiseq lin in
+      join (A.filter_lincons man b l1) (A.filter_lincons man b l2)
+    else A.filter_tcons man b c
+
+  let filterl b (e1,c,e2) =
+    filter b (e1,c,e2)
+
   let add_var abs (typ,v,dom) =
     let e = A.env abs in
     let ints,reals = if typ = INT then [|Var.of_string v|],[||] else [||],[|Var.of_string v|] in
     let env = Environment.add e ints reals in
-    A.change_environment man abs env false
+    let abs = A.change_environment man abs env false in
+    let c1,c2 = Csp.domain_to_constraints (typ,v,dom) in
+    filter (filter abs c1) c2
 
   let is_bottom abs =
     A.is_bottom man abs
@@ -161,8 +178,6 @@ module MAKE(AP:ADomain) = struct
       true
     with Exit -> false
 
-  let join a b = A.join man a b
-
   let prune a b =
     let work acc a c =
       let neg_c = Linconsext.neg c in
@@ -178,19 +193,6 @@ module MAKE(AP:ADomain) = struct
         work acc' a' c2
       else work acc a c
     ) (a,[]) (A.to_lincons_array man b) in pruned,b
-
-  let filter b (e1,c,e2) =
-    (*Format.printf "%a\n" A.print b;*)
-    let env = A.env b in
-    let c = T.cmp_expr_to_tcons (e1,c,e2) env in
-    if Tconsext.get_typ c = Tconsext.DISEQ then
-      let lin = Tconsext.to_lincons b.A.env c in
-      let l1,l2 = Linconsext.splitdiseq lin in
-      join (A.filter_lincons man b l1) (A.filter_lincons man b l2)
-    else A.filter_tcons man b c
-
-  let filterl b (e1,c,e2) =
-    filter b (e1,c,e2)
 
   let print = A.print
 
@@ -244,10 +246,10 @@ module MAKE(AP:ADomain) = struct
     let rec minmax tab i max i_max min i_min =
       if i>=Array.length tab then  (max, i_max, min, i_min)
       else
-	let dim = diam_interval (tab.(i)) in
-	if Mpqf.cmp dim max > 0 then minmax tab (i+1) dim i min i_min
-	else if Mpqf.cmp min dim > 0 then minmax tab (i+1) max i_max dim i
-	else minmax tab (i+1) max i_max min i_min
+	      let dim = diam_interval (tab.(i)) in
+	      if Mpqf.cmp dim max > 0 then minmax tab (i+1) dim i min i_min
+	      else if Mpqf.cmp min dim > 0 then minmax tab (i+1) max i_max dim i
+	      else minmax tab (i+1) max i_max min i_min
 
     (* let p1 = (p11, p12, ..., p1n) and p2 = (p21, p22, ..., p2n) two points
      * The vector p1p2 is (p21-p11, p22-p12, ..., p2n-p1n) and the orthogonal line
@@ -264,15 +266,15 @@ module MAKE(AP:ADomain) = struct
 	      let list2' = List.append list2 [(Coeff.neg coeffi, Environment.var_of_dim gen_env i)] in
 	      genere_linexpr gen_env size p1 p2 (i+1) list1' list2' cst'
 
- let split abs (e1,e2) =
-   let meet_linexpr abs man env expr =
-     let cons = Linconsext.make expr Linconsext.SUPEQ in
-     A.filter_lincons man abs cons
-   in
-   let env = A.env abs in
-   let abs1 = meet_linexpr abs man env e1 in
-   let abs2 = meet_linexpr abs man env e2 in
-   [abs1; abs2]
+    let split abs (e1,e2) =
+      let meet_linexpr abs man env expr cmp =
+        let cons = Linconsext.make expr cmp in
+        A.filter_lincons man abs cons
+      in
+      let env = A.env abs in
+      let abs1 = meet_linexpr abs man env e1 Linconsext.SUP in
+      let abs2 = meet_linexpr abs man env e2 Linconsext.SUPEQ in
+      [abs1; abs2]
 
   (************************************************)
   (* POLYHEDRIC VERSION OF SOME USEFUL OPERATIONS *)
@@ -284,10 +286,10 @@ module MAKE(AP:ADomain) = struct
     (*print_gen gens gen_env;*)
     let size = Environment.size gen_env in
     let gen_float_array = gen_to_array poly size in
-    let (p1, i1, p2, i2, dist_max) = maxdisttab gen_float_array in
+    let (p1, p2, dist_max) = maxdisttab gen_float_array in
     let (list1, list2, cst) = genere_linexpr gen_env size p1 p2 0 [] [] 0. in
-    let cst_sca1 = Scalar.of_float (-1. *.(cst +. split_prec)) in
-    let cst_sca2 = Scalar.of_float (cst +. split_prec) in
+    let cst_sca1 = Scalar.of_float (-1. *. cst) in
+    let cst_sca2 = Scalar.of_float cst in
     let linexp = Linexpr1.make gen_env in
     Linexpr1.set_list linexp list1 (Some (Coeff.Scalar cst_sca1));
     let linexp' = Linexpr1.make gen_env in
@@ -300,6 +302,6 @@ module MAKE(AP:ADomain) = struct
     (*print_gen gens gen_env;*)
     let size = Environment.size gen_env in
     let gen_float_array = gen_to_array poly size in
-    let (p1, i1, p2, i2, dist_max) = maxdisttab gen_float_array in
+    let (p1, p2, dist_max) = maxdisttab gen_float_array in
     (dist_max <= !Constant.precision)
 end
