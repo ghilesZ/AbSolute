@@ -27,16 +27,10 @@ module type ITV = sig
    *)
   type t (* = bound * bound *)
 
-
   (************************************************************************)
   (* CONSTRUCTORS AND CONSTANTS *)
   (************************************************************************)
 
-  val zero: t           (* {0} *)
-  val one: t            (* {1} *)
-  val minus_one: t      (* {-1} *)
-  val top: t            (* [-oo,+oo] *)
-  val zero_one: t       (* [0,1] *)
   val positive: t       (* [0,+oo] *)
   val negative: t       (* [-oo,0] *)
 
@@ -44,7 +38,6 @@ module type ITV = sig
   (* val of_rats: Q.t -> Q.t -> t *)
   val of_floats: float -> float -> t
   (* [a,b] *)
-
 
   val of_int: int -> t
   (* val of_rat: Q.t -> t *)
@@ -61,13 +54,11 @@ module type ITV = sig
   val to_float_range : t -> float * float
 
   val to_string: t -> string
-  val output: out_channel -> t -> unit
-  val sprint: unit -> t -> string
-  val bprint: Buffer.t -> t -> unit
-  val pp_print: Format.formatter -> t -> unit
-  val print: Format.formatter -> t -> unit
-
-  val to_expr: t -> (Csp.cmpop * Csp.expr) * (Csp.cmpop * Csp.expr)
+  val output   : out_channel -> t -> unit
+  val sprint   : unit -> t -> string
+  val bprint   : Buffer.t -> t -> unit
+  val pp_print : Format.formatter -> t -> unit
+  val print    : Format.formatter -> t -> unit
 
   (************************************************************************)
   (* SET-THEORETIC *)

@@ -39,37 +39,16 @@ module Box (I:ITV) = struct
     let first = ref true in
     Env.iter
       (fun v i ->
-	Format.fprintf fmt "%s%s:%a"
-	  (if !first then "" else " ")
-	  v
-	  I.print i;
-	first := false
+	      Format.fprintf fmt "%s%s:%a"
+	                     (if !first then "" else " ")
+	                     v
+	                     I.print i;
+	      first := false
       ) a
 
   let float_bounds a v =
     let ((l,h), _) = find v a in
     I.of_floats l h
-
-  let to_expr abs =
-    Env.fold (fun v x lexp ->
-               let ((cl, l), (ch, h)) = I.to_expr x in
-               List.append lexp [(Csp.Var(v), cl, l);
-                                 (Csp.Var(v), ch, h)]
-             ) abs []
-
-  let to_expr abs vars : (Csp.expr * Csp.cmpop * Csp.expr) list =
-    Env.fold (fun v x lexp ->
-        if List.exists (fun vn -> String.equal v vn) vars then
-          let ((cl, l), (ch, h)) = I.to_expr x in
-          List.append lexp [(Csp.Var(v), cl, l);
-                            (Csp.Var(v), ch, h)]
-        else if List.exists (fun vn -> String.equal v (vn^"%")) vars then
-          let ((cl, l), (ch, h)) = I.to_expr x in
-          let vn = String.sub v 0 ((String.length v)-2) in
-          List.append lexp [(Csp.Var(vn), cl, l);
-                            (Csp.Var(vn), ch, h)]
-        else lexp
-      ) abs []
 
   (************************************************************************)
   (* SET-THEORETIC *)
