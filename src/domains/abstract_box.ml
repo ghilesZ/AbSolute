@@ -222,7 +222,7 @@ let split_along (a:t) (v:var) : t list =
             let r = I.mul i1 i2 in
             if e1=e2 then
               (* special case: squares are positive *)
-              debot (I.meet r I.positive)
+              I.abs r
             else r
        in
        BBinary (o,b1,b2), r

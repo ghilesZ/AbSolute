@@ -31,9 +31,6 @@ module type ITV = sig
   (* CONSTRUCTORS AND CONSTANTS *)
   (************************************************************************)
 
-  val positive: t       (* [0,+oo] *)
-  val negative: t       (* [-oo,0] *)
-
   val of_ints: int -> int -> t
   (* val of_rats: Q.t -> Q.t -> t *)
   val of_floats: float -> float -> t
