@@ -9,17 +9,16 @@ CC        := gcc
 # libraries
 OPAMDIR   := $(shell opam config var lib)
 APRONDIR  := $(OPAMDIR)/apron
-ZARITHDIR := $(OPAMDIR)/zarith
 GMPDIR    := $(OPAMDIR)/gmp
 OCAMLDIR  := $(OPAMDIR)/ocaml
 
 #ocaml libraries
-LIBS         := bigarray gmp apron polkaMPQ zarith octD boxMPQ str unix graphics
+LIBS         := bigarray gmp apron polkaMPQ octD boxMPQ str unix graphics
 OCAMLLIBS    := $(LIBS:%=%.cma) $(CCLIB)
 OCAMLOPTLIBS := $(LIBS:%=%.cmxa) $(CCLIB)
 
 # directories to include
-OCAMLINC  := -I $(ZARITHDIR) -I $(APRONDIR) -I $(GMPDIR) \
+OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) \
              -I src -I src/lib -I src/domains -I src/frontend -I src/print \
              -I src/solver
 
