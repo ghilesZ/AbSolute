@@ -39,10 +39,6 @@ module type AbstractCP = sig
 
   val filter : t -> (expr * cmpop * expr) -> t
 
-  val filterl : t -> (expr * cmpop * expr) -> t
-
-  val forward_eval : t -> expr -> (float * float)
-
   (* printing *)
   val print : Format.formatter -> t -> unit
 

@@ -15,19 +15,6 @@ module Boolean (Abs:AbstractCP) = struct
     | Not b -> filter value (neg_bexpr b)
     | Cmp (binop,e1,e2) -> Abs.filter value (e1,binop,e2)
 
-  let rec filterl (value:Abs.t) = let open Csp in function
-    | And (b1,b2) -> filterl (filterl value b2) b1
-    | Or (b1,b2) ->
-      let a1 = try Some(filterl value b1) with Bot.Bot_found -> None
-      and a2 = try Some(filterl value b2) with Bot.Bot_found -> None in
-      (match (a1,a2) with
-      | (Some a1),(Some a2) -> Abs.join a1 a2
-      | None, (Some x) | (Some x), None -> x
-      | _ -> raise Bot.Bot_found)
-    | Not b -> filterl value (neg_bexpr b)
-    | Cmp (binop,e1,e2) -> Abs.filterl value (e1,binop,e2)
-
-
   let rec sat_cons (a:Abs.t) (constr:Csp.bexpr) : bool =
     let open Csp in
     match constr with
@@ -51,39 +38,26 @@ module Make (Abs : AbstractCP) = struct
 		     | Maybe of Abs.t * Csp.bexpr list
 		     | Empty
 
-  let print_debug tab obj abs =
+  let print_debug tab abs =
     if !Constant.debug then
-      match obj with
-      | Some obj ->
-         let (inf, sup) = Abs.forward_eval abs obj in
-         Format.printf "%sabs = %a\tobjective = (%f, %f)@." tab Abs.print abs inf sup
-      | None -> Format.printf "%sabs = %a@." tab Abs.print abs
+      Format.printf "%sabs = %a@." tab Abs.print abs
 
-  let minimize_test obj abs =
-    match obj with
-    | Some obj -> let (inf, sup) = Abs.forward_eval abs obj in inf = sup
-    | None -> false
-
-  let rec consistency abs ?obj:objv constrs : consistency =
-    print_debug "" objv abs;
+  let rec consistency abs constrs : consistency =
     try
       let abs' = List.fold_left filter abs constrs in
       if Abs.is_bottom abs' then Empty else
 	      let unsat = List.filter (fun c -> not (sat_cons abs' c)) constrs in
 	      match unsat with
-	      | [] -> print_debug "\t=> sure:" objv abs'; Full abs'
-	      | _ ->  if minimize_test objv abs' then
-                  (print_debug "\t*******=> sure:" objv abs'; Full abs')
-                else (
-                  print_debug "\t=> " objv abs';
-                  if !Constant.iter then
-                    let ratio = (Abs.volume abs')/.(Abs.volume abs) in
-                    if ratio > 0.9 || abs = abs' then
-                      Maybe(abs', unsat)
-                    else
-                      consistency abs' unsat
-                  else
-                    Maybe(abs', unsat))
+	      | [] -> print_debug "\t=> sure:" abs'; Full abs'
+	      | _ -> print_debug "\t=> " abs';
+               if !Constant.iter then
+                 let ratio = (Abs.volume abs')/.(Abs.volume abs) in
+                 if ratio > 0.9 || abs = abs' then
+                   Maybe(abs', unsat)
+                 else
+                   consistency abs' unsat
+               else
+                 Maybe(abs', unsat)
     with Bot.Bot_found -> if !Constant.debug then Format.printf "\t=> bot\n"; Empty
 
   (* using elimination technique *)

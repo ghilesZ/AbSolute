@@ -36,25 +36,4 @@ module Solve(Abs : AbstractCP) = struct
     let res =  explore abs prob.Csp.constraints in
     Format.printf "\nsolving ends\n%!%a" Res.print res;
     res
-
-  let solving_various prob =
-    let open Csp in
-    let abs = init prob in
-    (* Format.printf "abs = %a" Abs.print abs; *)
-    let cons = List.filter (fun e -> not (is_cons_linear e)) prob.constraints in
-    (* Format.printf "\nconstraints = [";
-    List.iter (Format.printf "%a ;" (print_bexpr)) prob.constraints;
-    Format.printf "]@.";
-    Format.printf "non linear constraints = [";
-    List.iter (Format.printf "%a ;" (print_bexpr)) cons;
-    Format.printf "]@."; *)
-    let lcons = List.filter (fun e -> (is_cons_linear e)) prob.constraints in
-    (* Format.printf "linear constraints = [";
-    List.iter (Format.printf "%a ;" (print_bexpr)) lcons;
-    Format.printf "]@."; *)
-    let abs = List.fold_left (fun a c -> filterl a c) abs lcons in
-    Format.printf "abs = %a@." Abs.print abs;
-    let res = explore abs cons in
-    Format.printf "\nsolving ends\n%!%a" Res.print res;
-    res
 end

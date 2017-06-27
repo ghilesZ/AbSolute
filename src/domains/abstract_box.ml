@@ -324,24 +324,6 @@ let split_along (a:t) (v:var) : t list =
 
   let is_enumerated a =
     Env.for_all (fun v i -> (is_integer v |> not) || I.is_singleton i) a
-
-  let forward_eval abs cons =
-    let (_, bounds) = eval abs cons in
-    I.to_float_range bounds
-
-  let rec is_applicable abs (e:expr) : bool =
-    match e with
-    | FunCall(name,args) -> List.for_all (is_applicable abs)  args
-    | Var v -> (try ignore (find v abs); true with Not_found -> false)
-    | Cst _ -> true
-    | Unary (_, e1) -> is_applicable abs e1
-    | Binary (_, e1, e2) -> (is_applicable abs e1) && (is_applicable abs e2)
-
-  let lfilter (a:t) l : t =
-    let la = List.filter (fun (e1, op, e2) ->
-                           (is_applicable a e1) && (is_applicable a e2)) l in
-    List.fold_left (fun a' e -> filter a' e) a la
-
 end
 
 (*************)

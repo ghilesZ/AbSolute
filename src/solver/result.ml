@@ -30,54 +30,16 @@ module Make (A: AbstractCP) = struct
     }
 
   (* adds an unsure element to a result *)
-  let add_u res ?obj:fobj u =
-    match fobj with
-    | Some fobj -> 
-       let (obj_value, _) = A.forward_eval u fobj in
-       if obj_value > res.best_value then
-         res
-       else if obj_value < res.best_value then
-         {sure       = [];
-          unsure     = [u]; 
-          best_value = obj_value; 
-          nb_unsure  = 0; 
-          nb_sure    = 1; 
-          nb_steps   = res.nb_steps;
-          vol_unsure = A.volume u;
-          vol_sure   = 0.}
-       else
-         {res with unsure     = u::res.unsure; 
-                   nb_unsure  = res.nb_unsure + 1;
-                   vol_unsure = res.vol_unsure +. A.volume u}
-    | None -> 
-       {res with unsure     = u::res.unsure;
-                 nb_unsure  = res.nb_unsure+1;
-                 vol_unsure = res.vol_unsure+.A.volume u}
+  let add_u res u =
+    {res with unsure     = u::res.unsure;
+              nb_unsure  = res.nb_unsure+1;
+              vol_unsure = res.vol_unsure+.A.volume u}
 
   (* adds a sure element to a result *)
-  let add_s res ?obj:fobj s =
-    match fobj with
-    | Some fobj -> 
-       let (obj_value, _) = A.forward_eval s fobj in
-       if obj_value > res.best_value then
-         res
-       else if obj_value < res.best_value then
-         {sure       = [s];
-          unsure     = []; 
-          best_value = obj_value; 
-          nb_sure    = 1; 
-          nb_unsure  = 0; 
-          nb_steps   = res.nb_steps;
-          vol_sure   = A.volume s;
-          vol_unsure = 0.}
-       else
-         {res with sure     = s::res.sure; 
-                   nb_sure  = res.nb_sure + 1;
-                   vol_sure = res.vol_sure +. A.volume s}
-    | None ->
-       {res with sure     = s::res.sure;
-                 nb_sure  = res.nb_sure+1;
-                 vol_sure = res.vol_sure +. A.volume s}
+  let add_s res s=
+    {res with sure     = s::res.sure;
+              nb_sure  = res.nb_sure+1;
+              vol_sure = res.vol_sure +. A.volume s}
 
   (* increments the step number of the solving process *)
   let incr_step res = {res with nb_steps = res.nb_steps+1}
@@ -90,11 +52,6 @@ module Make (A: AbstractCP) = struct
   (* tests if a result can't be pruned anymore *)
   let prunable res =
     !Constant.pruning && res.nb_steps < !Constant.pruning_iter
-
-  (* creates an empty res for the optimization *)
-  let empty_obj_res abs obj =
-    let (_,obj_value) = A.forward_eval abs obj in
-      {empty_res with best_value = obj_value}
 
   (* prints a result *)
   let print fmt res =
