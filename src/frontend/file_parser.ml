@@ -77,9 +77,7 @@ let parse (filename:string option) : prog =
   let lex = from_channel f in
   let fileparser =
     let ext = Filename.extension filename in
-    if ext = ".mod" then begin
-        failwith "no mod file accepted with this version of absolute"
-      end
+    if ext = ".mod" then failwith "no mod file accepted with this version of absolute"
     else Parser.file Lexer.token
   in
   try
