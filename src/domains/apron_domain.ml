@@ -140,6 +140,8 @@ module MAKE(AP:ADomain) = struct
 
   let join a b = A.join man a b
 
+  let meet a b = A.meet man a b
+
   let filter b (e1,c,e2) =
     (*Format.printf "%a\n" A.print b;*)
     let env = A.env b in

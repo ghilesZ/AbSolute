@@ -91,10 +91,6 @@ module Itv(B:BOUND) = struct
 
 
   (* printing *)
-  let output chan x = output_string chan (to_string x)
-  let sprint () x = to_string x
-  let bprint b x = Buffer.add_string b (to_string x)
-  let pp_print f x = Format.pp_print_string f (to_string x)
   let print fmt ((l,h):t) =
     match (B.ceil l = l),(B.ceil h = h) with
     | true,true -> Format.fprintf fmt "[%0F;%0F]" (B.to_float_down l) (B.to_float_up h)
@@ -114,7 +110,6 @@ module Itv(B:BOUND) = struct
   (* operations *)
   (* ---------- *)
 
-
   let join ((l1,h1):t) ((l2,h2):t) : t =
     B.min l1 l2, B.max h1 h2
 
@@ -130,7 +125,6 @@ module Itv(B:BOUND) = struct
   (* predicates *)
   (* ---------- *)
 
-
   let equal ((l1,h1):t) ((l2,h2):t) : bool =
     B.equal l1 l2 && B.equal h1 h2
 
@@ -143,7 +137,6 @@ module Itv(B:BOUND) = struct
   let intersect ((l1,h1):t) ((l2,h2):t) : bool =
     B.leq l1 h2 && B.leq l2 h1
 
-
   let is_finite x =
     B.classify x = B.FINITE
 
@@ -153,10 +146,8 @@ module Itv(B:BOUND) = struct
   let is_singleton ((l,h):t) : bool =
     is_finite l && B.equal l h
 
-
   (* mesure *)
   (* ------ *)
-
 
   (* length of the intersection (>= 0) *)
   let overlap ((l1,h1):t) ((l2,h2):t) : B.t  =
@@ -168,11 +159,8 @@ module Itv(B:BOUND) = struct
   let magnitude ((l,h):t) : B.t =
     B.max (B.abs l) (B.abs h)
 
-
-
   (* split *)
   (* ----- *)
-
 
   (* find the mean of the interval;
      when a bound is infinite, then "mean" is some value strictly inside the
@@ -225,18 +213,18 @@ module Itv(B:BOUND) = struct
     in
     List.rev_map check_bot ((!to_pair,h)::list)
 
-
-  let prune ((l,h):t) ((l',h'):t) : t list * t  =
-    let epsilon = B.of_float_up 0.000001 in
-    let h'_eps = B.add_up h' epsilon and l'_eps = B.add_down l' (B.neg epsilon) in
-    (* It may not be worth to use the pruning to win a very small step *)
-    let step = B.of_float_up 0.1 in
-    let h_step = B.add_up h'_eps step and l_step = B.sub_down l'_eps step in
-    match (B.gt l_step l),(B.lt h_step h) with
-    | true , true  -> [(l,l'_eps);(h'_eps,h)],(l'_eps,h'_eps)
-    | true , false -> [(l,l'_eps)],(l'_eps,h)
-    | false, true  -> [(h'_eps,h)],(l,h'_eps)
-    | false, false -> [],(l,h)
+  let prune (((l,h) as a):t) (((l',h') as b):t) : t list * t  =
+    if subseteq a b then [],a else
+      let epsilon = B.of_float_up 0.00001 in
+      let h'_eps = B.add_up h' epsilon and l'_eps = B.add_down l' (B.neg epsilon) in
+      (* It may not be worth to use the pruning to win a very small step *)
+      let step = B.of_float_up 0.1 in
+      let h_step = B.add_up h'_eps step and l_step = B.sub_down l'_eps step in
+      match (B.gt l_step l),(B.lt h_step h) with
+      | true , true  -> [(l,l'_eps);(h'_eps,h)],(l'_eps,h'_eps)
+      | true , false -> [(l,l'_eps)],(l'_eps,h)
+      | false, true  -> [(h'_eps,h)],(l,h'_eps)
+      | false, false -> [],(l,h)
 
   (************************************************************************)
   (* INTERVAL ARITHMETICS (FORWARD EVALUATION) *)
@@ -496,9 +484,6 @@ module Itv(B:BOUND) = struct
 
   (* r = i ** n => i = nroot r *)
   let filter_pow (i:t) n (r:t) =
-    (* let nri = n_root r n in *)
-    (* let fnri = meet_bot meet i (n_root r n) in *)
-    (* Format.printf "%s %s %s => %s => %s%!\n" (to_string i) (to_string r) (to_string n) (Bot.bot_to_string to_string nri) (Bot.bot_to_string to_string fnri); *)
     merge_bot2 (meet_bot meet i (n_root r n)) (Nb n)
 
   (* r = nroot i => i = r ** n *)

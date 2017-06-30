@@ -136,34 +136,40 @@ module Box (I:ITV) = struct
     ) e
     |> to_bot
 
-let split_along (a:t) (v:var) : t list =
+  let split_along (a:t) (v:var) : t list =
     let i = Env.find v a in
     let i_list =
       if is_integer v then I.split_integer i (I.mean i)
       else I.split i (I.mean i)
     in
     List.fold_left (fun acc b ->
-      match b with
-      | Nb e -> (Env.add v e a)::acc
-      | Bot -> acc
-    ) [] i_list
+        match b with
+        | Nb e -> (Env.add v e a)::acc
+        | Bot -> acc
+      ) [] i_list
 
   let split (a:t) : t list =
     let (v,_) = mix_range a in
     (if !Constant.debug then
-      Format.printf " ---- splits along %s ---- \n" v);
+       Format.printf " ---- splits along %s ---- \n" v);
     split_along a v
 
   let prune (a:t) (b:t) : t list * t =
-    let rec aux a good = function
-      | [] -> good,a
-      | (v, i_b)::tl ->
-	       let add = fun i -> (Env.add v i a) in
-	       let i_a = Env.find v a in
-	       let sures,unsure = I.prune i_a i_b in
-	       aux (add unsure) (List.rev_append (List.rev_map add sures) good) tl
-    in aux a [] (Env.bindings b)
-
+    let goods,nogood =
+      Env.fold2 (fun v i_a i_b (sures,unsure) ->
+          let s,u = I.prune i_a i_b in
+          let newunsure = Env.add v u unsure
+          and newsure =
+            List.fold_left (fun acc e ->
+                (Env.add v e unsure)::acc
+              ) sures s
+          in (newsure,newunsure)
+        ) a b ([],a)
+    in goods,nogood
+    (* Format.printf "\n\npruning %a\n and\n %a\nobtaining:\ngoods \n" print a print b; *)
+    (* List.iter (Format.printf "%a\n" print) goods; *)
+    (* Format.printf "--------\nnogoods\n%a\n" print nogood; *)
+    (* assert false *)
 
   (************************************************************************)
   (* ABSTRACT OPERATIONS *)

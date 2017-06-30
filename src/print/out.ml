@@ -25,7 +25,7 @@ module Make (D:Drawer) = struct
     | None, None -> failwith "nothing to draw"
     | Some(a,b),None | None, Some(a,b) -> View.init (a,b) (1.,1.)
     | Some(a,b),Some(c,d) -> View.init (a,b) (c,d));
-    List.iter (fun a -> D.draw2d a (v1,v2) color_sure) sure;
+    List.iter (fun a -> D.draw2d a (v1,v2) color_sure) (List.rev sure);
     if !Constant.sure |> not then
       List.iter (fun a -> D.draw2d a (v1,v2) color_unsure) unsure;
     View.draw_end ()

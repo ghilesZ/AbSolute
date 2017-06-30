@@ -11,15 +11,12 @@
  *)
 
 open Bot
-open Bound_sig
 
 module type ITV = sig
 
   (************************************************************************)
   (* TYPES *)
   (************************************************************************)
-
-  (* interval bound (possibly -oo or +oo) *)
 
   (* an interval is a pair of bounds (lower,upper);
      intervals are always non-empty: lower <= upper;
@@ -51,16 +48,12 @@ module type ITV = sig
   val to_float_range : t -> float * float
 
   val to_string: t -> string
-  val output   : out_channel -> t -> unit
-  val sprint   : unit -> t -> string
-  val bprint   : Buffer.t -> t -> unit
-  val pp_print : Format.formatter -> t -> unit
+
   val print    : Format.formatter -> t -> unit
 
   (************************************************************************)
   (* SET-THEORETIC *)
   (************************************************************************)
-
 
   (* operations *)
   (* ---------- *)
@@ -71,10 +64,8 @@ module type ITV = sig
   (* returns None if the set-union cannot be exactly represented *)
   val union: t -> t -> t option
 
-
   (* predicates *)
   (* ---------- *)
-
   val equal: t -> t -> bool
   val subseteq: t -> t -> bool
   val contains_float: t ->float -> bool
@@ -82,7 +73,6 @@ module type ITV = sig
   val is_bounded: t -> bool
   val is_singleton: t -> bool
   val check_bot: t -> t bot
-
 
   (* mesure *)
   (* ------ *)

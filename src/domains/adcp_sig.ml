@@ -31,6 +31,8 @@ module type AbstractCP = sig
   (*** OPERATIONS ***)
   val join: t -> t -> t
 
+  val meet: t -> t -> t
+
   (* pruning *)
   val prune : t -> t -> t list * t
 
