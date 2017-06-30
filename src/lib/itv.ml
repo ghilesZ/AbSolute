@@ -67,9 +67,6 @@ module Itv(B:BOUND) = struct
   (* PRINTING *)
   (************************************************************************)
 
-  let to_string ((l,h):t) : string =
-    Format.sprintf "[%s;%s]" (B.to_string l) (B.to_string h)
-
   (* printing *)
   let print fmt ((l,h):t) : unit =
     Format.fprintf fmt "[%a;%a]" B.print l B.print h

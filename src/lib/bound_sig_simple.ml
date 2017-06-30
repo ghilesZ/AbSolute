@@ -31,26 +31,25 @@ module type BOUND = sig
   val of_int : int -> t
   val of_float : float -> t
 
-  (* printing *)
-  (* ******** *)
-  val to_string: t -> string
-  val print: Format.formatter -> t -> unit
-
   (* conversion *)
   (* ********** *)
 
   val to_float : t -> float
   val to_int   : t -> int
 
+  (* printing *)
+  (* ******** *)
+  val print: Format.formatter -> t -> unit
+
   (* useful constants *)
   (* **************** *)
 
-  val zero: t
-  val one: t
-  val two: t
-  val minus_one: t
-  val inf: t
-  val minus_inf: t
+  val zero      : t
+  val one       : t
+  val two       : t
+  val minus_one : t
+  val inf       : t
+  val minus_inf : t
 
   (* operators *)
   (* ********* *)

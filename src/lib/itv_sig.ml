@@ -42,8 +42,6 @@ module type ITV = sig
 
   val to_float_range : t -> float * float
 
-  val to_string : t -> string
-
   val print : Format.formatter -> t -> unit
 
   (************************************************************************)

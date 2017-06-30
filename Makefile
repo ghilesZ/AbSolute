@@ -48,11 +48,11 @@ MLFILES = \
   src/lib/bot.ml \
   src/lib/mapext.ml \
   src/lib/bound_sig.ml \
-  src/lib/bound_sig_no_rounding.ml \
+  src/lib/bound_sig_simple.ml \
   src/lib/bound_float.ml \
   src/lib/itv_sig.ml \
   src/lib/itv.ml \
-  src/lib/itv_no_rounding.ml \
+  src/lib/itv_simple.ml \
   src/domains/apron_domain.ml \
   src/domains/abstract_box.ml \
   src/domains/adcp_sig.ml \

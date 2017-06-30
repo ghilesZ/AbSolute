@@ -42,8 +42,6 @@ module type BOUND = sig
 
   (* printing *)
   (* ******** *)
-
-  val to_string: t -> string
   val print: Format.formatter -> t -> unit
 
   (* conversion *)

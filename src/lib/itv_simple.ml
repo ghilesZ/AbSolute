@@ -6,7 +6,7 @@
 
 
 open Bot
-open Bound_sig_no_rounding
+open Bound_sig_simple
 
 module Itv(B:BOUND) = struct
 
@@ -61,12 +61,10 @@ module Itv(B:BOUND) = struct
   (* PRINTING *)
   (************************************************************************)
 
-  let to_string ((l,h):t) : string =
-    Format.sprintf "[%f;%f]" (B.to_float l) (B.to_float h)
-
   (* printing *)
   let print fmt ((l,h):t) =
     Format.fprintf fmt "[%a;%a]" B.print l B.print h
+
 
   (************************************************************************)
   (* SET-THEORETIC *)
