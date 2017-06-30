@@ -46,22 +46,9 @@ let to_float_up x : float = x
 let to_float_down x : float = x
 
 (* printing *)
-let output chan x = output_string chan (to_string x)
-let sprint () x = to_string x
-let bprint b x = Buffer.add_string b (to_string x)
-let pp_print f x = Format.pp_print_string f (to_string x)
-
-
-(* classification *)
-
-type kind = FINITE | MINF | INF | INVALID
-
-let classify (x:t) : kind =
-  if classify_float x = FP_nan then INVALID
-  else if x = infinity then INF
-  else if x = neg_infinity then MINF
-  else FINITE
-
+let print fmt x =
+  if ceil x = x then Format.fprintf fmt "%0F" x
+  else Format.fprintf fmt "%f" x
 
 
 (* useful constants *)
@@ -74,7 +61,6 @@ let inf : t = infinity
 let minus_inf : t = neg_infinity
 let nan : t = nan
 
-
 (* exact operators *)
 
 let neg x = -. x
@@ -85,7 +71,7 @@ let abs x = abs_float x
 let add_up a b = a +. b
 let sub_up a b = a -. b
 let mul_up a b = a *. b
-let div_up a b = 
+let div_up a b =
   match sign a, sign b with
   |  0,_ -> zero
   |  1,0 -> inf
@@ -95,7 +81,7 @@ let div_up a b =
 let add_down a b = -. (-. a -. b)
 let sub_down a b = -. (b -. a)
 let mul_down a b = -. ((-. a) *. b)
-let div_down a b = 
+let div_down a b =
     match sign a, sign b with
     |  0,_ -> zero
     |  1,0 -> inf

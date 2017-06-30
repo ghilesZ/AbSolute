@@ -1,11 +1,3 @@
-(*
-  An abstract fixpoint solver based on Constraint Programming
-  
-  Author: Antoine Mine
-  Copyright 2015
-*)
-
-
 (* Signature for bounds: numeric values enriched with +oo and -oo.
  *)
 
@@ -13,10 +5,10 @@
 module type BOUND = sig
 
   type t
-        
+
 
   (* ordering *)
-  (* ******** *)      
+  (* ******** *)
 
   val compare: t -> t -> int
 
@@ -35,36 +27,24 @@ module type BOUND = sig
 
   val sign: t -> int
 
-      
+
   (* construction *)
   (* ************ *)
 
   (* operators and conversions are tagged with a _up or _down suffix
      to indicate rounding direction
    *)
-      
+
   val of_int_up: int -> t
   val of_int_down: int -> t
-  (* val of_z_up: Z.t -> t *)
-  (* val of_z_down: Z.t -> t *)
   val of_float_up: float -> t
   val of_float_down: float -> t
-  (* val of_rat_up: Q.t -> t *)
-  (* val of_rat_down: Q.t -> t *)
-
-  val of_string_up: string -> t
-  val of_string_down: string -> t
-
 
   (* printing *)
   (* ******** *)
 
   val to_string: t -> string
-  val output: out_channel -> t -> unit
-  val sprint: unit -> t -> string
-  val bprint: Buffer.t -> t -> unit
-  val pp_print: Format.formatter -> t -> unit
-
+  val print: Format.formatter -> t -> unit
 
   (* conversion *)
   (* ********** *)
@@ -72,19 +52,9 @@ module type BOUND = sig
   val to_float_up: t -> float
   val to_float_down: t -> float
   (* val to_rat: t -> Q.t *)
-      
-      
 
-  (* classification *)
-  (* ************** *)
 
-  type kind =
-    | FINITE      (* finite number *)
-    | MINF | INF  (* -oo or +oo *)
-    | INVALID     (* for NaN and other invalid numbers *)
 
-  val classify: t -> kind
-      
   (* useful constants *)
   (* **************** *)
 
@@ -99,14 +69,13 @@ module type BOUND = sig
   (* operators *)
   (* ********* *)
 
-
   (* exact operators *)
 
   val neg: t -> t
   val abs: t -> t
 
-  
-  (* operators with rounding *)    
+
+  (* operators with rounding *)
   val add_up: t -> t -> t
   val sub_up: t -> t -> t
   val mul_up: t -> t -> t

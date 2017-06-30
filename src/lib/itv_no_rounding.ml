@@ -1,19 +1,18 @@
 (*
    Generic intervals.
-   Working with bounds that may induce rounding errors.
+
    Can be instantiated with any bound type.
 *)
 
 
 open Bot
-open Bound_sig
+open Bound_sig_no_rounding
 
 module Itv(B:BOUND) = struct
 
   (************************************************************************)
   (* TYPES *)
   (************************************************************************)
-
 
   (* interval bound (possibly -oo or +oo *)
   type bound = B.t
@@ -24,22 +23,15 @@ module Itv(B:BOUND) = struct
    *)
   type t = bound * bound
 
-  (* not all pairs of rationals are valid intervals *)
-  let validate ((l,h):t) : t =
-    if B.gt l h then invalid_arg "int.validate"
-    else l,h
-
   (* maps empty intervals to explicit bottom *)
   let check_bot ((l,h):t) : t bot =
     if B.leq l h then Nb (l,h) else Bot
-
 
   (************************************************************************)
   (* CONSTRUCTORS AND CONSTANTS *)
   (************************************************************************)
 
-
-  let of_bound (x:B.t) : t = validate (x,x)
+  let of_bound (x:B.t) : t = (x,x)
 
   let zero : t = of_bound B.zero
 
@@ -47,17 +39,19 @@ module Itv(B:BOUND) = struct
 
   let minus_one : t = of_bound B.minus_one
 
+  let zero_one : t = B.zero, B.one
+
   let positive : t = B.zero, B.inf
 
   let negative : t = B.minus_inf, B.zero
 
-  let of_bounds (l:bound) (h:bound) = validate (l,h)
+  let of_bounds (l:bound) (h:bound) = (l,h)
 
-  let of_ints (l:int) (h:int) : t = of_bounds (B.of_int_down l) (B.of_int_up h)
+  let of_ints (l:int) (h:int) : t = of_bounds (B.of_int l) (B.of_int h)
 
   let of_int (x:int) = of_ints x x
 
-  let of_floats (l:float) (h:float) : t = of_bounds (B.of_float_down l) (B.of_float_up h)
+  let of_floats (l:float) (h:float) : t = of_bounds (B.of_float l) (B.of_float h)
 
   let of_float (x:float) = of_floats x x
 
@@ -68,10 +62,10 @@ module Itv(B:BOUND) = struct
   (************************************************************************)
 
   let to_string ((l,h):t) : string =
-    Format.sprintf "[%s;%s]" (B.to_string l) (B.to_string h)
+    Format.sprintf "[%f;%f]" (B.to_float l) (B.to_float h)
 
   (* printing *)
-  let print fmt ((l,h):t) : unit =
+  let print fmt ((l,h):t) =
     Format.fprintf fmt "[%a;%a]" B.print l B.print h
 
   (************************************************************************)
@@ -87,7 +81,6 @@ module Itv(B:BOUND) = struct
   let meet ((l1,h1):t) ((l2,h2):t) : t bot =
     check_bot (B.max l1 l2, B.min h1 h2)
 
-
   (* predicates *)
   (* ---------- *)
 
@@ -98,25 +91,21 @@ module Itv(B:BOUND) = struct
     B.geq l1 l2 && B.leq h1 h2
 
   let contains_float ((l,h):t) (x:float) : bool =
-    B.leq l (B.of_float_down x) && B.leq (B.of_float_up x) h
+    B.leq l (B.of_float x) && B.leq (B.of_float x) h
 
   let intersect ((l1,h1):t) ((l2,h2):t) : bool =
     B.leq l1 h2 && B.leq l2 h1
 
-  let is_singleton ((l,h):t) : bool =  B.equal l h
+  let is_singleton ((l,h):t) : bool = l=h
 
   (* mesure *)
   (* ------ *)
 
   (* length of the intersection (>= 0) *)
   let overlap ((l1,h1):t) ((l2,h2):t) : B.t  =
-    B.max B.zero (B.sub_up (B.min h1 h2) (B.max l1 l2))
+    B.max B.zero (B.sub (B.min h1 h2) (B.max l1 l2))
 
-  let range ((l,h):t) : B.t =
-    B.sub_up h l
-
-  let magnitude ((l,h):t) : B.t =
-    B.max (B.abs l) (B.abs h)
+  let range ((l,h):t) : B.t = B.sub h l
 
   (* split *)
   (* ----- *)
@@ -125,7 +114,7 @@ module Itv(B:BOUND) = struct
      when a bound is infinite, then "mean" is some value strictly inside the
      interval
    *)
-  let mean ((l,h):t) : B.t list = [B.div_up (B.add_up l h) B.two]
+  let mean ((l,h):t) : B.t list = [B.div (B.add l h) B.two]
 
   (* splits in two, around m *)
   let split ((l,h):t) (m:bound list) : (t bot) list =
@@ -144,32 +133,20 @@ module Itv(B:BOUND) = struct
     let list =
       List.rev_map (fun e ->
 	      let ll,hh =
-          let a, b = B.floor e, B.ceil e in
-          if B.equal a b then a, B.add_up b B.one
-	        else a, b
+          let a = B.to_int e |> B.of_int in
+          a, B.add e B.one
         in
 	      let res = (!to_pair,ll) in to_pair := hh ; res)
 	      m
     in
     List.rev_map check_bot ((!to_pair,h)::list)
 
-  let prune (((l,h) as a):t) (((l',h') as b):t) : t list * t  =
-    if subseteq a b then [],a else
-      let epsilon = B.of_float_up 0.00001 in
-      let h'_eps = B.add_up h' epsilon and l'_eps = B.add_down l' (B.neg epsilon) in
-      (* It may not be worth to use the pruning to win a very small step *)
-      let step = B.of_float_up 0.1 in
-      let h_step = B.add_up h'_eps step and l_step = B.sub_down l'_eps step in
-      match (B.gt l_step l),(B.lt h_step h) with
-      | true , true  -> [(l,l'_eps);(h'_eps,h)],(l'_eps,h'_eps)
-      | true , false -> [(l,l'_eps)],(l'_eps,h)
-      | false, true  -> [(h'_eps,h)],(l,h'_eps)
-      | false, false -> [],(l,h)
+  let prune a b : t list * t  =
+    failwith "no pruning available for now with itv_no_rounding"
 
-  (************************************************************************)
+  (*********************************************)
   (* INTERVAL ARITHMETICS (FORWARD EVALUATION) *)
-  (************************************************************************)
-
+  (*********************************************)
 
   let neg ((l,h):t) : t =
     B.neg h, B.neg l
@@ -180,27 +157,19 @@ module Itv(B:BOUND) = struct
     else of_bounds (B.abs l) (B.abs h)
 
   let add ((l1,h1):t) ((l2,h2):t) : t =
-    B.add_down l1 l2, B.add_up h1 h2
+    B.add l1 l2, B.add h1 h2
 
   let sub ((l1,h1):t) ((l2,h2):t) : t =
-    B.sub_down l1 h2, B.sub_up h1 l2
+    B.sub l1 h2, B.sub h1 l2
 
-  let bound_mul_up   = B.bound_mul B.mul_up
-  let bound_mul_down = B.bound_mul B.mul_down
+  let mix4 f ((l1,h1):t) ((l2,h2):t) =
+    B.min (B.min (f l1 l2) (f l1 h2)) (B.min (f h1 l2) (f h1 h2)),
+    B.max (B.max (f l1 l2) (f l1 h2)) (B.max (f h1 l2) (f h1 h2))
 
-  let mix4 up down ((l1,h1):t) ((l2,h2):t) =
-    B.min (B.min (down l1 l2) (down l1 h2)) (B.min (down h1 l2) (down h1 h2)),
-    B.max (B.max (up   l1 l2) (up   l1 h2)) (B.max (up   h1 l2) (up   h1 h2))
-
-  let mul =
-    mix4 bound_mul_up bound_mul_down
-
-  let bound_div_up   = B.bound_div B.div_up
-  let bound_div_down = B.bound_div B.div_down
+  let mul = mix4 B.mul
 
   (* helper: assumes i2 has constant sign *)
-  let div_sign =
-    mix4 bound_div_up bound_div_down
+  let div_sign = mix4 B.div
 
   (* return valid values (possibly Bot) + possible division by zero *)
   let div (i1:t) (i2:t) : t bot * bool =
@@ -211,101 +180,21 @@ module Itv(B:BOUND) = struct
     join_bot2 join pos neg,
     contains_float i2 0.
 
-  (* interval square root *)
-  let sqrt ((l,h):t) : t bot =
-    if B.sign h < 0 then Bot else
-    let l = B.max l B.zero in
-    Nb (B.sqrt_down l, B.sqrt_up h)
-
-  (* deprecated : use the interval version instead*)
-  let ln10 = B.of_float_up 2.3025850
-
-  (* interval exp *)
-  let exp (l,h) = (B.exp_down l,B.exp_up h)
-
-  (* interval ln *)
-  let ln (l,h) =
-    if B.leq h B.zero then Bot
-    else if B.leq l B.zero then Nb (B.minus_inf,B.ln_up h)
-    else Nb (B.ln_down l,B.ln_up h)
-
-  (* interval log *)
-  let log itv =
-    let itv' = ln itv in
-    match itv' with
-    | Bot -> Bot
-    | Nb (l', h') -> fst (div (l',h') (of_bound ln10))
-
   (* powers *)
   let pow ((il,ih):t) ((l,h):t) =
-    if l=h && B.floor l = l then
-      let p = B.to_float_down l |> int_of_float in
-      match p with
-      | 0 -> one
-      | 1 -> (il, ih)
-      | x when x > 1 && p mod 2 = 1 -> (B.pow_down il p, B.pow_up ih p)
-      | x when x > 1 && B.even l ->
-         if B.leq il B.zero && B.geq ih B.zero then
-	         (B.zero, B.max (B.pow_up il p) (B.pow_up ih p))
-         else if B.geq il B.zero then
-	         (B.pow_down il p, B.pow_up ih p)
-         else (B.pow_down ih p, B.pow_up il p)
-      | _ -> failwith "cant handle negatives powers"
-    else failwith  "cant handle non_singleton powers"
-
-  (* nth-root *)
-  let n_root ((il,ih):t) ((l,h):t) =
-    if B.equal l h && B.floor l = l then
-      let p = B.to_float_down l |> int_of_float in
-      match p with
-      | 1 -> Nb (il, ih)
-      | x when x > 1 && B.odd l ->
-	       Nb (B.root_down il p, B.root_up ih p)
-      | x when x > 1 && B.even l ->
-         if B.lt ih B.zero then Bot
-         else if B.leq il B.zero then Nb (B.neg (B.root_up ih p), B.root_up ih p)
-         else
-           Nb (B.min (B.neg (B.root_down il p)) (B.neg (B.root_down ih p)),
-               B.max (B.root_up il p) (B.root_up ih p))
-      | _ -> failwith "can only handle stricly positive roots"
-    else failwith  "cant handle non_singleton roots"
+    failwith "cant handle powers with itv no rounding"
 
   (* interval min *)
   let min ((l1, u1):t) ((l2, u2):t) =
-    validate (B.min l1 l2, B.min u1 u2)
+    (B.min l1 l2, B.min u1 u2)
 
   (* interval max *)
   let max ((l1, u1):t) ((l2, u2):t) =
-    validate (B.max l1 l2, B.max u1 u2)
+    (B.max l1 l2, B.max u1 u2)
 
   (** runtime functions **)
   let eval_fun name args : t bot =
-    let arity_1_bot (f: t -> t bot) : t bot =
-       match args with
-       | [i] ->
-          (match f i with
-          | Bot -> Bot
-          | Nb i -> Nb i)
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
-    in
-    let arity_2 (f: t -> t -> t) : t bot  =
-      match args with
-      | [i1;i2] -> Nb (f i1 i2)
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
-    in
-    let arity_2_bot (f: t -> t -> t bot) : t bot  =
-      match args with
-      | [i1;i2] ->
-         (match f i1 i2 with
-          | Bot -> Bot
-          | Nb(i) -> Nb i)
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
-    in
-    match name with
-    | "sqrt"  -> arity_1_bot sqrt
-    | "max"   -> arity_2 max
-    | "nroot" -> arity_2_bot n_root
-    | s -> failwith (Format.sprintf "unknown eval function : %s" s)
+    failwith (Format.sprintf "unknown eval function : %s" name)
 
   (************************************************************************)
   (* FILTERING (TEST TRANSFER FUNCTIONS) *)
@@ -372,30 +261,8 @@ module Itv(B:BOUND) = struct
       (if contains_float r 0. && contains_float i1 0. then Nb i2
       else match fst (div i1 r) with Bot -> Bot | Nb x -> meet i2 x)
 
-  (* r = sqrt i => i = r*r or i < 0 *)
-  let filter_sqrt ((il,ih) as i:t) ((rl,rh):t) : t bot =
-    let rr = B.mul_down rl rl, B.mul_up rh rh in
-    if B.sign il >= 0 then meet i rr
-    else meet i (B.minus_inf, snd rr)
-
-  (* r = exp i => i = ln r *)
-  let filter_exp i r =
-    meet_bot meet i (ln r)
-
-  (* r = ln i => i = exp r *)
-  let filter_ln i r =
-    meet i (exp r)
-
-  (* r = log i => i = *)
-  let filter_log i r = failwith "todo filter_log"
-
   (* r = i ** n => i = nroot r *)
-  let filter_pow (i:t) n (r:t) =
-    merge_bot2 (meet_bot meet i (n_root r n)) (Nb n)
-
-  (* r = nroot i => i = r ** n *)
-  let filter_root i r n =
-     merge_bot2 (meet i (pow r n)) (Nb n)
+  let filter_pow (i:t) n (r:t) = failwith "filter pow"
 
   (* r = min (i1, i2) *)
   let filter_min (l1, u1) (l2, u2) (lr, ur) =
@@ -406,39 +273,10 @@ module Itv(B:BOUND) = struct
     merge_bot2 (check_bot ((B.min l1 lr), (B.min u1 ur))) (check_bot ((B.min l2 lr), (B.min u2 ur)))
 
   let filter_fun name args r : (t list) bot =
-    let arity_1 (f: t -> t -> t bot) : (t list) bot =
-      match args with
-      | [i] ->
-         (match f i r with
-         | Bot -> Bot
-         | Nb i -> Nb [i])
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
-    in
-    let arity_2 (f: t -> t -> t -> (t*t) bot) : (t list) bot  =
-      match args with
-      | [i1;i2] ->
-         (match f i1 i2 r with
-          | Bot -> Bot
-          | Nb(i1,i2) -> Nb[i1;i2])
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
-    in
-    match name with
-    | "sqrt" -> arity_1 filter_sqrt
-    | "exp"  -> arity_1 filter_exp
-    | "ln"   -> arity_1 filter_ln
-    | "max"  -> arity_2 filter_max
-    | "min"  -> arity_2 filter_min
-    | s -> failwith (Format.sprintf "unknown filter function : %s" s)
+    failwith (Format.sprintf "unknown filter function : %s" name)
 
-  let filter_bounds (l,h) =
-    let inf = B.ceil l
-    and sup = B.floor h in
-    check_bot (inf, sup)
+  let filter_bounds (l,h) = failwith "filter bounds"
 
   let to_float_range (l,h) =
-    (B.to_float_down l),(B.to_float_up h)
-
-
+    (B.to_float l),(B.to_float h)
 end
-
-module ItvF = Itv(Bound_float)

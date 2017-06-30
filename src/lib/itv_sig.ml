@@ -28,18 +28,13 @@ module type ITV = sig
   (* CONSTRUCTORS AND CONSTANTS *)
   (************************************************************************)
 
-  val of_ints: int -> int -> t
-  (* val of_rats: Q.t -> Q.t -> t *)
-  val of_floats: float -> float -> t
+  val of_ints : int -> int -> t
+  val of_floats : float -> float -> t
   (* [a,b] *)
 
-  val of_int: int -> t
-  (* val of_rat: Q.t -> t *)
-  val of_float: float -> t
+  val of_int : int -> t
+  val of_float : float -> t
   (* {a} *)
-
-  val float_hull: float -> float -> t
-  (* [min a b, max a b] *)
 
   (************************************************************************)
   (* PRINTING and CONVERSIONS *)
@@ -47,9 +42,9 @@ module type ITV = sig
 
   val to_float_range : t -> float * float
 
-  val to_string: t -> string
+  val to_string : t -> string
 
-  val print    : Format.formatter -> t -> unit
+  val print : Format.formatter -> t -> unit
 
   (************************************************************************)
   (* SET-THEORETIC *)
@@ -61,32 +56,20 @@ module type ITV = sig
   val join: t -> t -> t
   val meet: t -> t -> t bot
 
-  (* returns None if the set-union cannot be exactly represented *)
-  val union: t -> t -> t option
-
   (* predicates *)
   (* ---------- *)
-  val equal: t -> t -> bool
   val subseteq: t -> t -> bool
-  val contains_float: t ->float -> bool
+  val contains_float: t -> float -> bool
   val intersect: t -> t -> bool
-  val is_bounded: t -> bool
   val is_singleton: t -> bool
   val check_bot: t -> t bot
 
   (* mesure *)
   (* ------ *)
-
-  (* length of the intersection (>= 0) *)
-  val overlap: t -> t -> float
-
   val range: t -> float
-  val magnitude: t -> float
-
 
   (* split *)
   (* ----- *)
-
   val mean: t -> float list
   val split: t -> float list -> (t bot) list
   val split_integer: t -> float list -> (t bot) list
@@ -109,8 +92,15 @@ module type ITV = sig
   (* return valid values (possibly Bot) + possible division by zero *)
   val div: t -> t -> t bot * bool
 
-  (* returns valid value when the exponant is a singleton positive integer. fails otherwise*)
+  (* returns valid value when the exponant is a singleton positive integer.
+     fails otherwise
+  *)
   val pow: t -> t -> t
+
+  (* function calls (sqrt, exp, ln ...) are handled here :
+     given a function name and and a list of argument,
+     it returns a possibly bottom result
+   *)
   val eval_fun : string -> t list -> t bot
 
   (************************************************************************)
@@ -128,12 +118,6 @@ module type ITV = sig
   val filter_gt: t -> t -> (t * t) bot
   val filter_eq: t -> t -> (t * t) bot
   val filter_neq: t -> t -> (t * t) bot
-
-  (* integer versions *)
-  val filter_lt_int: t -> t -> (t * t) bot
-  val filter_gt_int: t -> t -> (t * t) bot
-  val filter_neq_int: t -> t -> (t * t) bot
-
 
   (* given the interval argument(s) and the expected interval result of
      a numeric operation, returns refined interval argument(s) where
@@ -153,8 +137,14 @@ module type ITV = sig
 
   val filter_pow: t -> t -> t -> (t*t) bot
 
+  (* filtering function calls like (sqrt, exp, ln ...) is done here :
+     given a function name, a list of argument, and a result,
+     it remove points that cannot satisfy the relation : f(arg1,..,argn) = r;
+     it returns a possibly bottom result
+   *)
   val filter_fun: string -> t list -> t -> (t list) bot
 
+  (* bound tightening over Integers values *)
   val filter_bounds: t -> t bot
 
 end
