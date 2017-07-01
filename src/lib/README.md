@@ -1,5 +1,5 @@
 # lib
-This repository defines all the auxiliary modules that we'll be used by the solver. They provide general functions that can be re-used and are not specific to AbSolute's implementation.
+This repository defines all the auxiliary modules that will be used by the solver. They provide general functions that can be re-used and are not specific to AbSolute's implementation.
 
 - **abstractext**, **linconsext** and **tconsext** are small extensions to the **abstract1**, **lincons1** and **tcons1** module of the [apron library]( http://apron.cri.ensmp.fr/library/)
 - **apron_utils** provides few utilities over the apron types
