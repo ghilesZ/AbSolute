@@ -1,5 +1,6 @@
 open Graphics
 
+(* window settings *)
 let padding = 15.
 let x_min = ref 0.
 and x_max = ref 0.
@@ -8,37 +9,39 @@ and y_max = ref 0.
 and sx = ref 0.
 and sy = ref 0.
 
-(* graham sort *)
-let signF f = if f < 0. then -1. else 1.
+(********************************)
+(* drawing related computations *)
+(********************************)
 
-let bas_gauche l =
-  let rec aux (best_x,best_y) l =
-    match l with
-    | [] -> best_x,best_y
-    | (x,y)::b ->
-      if best_y > y || best_y = y && x < best_x then aux (x,y) b
-      else aux (best_x,best_y) b
-  in aux (List.hd l) (List.tl l)
+(* vector determinant for convex hull *)
+let det (dx1,dy1) (dx2,dy2) = dx1 *. dy2 -. dy1 *. dx2
 
-let angle (ax,ay) (bx,by) =
-  let (ax,ay) = (bx -. ax), (by -. ay)
-  and (bx,by) = (1.,0.) in
-  let na = sqrt (ax *. ax +. ay *. ay)
-  and nb = sqrt (bx *. bx +. by *. by) in
-  let c = (ax *. bx +. ay *. by)/.(na*.nb)
-  and s = (ax *. by -. ay *. bx) in
-  (signF s)*.(acos c)
+(* convex hull computation *)
+let hull = function
+  | [] -> failwith "can't build convex envelop with no points"
+  | h::t as l ->
+     let p = List.fold_left min h t in
+     let ccw (px,py) (ax,ay) (bx,by) = det (ax-.px,ay-.py) (bx-.px,by-.py) in
+     let cmp p1 p2 =
+       if p1 = p then 1
+       else if p2 = p then -1
+       else
+         let ccw = ccw p p1 p2 in
+         if ccw < 0. then 1
+         else if ccw = 0. then 0
+         else -1
+     in
+     let rec graham_aux cl conv =
+       match cl,conv with
+       | ([],_) -> conv
+       | (h::t, a::b::tl) ->
+          let p = ccw b a h in
+          if p <= 0. then graham_aux cl (b::tl)
+          else graham_aux t (h::conv)
+       | (h::t,_) -> graham_aux t (h::conv)
+     in graham_aux (List.sort cmp l) [p]
 
-let graham_sort l =
-  let p = bas_gauche l in
-  let comp p1 p2 =
-    if p1 = p then 1
-    else if p2 = p then -1
-    else if angle p p1 < angle p p2 then 1
-    else if angle p p1 = angle p p2 then 0
-    else -1
-  in List.sort comp l
-
+(* project from a value from [a;b] to [c;d] *)
 let projection (a,b) (c,d) n =
   let perc (x,y) r = x +. (r *. (y-.x))
   and to_perc (x,y) r =
@@ -47,33 +50,36 @@ let projection (a,b) (c,d) n =
   in
   if b = a then c else perc (c,d) (to_perc (a,b) n)
 
-let to_coord (min_x,max_x) (min_y,max_y) (a,b) =
-  let a = projection (min_x,max_x) (padding, (!sx-.padding)) a
-  and b = projection (min_y,max_y) (padding, (!sy-. (2. *. padding))) b
-  in (int_of_float a, int_of_float b)
-
+(* bring all coordinate to window size *)
 let normalize p =
+  let to_coord (min_x,max_x) (min_y,max_y) (a,b) =
+    let a = projection (min_x,max_x) (padding, (!sx-.padding)) a
+    and b = projection (min_y,max_y) (padding, (!sy-. (2. *. padding))) b
+    in (int_of_float a, int_of_float b)
+  in
   to_coord (!x_min,!x_max) (!y_min,!y_max) p
+
+(***********************************************************************)
+(*                        Drawing utilities                            *)
+(***********************************************************************)
 
 let fill_circle a b r =
   let a,b = normalize (a,b) in
   fill_circle a b r
 
-let fill_poly l col =
+(* build the array corresponding to the list of points normalized and
+   apply f to it *)
+let do_poly f l col =
   set_color col;
-  let l = graham_sort l in
+  let l = hull l in
   let n = List.length l in
   let arr = Array.make n (0,0) in
   List.iteri (fun i (x,y) -> arr.(i) <- normalize (x,y)) l;
-  fill_poly arr
+  f arr
 
-let draw_poly l col =
-  set_color col;
-  let l = graham_sort l in
-  let n = List.length l in
-  let arr = Array.make n (0,0) in
-  List.iteri (fun i (x,y) -> arr.(i) <- normalize (x,y)) l;
-  draw_poly arr
+let fill_poly = do_poly fill_poly
+
+let draw_poly = do_poly draw_poly
 
 let draw_seg p1 p2 col =
   set_color col;
@@ -107,6 +113,11 @@ let draw_string x y str col =
   set_color col;
   moveto (int_of_float x) (int_of_float y);
   draw_string str
+
+
+(***********************************************************************)
+(*                        Window Initialization                        *)
+(***********************************************************************)
 
 let init (xl,xu) (yl,yu) =
   x_min := xl;
