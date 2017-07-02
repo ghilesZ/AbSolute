@@ -38,7 +38,10 @@ module Make (Abs : AbstractCP) = struct
   (* filter function without exception but possible bottom value instead*)
   let filter_bot abs cstr =
     let open Bot in
-    try Nb(filter abs cstr)
+    try
+      let filtered = filter abs cstr in
+      if Abs.is_bottom filtered then Bot
+      else Nb filtered
     with Bot_found -> Bot
 
   let split abs cstrs = Abs.split abs
