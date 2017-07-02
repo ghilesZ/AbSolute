@@ -32,10 +32,7 @@ open Csp
 %token TOK_INT
 %token TOK_REAL
 %token TOK_INIT
-%token TOK_OBJ
 %token TOK_CONSTR
-%token TOK_ANNOT
-%token TOK_DRAW
 %token TOK_MINF
 %token TOK_INF
 
@@ -64,32 +61,18 @@ open Csp
 %%
 
 file:
-  annot
   domains
-  objective
   constraints
   TOK_EOF
-  {{init=$2;
-    objective=$3;
-    constraints=$4;
-    to_draw=$1}}
-
-annot:
- | TOK_ANNOT TOK_LBRACE annot2 TOK_RBRACE {$3}
- | {[]}
+  {{init=$1;
+    constraints=$2;
+  }}
 
 domains:
  | TOK_INIT TOK_LBRACE decls TOK_RBRACE {$3}
 
-objective:
- | TOK_OBJ TOK_LBRACE expr TOK_RBRACE {$3}
- | {Cst(0.)}
-
 constraints:
  | TOK_CONSTR TOK_LBRACE bexprs TOK_RBRACE {$3}
-
-annot2:
- | TOK_DRAW TOK_COLON varlist {$3}
 
 varlist:
   | TOK_id varlist {$1::$2}

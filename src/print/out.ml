@@ -60,10 +60,7 @@ module Make (D:Drawer) = struct
 
   let draw_vars prob =
     let open Csp in
-    Array.of_list
-      (match prob.to_draw with
-      | [] -> get_vars prob
-      | l -> l)
+    Array.of_list (get_vars prob)
 
   let vars2D prob =
     let vars = draw_vars prob in

@@ -9,31 +9,14 @@
 let kwd_table = Hashtbl.create 10
 let _ =
   List.iter (fun (a,b) -> Hashtbl.add kwd_table a b)
-    [
-      "info",           TOK_ANNOT;
-      "draw",           TOK_DRAW;
-      "init",           TOK_INIT;
-      "objective", 	TOK_OBJ;
-      "constraints",    TOK_CONSTR;
-      "int",            TOK_INT;
-      "real",           TOK_REAL;
-      "oo",             TOK_INF;
-      "-oo",            TOK_MINF
+   [
+     "init",           TOK_INIT;
+     "constraints",    TOK_CONSTR;
+     "int",            TOK_INT;
+     "real",           TOK_REAL;
+     "oo",             TOK_INF;
+     "-oo",            TOK_MINF
    ]
-
-(* (exact) parsing of decimal constants constants *)
-(*let parse_const c =
-  let rec div10 x n =
-    if n <= 0 then x else div10 (x /. (float_of_int 10)) (n-1)
-  in
-  try
-    let p = String.index c '.' in
-    let p' = String.length c - p - 1 in
-    let x = (String.sub c 0 p)^(String.sub c (p+1) p') in
-    div10 (float_of_string x) p'
-  with Not_found ->
-    float_of_string c
-*)
 
 let parse_const = float_of_string
 }

@@ -43,14 +43,14 @@ type decls =  assign list
 type constrs = bexpr list
 
 (* program *)
-type prog = { init: decls; objective : expr; constraints: constrs; to_draw : var list}
+type prog = { init: decls; constraints: constrs}
 
 
 (*****************************************)
 (*        USEFUL FUNCTION ON AST         *)
 (*****************************************)
 
-let empty = {init = []; constraints= []; objective =Cst(0.); to_draw=[]}
+let empty = {init = []; constraints= []}
 
 let get_vars p =
   List.map (fun (_,v,_) -> v) p.init

@@ -29,12 +29,6 @@ let check_ast p =
 	raise (IllFormedAST (Format.sprintf "two variables share the same name: %s" v))
       else Hashtbl.add h v true
     ) p.init
-  and check_draw () =
-    match p.to_draw with
-    | [] -> ()
-    | l -> List.iter (fun v ->
-      if not (Hashtbl.mem h v) then raise (IllFormedAST (illegal_var_draw v))) l
-
   and check_dom () =
     let aux (_, var, d) =
       match d with
@@ -55,7 +49,6 @@ let check_ast p =
   in
   check_vars ();
   check_dom ();
-  check_draw ();
   check_constrs ()
 
 
