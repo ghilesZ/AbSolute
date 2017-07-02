@@ -10,7 +10,7 @@
 
 open Drawer_sig
 
-module GoS (Abs:Adcp_sig.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct
+module GoS (Abs:Domain_signature.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct
   module Sol = Solver.Solve(Abs)
   module Print = Out.Make(Dr)
   let go prob =
@@ -23,12 +23,11 @@ end
 (************************)
 
 (* interval domain instance. Only large constraints *)
-module SBox      = GoS (Abstract_box.BoxF)(Box_drawer)
+module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
 
 (* apron domain based instances *)
-module SBoxCP    = GoS (ADCP.BoxCP)(Apron_drawer.BoxDrawer)
-module SOctCP    = GoS (ADCP.OctBoxCP)(Apron_drawer.OctDrawer)
-module SPolyCP   = GoS (ADCP.PolyCP)(Apron_drawer.PolyDrawer)
+module SOctCP    = GoS (Relational.OctBoxCP)(Apron_drawer.OctDrawer)
+module SPolyCP   = GoS (Relational.PolyCP)(Apron_drawer.PolyDrawer)
 
 (********************)
 (* OPTIONS HANDLING *)
@@ -37,8 +36,8 @@ module SPolyCP   = GoS (ADCP.PolyCP)(Apron_drawer.PolyDrawer)
 let speclist =
   let open Constant in
   [
-  ("-visualization", Arg.Set visualization, "Enables visualization mode");
-  ("-precision"    , Arg.Float set_prec   , "Changes the precision. default is 1e-3");
+  ("-visualization", Arg.Set visualization   , "Enables visualization mode");
+  ("-precision"    , Arg.Float set_prec      , "Changes the precision. default is 1e-3");
   ("-max_sol"      , Arg.Int set_max_sol     , "Changes the maximum number of solutions. default is 1e6");
   ("-max_iter"     , Arg.Int set_max_iter    , "Changes the maximum number of iterations. default is 1e7");
   ("-domain"       , Arg.String set_domain   , "Changes the domain used for the solving. default is box");
@@ -74,7 +73,6 @@ let go() =
   if !trace then Format.printf "%a" Csp.print prob;
   match !domain with
   | "box"   -> SBox.go prob
-  | "boxCP" -> SBoxCP.go prob
   | "oct"   -> SOctCP.go prob
   | "poly"  -> SPolyCP.go prob
   | _ -> "domain undefined "^(!domain)^". should be one among : box, boxCP, poly, oct" |> failwith

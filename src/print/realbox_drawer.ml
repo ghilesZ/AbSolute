@@ -1,9 +1,9 @@
 open Itv_sig
-open Abstract_box.BoxStrict
+open Cartesian.BoxStrict
 
-type t = Abstract_box.BoxStrict.t
+type t = Cartesian.BoxStrict.t
 
-let print = Abstract_box.BoxStrict.print
+let print = Cartesian.BoxStrict.print
 
 let bound abs v = find v abs |> fst |> I.to_float_range
 

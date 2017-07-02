@@ -1,4 +1,4 @@
-open Adcp_sig
+open Domain_signature
 
 (* Boolean expressions abstractions *)
 module Boolean (Abs:AbstractCP) = struct

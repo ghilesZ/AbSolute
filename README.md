@@ -1,6 +1,6 @@
 # Simplified/Stable version of AbSolute
 
-AbSolute is a constraint solver based on abstract domains. It implements the solving method presented in: ["A Constraint Solver Based on Abstract Domains"](https://hal.archives-ouvertes.fr/hal-00785604/file/Pelleau_Mine_Truchet_Benhamou.pdf).
+AbSolute is a constraint solver based on abstract domains. It implements the solving method presented in: ["A Constraint Solver Based on Abstract Domains"](https://hal.archives-ouvertes.fr/hal-00785604/file/Pelleau_Mine_Truchet_Benhamou.pdf). This is a simplified version that does not enjoy all the features of the real AbSolute which can be found [here](https://github.com/mpelleau/AbSolute).
 
 ### Solving example:
 
@@ -12,8 +12,8 @@ init{
 }
 
 constraints{
-  y < (sin x) + 1;
-  y > (cos x) - 1;
+  y < sin(x) + 1;
+  y > cos(x) - 1;
 }
 ```
 <img src="https://github.com/mpelleau/AbSolute/blob/master/imgs/t2.png" width="400" height="400">

@@ -54,9 +54,9 @@ MLFILES = \
   src/lib/itv.ml \
   src/lib/itv_simple.ml \
   src/domains/apron_domain.ml \
-  src/domains/abstract_box.ml \
-  src/domains/adcp_sig.ml \
-  src/domains/ADCP.ml \
+  src/domains/cartesian.ml \
+  src/domains/domain_signature.ml \
+  src/domains/relational.ml \
   src/solver/result.ml \
   src/solver/splitter.ml \
   src/solver/solver.ml \
@@ -71,8 +71,6 @@ MLFILES = \
 
 CFILES = \
   src/lib/ml_float.c
-
-# MLIFILES = ADCP.mli
 
 # object files
 CMIFILES = $(MLIFILES:%.ml=%.cmi)

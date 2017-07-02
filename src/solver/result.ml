@@ -1,5 +1,5 @@
 (* Module that handles solution of the abstract solver *)
-open Adcp_sig
+open Domain_signature
 
 type 'a res = {
     sure       : 'a list;   (* elements that satisfy the constraints *)

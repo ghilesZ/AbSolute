@@ -1,5 +1,4 @@
-open Adcp_sig
-open ADCP
+open Domain_signature
 
 (* Solver *)
 module Solve(Abs : AbstractCP) = struct

@@ -1,8 +1,8 @@
 open Apron
 open Apron_domain
 open Apron_utils
-open Adcp_sig
-open ADCP
+open Domain_signature
+open Relational
 
 module Make(AP:ADomain) = struct
 
