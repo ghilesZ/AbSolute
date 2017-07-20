@@ -90,10 +90,8 @@ module Make (Abs : AbstractCP) = struct
     let open Topology in
     match build abs constrs with
     | Bot.Nb {sols;complementary=[],[]} -> Full sols
-    | Bot.Nb {sols;complementary=cstrs,compl} ->
-       (* Format.printf "%a" print topo; *)
-       Maybe(sols,cstrs,compl)
-    | Bot.Bot -> (* Format.printf "empty\n"; *) Empty
+    | Bot.Nb {sols;complementary=cstrs,compl} -> Maybe(sols,cstrs,compl)
+    | Bot.Bot -> Empty
 
   (* using elimination technique *)
   let prune_topo (abs:Abs.t) (compl:Abs.t list) =
@@ -116,6 +114,4 @@ module Make (Abs : AbstractCP) = struct
 	       aux u tl false s' u'
       | h::tl (* h and abs dont overlap *) -> aux abs tl is_sure sures unsures
     in aux abs compl true [] []
-
-
 end

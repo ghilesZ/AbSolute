@@ -49,9 +49,9 @@ module type BOUND = sig
 
   val to_float_up: t -> float
   val to_float_down: t -> float
-  (* val to_rat: t -> Q.t *)
-
-
+  val to_rat: t -> Q.t
+  val of_rat_up: Q.t -> t
+  val of_rat_down : Q.t -> t
 
   (* useful constants *)
   (* **************** *)

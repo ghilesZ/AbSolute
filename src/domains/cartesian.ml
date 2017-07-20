@@ -176,14 +176,7 @@ module Box (I:ITV) = struct
   (************************************************************************)
 
   (* trees with nodes annotated with evaluation *)
-  type bexpr =
-    | BFunCall of var * bexpri list
-    | BUnary   of unop * bexpri
-    | BBinary  of binop * bexpri * bexpri
-    | BVar     of var
-    | BCst     of i
-
-  and bexpri = bexpr * i
+  type evalexpr = i annot_expr
 
   (* interval evaluation of an expression;
      returns the interval result but also an expression tree annotated with
@@ -193,29 +186,29 @@ module Box (I:ITV) = struct
      - we raise Bot_found in case the expression only evaluates to error values
      - otherwise, we return only the non-error values
    *)
-  let rec eval (a:t) (e:expr) : bexpri =
+  let rec eval (a:t) (e:expr) : evalexpr =
     match e with
     | FunCall(name,args) ->
        let bargs = List.map (eval a) args in
        let iargs = List.map snd bargs in
        let r = debot (I.eval_fun name iargs) in
-       BFunCall(name, bargs), r
+       AFunCall(name, bargs),r
     | Var v ->
         let (r, n) =
           try find v a
           with Not_found -> failwith ("variable not found: "^v)
         in
-        BVar n, r
+        AVar (n, r),r
     | Cst c ->
         let r = I.of_float c in
-        BCst r, r
+        ACst (c, r),r
     | Unary (o,e1) ->
        let _,i1 as b1 = eval a e1 in
        let r = match o with
          | NEG -> I.neg i1
 	       | ABS -> I.abs i1
        in
-       BUnary (o,b1), r
+       AUnary (o,b1), r
     | Binary (o,e1,e2) ->
        let _,i1 as b1 = eval a e1
        and _,i2 as b2 = eval a e2 in
@@ -231,7 +224,7 @@ module Box (I:ITV) = struct
               I.abs r
             else r
        in
-       BBinary (o,b1,b2), r
+       ABinary (o,b1,b2), r
 
 
   (* returns a box included in its argument, by removing points such that
@@ -239,24 +232,24 @@ module Box (I:ITV) = struct
      not all such points are removed, due to interval abstraction;
      iterating eval and refine can lead to better reults (but is more costly);
      can raise Bot_found *)
-  let rec refine (a:t) (e:bexpr) (x:i) : t =
+  let rec refine (a:t) ((e,x):evalexpr) : t =
     match e with
-    | BFunCall(name,args) ->
+    | AFunCall(name,args) ->
        let bexpr,itv = List.split args in
        let res = I.filter_fun name itv x in
        List.fold_left2 (fun acc e1 e2 ->
-           refine acc e2 e1) a (debot res) bexpr
-    | BVar v ->
-       (try Env.add v (debot (I.meet x (fst (find v a)))) a
+           refine acc (e2,e1)) a (debot res) bexpr
+    | AVar (v,annot) ->
+       (try Env.add v (debot (I.meet x annot)) a
         with Not_found -> failwith ("variable not found: "^v))
-    | BCst i -> ignore (debot (I.meet x i)); a
-    | BUnary (o,(e1,i1)) ->
+    | ACst (c,i) -> ignore (debot (I.meet x i)); a
+    | AUnary (o,(e1,i1)) ->
         let j = match o with
           | NEG -> I.filter_neg i1 x
           | ABS -> I.filter_abs i1 x
         in
-        refine a e1 (debot j)
-    | BBinary (o,(e1,i1),(e2,i2)) ->
+        refine a (e1,(debot j))
+    | ABinary (o,(e1,i1),(e2,i2)) ->
        let j = match o with
          | ADD -> I.filter_add i1 i2 x
          | SUB -> I.filter_sub i1 i2 x
@@ -265,7 +258,7 @@ module Box (I:ITV) = struct
 	       | POW -> I.filter_pow i1 i2 x
        in
        let j1,j2 = debot j in
-       refine (refine a e1 j1) e2 j2
+       refine (refine a (e1,j1)) (e2,j2)
 
   (* test transfer function *)
   let test (a:t) (e1:expr) (o:cmpop) (e2:expr) : t bot =
@@ -275,16 +268,13 @@ module Box (I:ITV) = struct
     | LEQ -> I.filter_leq i1 i2
     | GEQ -> I.filter_geq i1 i2
     | NEQ -> I.filter_neq i1 i2
-    (*| NEQ_INT -> I.filter_neq_int i1 i2*)
     | GT -> I.filter_gt i1 i2
-    (*| GT_INT -> I.filter_gt_int i1 i2*)
     | LT -> I.filter_lt i1 i2
-    (*| LT_INT -> I.filter_lt_int i1 i2*)
     in
     let aux = rebot
       (fun a ->
         let j1,j2 = debot j in
-        refine (refine a b1 j1) b2 j2
+        refine (refine a (b1,j1)) (b2,j2)
       ) a
     in
     filter_bounds_bot aux

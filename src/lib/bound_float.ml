@@ -45,6 +45,10 @@ let to_string x = string_of_float (x+.0.)
 let to_float_up x : float = x
 let to_float_down x : float = x
 
+let to_rat = Q.of_float
+let of_rat_up rat = Q.to_float rat
+let of_rat_down x = -. (Q.to_float (Q.neg x))
+
 (* printing *)
 let print fmt x =
   if ceil x = x then Format.fprintf fmt "%0F" x
@@ -82,11 +86,11 @@ let add_down a b = -. (-. a -. b)
 let sub_down a b = -. (b -. a)
 let mul_down a b = -. ((-. a) *. b)
 let div_down a b =
-    match sign a, sign b with
-    |  0,_ -> zero
-    |  1,0 -> inf
-    | -1,0 -> minus_inf
-    | _ -> -. ((-. a) /. b)
+  match sign a, sign b with
+  |  0,_ -> zero
+  |  1,0 -> inf
+  | -1,0 -> minus_inf
+  | _ -> -. ((-. a) /. b)
 
 (* helper: oo * 0 = 0 when multiplying bounds *)
 let bound_mul f x y =

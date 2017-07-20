@@ -45,7 +45,6 @@ type constrs = bexpr list
 (* program *)
 type prog = { init: decls; constraints: constrs}
 
-
 (*****************************************)
 (*        USEFUL FUNCTION ON AST         *)
 (*****************************************)
@@ -62,6 +61,8 @@ let add_real_var csp name inf sup =
 let add_constr csp c =
   {csp with constraints = c::csp.constraints}
 
+(* extract to linear constraints from domain declaration :
+  x = [a,b]  -->  x >= a && x <= b *)
 let domain_to_constraints (_,v,d)  =
   match d with
   | Finite (l,h) ->
@@ -83,28 +84,6 @@ let rec iter_constr f_expr f_constr = function
   | Or  (b1,b2) as constr -> f_constr constr; iter_constr f_expr f_constr b1; iter_constr f_expr f_constr b2
   | Not b as constr -> f_constr constr; iter_constr f_expr f_constr b
 
-(* power unrolling on exprs *)
-let rec power_unrolling expr : expr =
-  let rec doit res e1 i =
-    match i with
-    | 0 -> Cst 1.
-    | 1 -> res
-    | _ -> doit (Binary(MUL,res,res)) e1 (i-1)
-  in
-  match expr with
-  | Binary (POW,e1,Cst x) when ceil x = x && x >= 0. -> doit e1 e1 (int_of_float x)
-  | Unary (u, e) -> Unary (u,(power_unrolling e))
-  | Binary (b,e1,e2) -> Binary(b,(power_unrolling e1), (power_unrolling e2))
-  | x -> x
-
-(* power unrolling on bexprs *)
-let rec power_unrolling_bexpr bexpr : bexpr =
-  match bexpr with
-  | Cmp (c,e1,e2) -> Cmp(c, (power_unrolling e1), (power_unrolling e2))
-  | And (b1,b2) -> And (power_unrolling_bexpr b1, power_unrolling_bexpr b2)
-  | Or  (b1,b2) -> Or (power_unrolling_bexpr b1, power_unrolling_bexpr b2)
-  | Not b -> Not (power_unrolling_bexpr b)
-
 (* cmp operator negation *)
 let neg = function
   | EQ -> NEQ
@@ -121,6 +100,14 @@ let rec neg_bexpr = function
   | Or (b1,b2) -> And (neg_bexpr b1, neg_bexpr b2)
   | Not b -> b
 
+(* boolean formules map *)
+let rec booleanmap f = function
+  | Cmp (op,e1,e2) ->
+     let op',e1',e2' = f (op,e1,e2) in
+     Cmp(op',e1',e2')
+  | And (b1,b2) -> Or (booleanmap f b1, booleanmap f b2)
+  | Or (b1,b2) -> And (booleanmap f b1, booleanmap f b2)
+  | Not b -> Not (booleanmap f b)
 
 (*************************************************************)
 (*                         PREDICATES                        *)
@@ -227,3 +214,14 @@ let print fmt prog =
   aux print_assign prog.init;
   Format.fprintf fmt "\n";
   aux print_bexpr prog.constraints
+
+(****************** EXPRESSION ANNOTATIONS ********************)
+(*         A unique type for the anotated expr tree           *)
+(* useful to unify the treatment of tree expression traversal *)
+type 'a annot_expr = 'a ex * 'a
+and 'a ex =
+  | AFunCall of var   * 'a annot_expr list
+  | AUnary   of unop  * 'a annot_expr
+  | ABinary  of binop * 'a annot_expr * 'a annot_expr
+  | AVar     of var   * 'a
+  | ACst     of i     * 'a

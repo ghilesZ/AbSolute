@@ -47,6 +47,7 @@ let speclist =
   ("-trace"        , Arg.Set trace           , "Prints the solutions on standard output");
   ("-sure"         , Arg.Set sure            , "Keeps only the sure solutions");
   ("-iter"         , Arg.Set iter            , "Enables the loop for the propagation");
+  ("-rewrite"      , Arg.Set rewrite         , "Enables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
   (*********************************************** ALIASES ********************************************************)
   ("-t"            , Arg.Set trace           , "Alias for -trace");
@@ -77,25 +78,4 @@ let go() =
   | "poly"  -> SPolyCP.go prob
   | _ -> "domain undefined "^(!domain)^". should be one among : box, boxCP, poly, oct" |> failwith
 
-
-let test_mod_parser() =
-  let dir = "problems/mods/" in
-  let children = Sys.readdir dir in
-  let cl = Array.to_list children in
-  let move_to_good file = Unix.system ("mv problems/mods/"^file^" problems/mods/parse/") |> ignore in
-  let parse = List.filter (fun file ->
-                  try
-                    File_parser.parse (Some (dir^file)) |> ignore;
-                    true
-                  with _ -> false
-                ) cl
-  in
-  List.iter move_to_good parse;
-  let size = List.length parse in
-  List.iter (Format.printf "%s\n") parse;
-  Format.printf "\n%i/%i readable files\n" size (Array.length children)
-
-
-let _ =
-  (* test_mod_parser () *)
-  go()
+let _ = go()

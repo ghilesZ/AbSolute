@@ -1,4 +1,5 @@
 PKG apron
+PKG zarith
 S src/frontend
 B src/frontend
 S src/lib

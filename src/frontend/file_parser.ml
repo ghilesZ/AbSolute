@@ -77,15 +77,25 @@ let parse (filename:string option) : prog =
     lex.lex_curr_p <- { lex.lex_curr_p with pos_fname = filename; };
     fileparser lex
   with
-  (* | Failure s -> *)
-  (*     Printf.eprintf "Error near %s\n%s\n" *)
-  (*       (string_of_position lex.lex_start_p) *)
-	(*       s; *)
-  (*     failwith "Parse error" *)
-  | Parsing.Parse_error -> failwith "Parse error"
-
+  | Failure s ->
+      Printf.eprintf "Error near %s\n%s\n"
+        (string_of_position lex.lex_start_p)
+	      s;
+      failwith "Parse error"
 
 let parse fn =
   let p = parse fn in
   check_ast p;
-  {p with constraints = p.constraints}
+  let new_constraints =
+    if !Constant.rewrite then
+      let res = List.map (booleanmap Rewrite.rewrite) p.constraints in
+      if !Constant.trace then begin
+          Format.printf "original constraint system :\n";
+          List.iter (Format.printf "%a\n" print_bexpr) p.constraints;
+          Format.printf "rewrited constraint system :\n";
+          List.iter (Format.printf "%a\n" print_bexpr) res;
+        end;
+      res
+    else p.constraints
+  in
+  {p with constraints = new_constraints}

@@ -14,6 +14,7 @@ let debug           = ref false
 let pruning         = ref false
 let sure            = ref false
 let iter            = ref false
+let rewrite         = ref false
 let pruning_iter    = ref 100000000
 
 (* let parse_prec p = *)

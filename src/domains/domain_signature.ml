@@ -26,8 +26,6 @@ module type AbstractCP = sig
 
   val is_bottom : t -> bool
 
-  val is_enumerated : t -> bool
-
   (*** OPERATIONS ***)
   val join: t -> t -> t
 

@@ -267,16 +267,48 @@ module Itv(B:BOUND) = struct
       | _ -> failwith "can only handle stricly positive roots"
     else failwith  "cant handle non_singleton roots"
 
-  (* interval min *)
+  (* cos *)
+  let cos ((l,u):t) : t =
+    let itv_rat = (B.to_rat l),(B.to_rat u) in
+    let (l,u) = Trigo.cos_itv itv_rat in
+    (B.of_rat_down l),(B.of_rat_up u)
+
+
+   (* sin *)
+  let sin ((l,u):t) : t =
+    let itv_rat = (B.to_rat l),(B.to_rat u) in
+    let (l,u) = Trigo.sin_itv itv_rat in
+    (B.of_rat_down l),(B.of_rat_up u)
+
+  (* acos *)
+  let acos ((l,u):t) : t bot =
+    let itv_rat = (B.to_rat l),(B.to_rat u) in
+    match Trigo.acos_itv itv_rat with
+    | Nb(l,u) -> Nb((B.of_rat_down l),(B.of_rat_up u))
+    | Bot -> Bot
+
+  (* (\* asin *\) *)
+  (* let asin ((l,u):t) : t bot = *)
+  (*   let itv_rat = (B.to_rat l),(B.to_rat u) in *)
+  (*   match Trigo.asin_itv itv_rat with *)
+  (*   | Nb(l,u) -> Nb((B.of_rat_down l),(B.of_rat_up u)) *)
+  (*   | Bot -> Bot *)
+
+  (* min *)
   let min ((l1, u1):t) ((l2, u2):t) =
     validate (B.min l1 l2, B.min u1 u2)
 
-  (* interval max *)
+  (* max *)
   let max ((l1, u1):t) ((l2, u2):t) =
     validate (B.max l1 l2, B.max u1 u2)
 
   (** runtime functions **)
   let eval_fun name args : t bot =
+    let arity_1 (f: t -> t) : t bot =
+       match args with
+       | [i] -> Nb (f i)
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
     let arity_1_bot (f: t -> t bot) : t bot =
        match args with
        | [i] ->
@@ -300,7 +332,11 @@ module Itv(B:BOUND) = struct
     in
     match name with
     | "sqrt"  -> arity_1_bot sqrt
+    | "exp"   -> arity_1 exp
+    | "cos"   -> arity_1 cos
+    | "sin"   -> arity_1 sin
     | "max"   -> arity_2 max
+    | "min"   -> arity_2 min
     | "nroot" -> arity_2_bot n_root
     | s -> failwith (Format.sprintf "unknown eval function : %s" s)
 
@@ -392,16 +428,31 @@ module Itv(B:BOUND) = struct
 
   (* r = nroot i => i = r ** n *)
   let filter_root i r n =
-     merge_bot2 (meet i (pow r n)) (Nb n)
+    merge_bot2 (meet i (pow r n)) (Nb n)
+
+  (* r = cos i => i = arccos r *)
+  let filter_cos (i:t) (r:t) : t bot =
+    (* TODO: finish *)
+    Nb i
+
+  (* r = sin i => i = arcsin r *)
+  let filter_sin (i:t) (r:t) : t bot =
+    (* TODO: finish *)
+    Nb i
 
   (* r = min (i1, i2) *)
   let filter_min (l1, u1) (l2, u2) (lr, ur) =
-    merge_bot2 (check_bot ((B.max l1 lr), (B.max u1 ur))) (check_bot ((B.max l2 lr), (B.max u2 ur)))
+    merge_bot2
+      (check_bot ((B.max l1 lr), (B.max u1 ur)))
+      (check_bot ((B.max l2 lr), (B.max u2 ur)))
 
   (* r = max (i1, i2) *)
   let filter_max (l1, u1) (l2, u2) (lr, ur) =
-    merge_bot2 (check_bot ((B.min l1 lr), (B.min u1 ur))) (check_bot ((B.min l2 lr), (B.min u2 ur)))
+    merge_bot2
+      (check_bot ((B.min l1 lr), (B.min u1 ur)))
+      (check_bot ((B.min l2 lr), (B.min u2 ur)))
 
+  (* r = f(x0,x1,...,xn) *)
   let filter_fun name args r : (t list) bot =
     let arity_1 (f: t -> t -> t bot) : (t list) bot =
       match args with
@@ -422,6 +473,8 @@ module Itv(B:BOUND) = struct
     match name with
     | "sqrt" -> arity_1 filter_sqrt
     | "exp"  -> arity_1 filter_exp
+    | "cos"  -> arity_1 filter_cos
+    | "sin"  -> arity_1 filter_sin
     | "ln"   -> arity_1 filter_ln
     | "max"  -> arity_2 filter_max
     | "min"  -> arity_2 filter_min

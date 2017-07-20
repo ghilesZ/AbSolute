@@ -10,15 +10,16 @@ CC        := gcc
 OPAMDIR   := $(shell opam config var lib)
 APRONDIR  := $(OPAMDIR)/apron
 GMPDIR    := $(OPAMDIR)/gmp
+ZARITHDIR := $(OPAMDIR)/zarith
 OCAMLDIR  := $(OPAMDIR)/ocaml
 
 #ocaml libraries
-LIBS         := bigarray gmp apron polkaMPQ octD boxMPQ str unix graphics
+LIBS         := bigarray gmp zarith apron polkaMPQ octD boxMPQ str unix graphics
 OCAMLLIBS    := $(LIBS:%=%.cma) $(CCLIB)
 OCAMLOPTLIBS := $(LIBS:%=%.cmxa) $(CCLIB)
 
 # directories to include
-OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) \
+OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) -I $(ZARITHDIR) \
              -I src -I src/lib -I src/domains -I src/frontend -I src/print \
              -I src/solver
 
@@ -35,10 +36,7 @@ AUTOGEN =\
 
 # source files
 MLFILES = \
-  src/frontend/csp.ml \
-  src/frontend/parser.ml \
-  src/frontend/lexer.ml \
-  src/frontend/file_parser.ml \
+	src/lib/polynom.ml \
 	src/lib/array_maker.ml \
 	src/lib/linconsext.ml \
 	src/lib/tconsext.ml \
@@ -46,6 +44,7 @@ MLFILES = \
   src/lib/constant.ml \
   src/lib/apron_utils.ml \
   src/lib/bot.ml \
+  src/lib/trigo.ml \
   src/lib/mapext.ml \
   src/lib/bound_sig.ml \
   src/lib/bound_sig_simple.ml \
@@ -53,6 +52,11 @@ MLFILES = \
   src/lib/itv_sig.ml \
   src/lib/itv.ml \
   src/lib/itv_simple.ml \
+  src/frontend/csp.ml \
+	src/frontend/rewrite.ml \
+  src/frontend/parser.ml \
+  src/frontend/lexer.ml \
+  src/frontend/file_parser.ml \
   src/domains/apron_domain.ml \
   src/domains/cartesian.ml \
   src/domains/domain_signature.ml \
@@ -60,6 +64,7 @@ MLFILES = \
   src/solver/result.ml \
   src/solver/splitter.ml \
   src/solver/solver.ml \
+	src/solver/checker.ml \
   src/print/view.ml \
   src/print/objgen.ml \
 	src/print/latex.ml \
