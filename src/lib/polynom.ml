@@ -7,6 +7,13 @@ module type Ring = sig
   type t
   val add   : t -> t -> t
   val mul   : t -> t -> t
+
+  (* None if the division is not exact *)
+  val div   : t -> t -> t option
+
+  (* None if the value cannot be converted exactly to an integer *)
+  val to_int : t -> int option
+
   val zero  : t
   val one   : t
 
@@ -142,6 +149,43 @@ module Make(R:Ring) = struct
   (* substraction of two polynoms *)
   let sub (e1:t) (e2:t) : t = add e1 (neg e2)
 
+  (* check if a is divisible by b *)
+  let is_divisible a b = false
+
+  (* division of two polynoms *)
+  (* return None if the division is not exact or if e2 = 0 *)
+  let div (e1:t) (e2:t) : t option =
+    try
+      match e2 with
+      | [c] -> if is_monom_constant c then
+                 let d = to_constant c in
+                 let p' =
+                   List.map (fun (c,vl) ->
+                       match R.div c d with
+                       | None -> raise Exit
+                       | Some c -> (c,vl)
+                     ) e1
+                 in Some p'
+               else None
+      | _ -> None
+    with Exit -> None
+
+  (* exponentation of two polynoms *)
+  (* return None if the division is not exact or if e2 = 0 *)
+  let pow (e1:t) (e2:t) : t option =
+    match e2 with
+    | [c] -> if is_monom_constant c then
+               match to_constant c |> R.to_int with
+               | Some d ->
+                  let rec aux acc d =
+                    if d = 0 then acc
+                    else aux (mul acc e1) (d-1)
+                  in
+                  let res = aux (of_int 1) d in
+                  Some res
+               | None -> None
+             else None
+    | _ -> None
 end
 
 module IntRing = struct
@@ -151,6 +195,10 @@ module IntRing = struct
   let mul = ( * )
   let zero = 0
   let one = 1
+
+  let div x y = if y <> 0 && x mod y = 0 then Some (x/y) else None
+
+  let to_int x = Some x
 
   let of_int x = x
   let of_float = int_of_float
@@ -167,6 +215,13 @@ module FloatRing = struct
   let mul = ( *. )
   let zero = 0.
   let one = 1.
+
+  let div x y = if y <> 0. && (x/.y) *. y = x then Some (x/.y) else None
+
+  let to_int x =
+    let xi = int_of_float x in
+    if float xi = x then Some xi
+    else None
 
   let of_int = float_of_int
   let of_float x = x

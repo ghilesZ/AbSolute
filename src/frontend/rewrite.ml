@@ -42,15 +42,21 @@ let rec simplify env : expr -> (PI.t * string CoEnv.t) =
       | SUB -> (PI.sub p1 p2),env''
       | MUL -> (PI.mul p1 p2),env''
       | DIV ->
-         (*TODO: add constant division *)
-         let e1 = polynom_to_expr p1 env'' and e2 = polynom_to_expr p2 env'' in
-         let e = Binary (DIV,e1,e2) in
-         check_var e env''
+         (* only division by a constant to make sure we do not shadow any dbz *)
+         (match PI.div p1 p2 with
+         | Some p -> p,env''
+         | None ->
+           let e1 = polynom_to_expr p1 env'' and e2 = polynom_to_expr p2 env'' in
+           let e = Binary (DIV,e1,e2) in
+           check_var e env'')
       | POW ->
+         (match PI.pow p1 p2 with
+         | Some p -> p,env''
+         | None ->
          (*TODO: add constant exponentiation *)
          let e1 = polynom_to_expr p1 env'' and e2 = polynom_to_expr p2 env'' in
          let e = Binary (POW,e1,e2) in
-         check_var e env'')
+         check_var e env''))
   | Unary (u,e) ->
      let p,env = simplify env e in
      (match u with
