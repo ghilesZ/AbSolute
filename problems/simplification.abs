@@ -1,0 +1,11 @@
+/* octagon with a hole */
+
+init{
+  real x = [0;5];
+  real y = [0;5];
+}
+
+constraints{
+  2*y * 89*x + y*y - 20*y + 66*x -18 < y - x + x*x + 18;
+  x + 2*cos(x) - y < x + cos(x);
+}
