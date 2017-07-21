@@ -269,22 +269,22 @@ module Itv(B:BOUND) = struct
 
   (* cos *)
   let cos ((l,u):t) : t =
-    let itv_rat = (B.to_rat l),(B.to_rat u) in
+    let itv_rat = (B.to_float_down l),(B.to_float_up u) in
     let (l,u) = Trigo.cos_itv itv_rat in
-    (B.of_rat_down l),(B.of_rat_up u)
+    (B.of_float_down l),(B.of_float_up u)
 
 
    (* sin *)
   let sin ((l,u):t) : t =
-    let itv_rat = (B.to_rat l),(B.to_rat u) in
+    let itv_rat = (B.to_float_down l),(B.to_float_up u) in
     let (l,u) = Trigo.sin_itv itv_rat in
-    (B.of_rat_down l),(B.of_rat_up u)
+    (B.of_float_down l),(B.of_float_up u)
 
   (* acos *)
   let acos ((l,u):t) : t bot =
-    let itv_rat = (B.to_rat l),(B.to_rat u) in
+    let itv_rat = (B.to_float_down l),(B.to_float_up u) in
     match Trigo.acos_itv itv_rat with
-    | Nb(l,u) -> Nb((B.of_rat_down l),(B.of_rat_up u))
+    | Nb(l,u) -> Nb((B.of_float_down l),(B.of_float_up u))
     | Bot -> Bot
 
   (* (\* asin *\) *)

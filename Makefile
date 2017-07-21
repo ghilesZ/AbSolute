@@ -44,11 +44,11 @@ MLFILES = \
   src/lib/constant.ml \
   src/lib/apron_utils.ml \
   src/lib/bot.ml \
-  src/lib/trigo.ml \
   src/lib/mapext.ml \
   src/lib/bound_sig.ml \
   src/lib/bound_sig_simple.ml \
   src/lib/bound_float.ml \
+  src/lib/trigo.ml \
   src/lib/itv_sig.ml \
   src/lib/itv.ml \
   src/lib/itv_simple.ml \
