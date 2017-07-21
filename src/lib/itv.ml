@@ -10,6 +10,8 @@ open Bound_sig
 
 module Itv(B:BOUND) = struct
 
+  module Trigo = Trigo.Make(B)
+
   (************************************************************************)
   (* TYPES *)
   (************************************************************************)
@@ -267,32 +269,21 @@ module Itv(B:BOUND) = struct
       | _ -> failwith "can only handle stricly positive roots"
     else failwith  "cant handle non_singleton roots"
 
-  (* cos *)
-  let cos ((l,u):t) : t =
-    let itv_rat = (B.to_float_down l),(B.to_float_up u) in
-    let (l,u) = Trigo.cos_itv itv_rat in
-    (B.of_float_down l),(B.of_float_up u)
+  (****************)
+  (* TRIGONOMETRY *)
+  (****************)
 
+  (* cos *)
+  let cos = Trigo.cos_itv
 
    (* sin *)
-  let sin ((l,u):t) : t =
-    let itv_rat = (B.to_float_down l),(B.to_float_up u) in
-    let (l,u) = Trigo.sin_itv itv_rat in
-    (B.of_float_down l),(B.of_float_up u)
+  let sin = Trigo.sin_itv
 
   (* acos *)
-  let acos ((l,u):t) : t bot =
-    let itv_rat = (B.to_float_down l),(B.to_float_up u) in
-    match Trigo.acos_itv itv_rat with
-    | Nb(l,u) -> Nb((B.of_float_down l),(B.of_float_up u))
-    | Bot -> Bot
+  let acos = Trigo.acos_itv
 
-  (* (\* asin *\) *)
-  (* let asin ((l,u):t) : t bot = *)
-  (*   let itv_rat = (B.to_rat l),(B.to_rat u) in *)
-  (*   match Trigo.asin_itv itv_rat with *)
-  (*   | Nb(l,u) -> Nb((B.of_rat_down l),(B.of_rat_up u)) *)
-  (*   | Bot -> Bot *)
+  (* acos *)
+  let asin = Trigo.asin_itv
 
   (* min *)
   let min ((l1, u1):t) ((l2, u2):t) =
@@ -439,6 +430,14 @@ module Itv(B:BOUND) = struct
   let filter_sin (i:t) (r:t) : t bot =
     (* TODO: finish *)
     Nb i
+
+  (* r = asin i => i = sin r *)
+  let filter_asin i r =
+    meet i (sin r)
+
+  (* r = acos i => i = cos r *)
+  let filter_acos i r =
+    meet i (cos r)
 
   (* r = min (i1, i2) *)
   let filter_min (l1, u1) (l2, u2) (lr, ur) =
