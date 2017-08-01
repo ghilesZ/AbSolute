@@ -46,16 +46,11 @@ module type BOUND = sig
 
   (* conversion *)
   (* ********** *)
-
   val to_float_up: t -> float
   val to_float_down: t -> float
-  val to_rat: t -> Q.t
-  val of_rat_up: Q.t -> t
-  val of_rat_down : Q.t -> t
 
   (* useful constants *)
   (* **************** *)
-
   val zero: t
   val one: t
   val two: t
@@ -63,15 +58,12 @@ module type BOUND = sig
   val inf: t
   val minus_inf: t
 
-
   (* operators *)
   (* ********* *)
 
   (* exact operators *)
-
   val neg: t -> t
   val abs: t -> t
-
 
   (* operators with rounding *)
   val add_up: t -> t -> t
@@ -93,20 +85,6 @@ module type BOUND = sig
   val pow_down: t -> int -> t
   val root_up: t -> int -> t
   val root_down: t -> int -> t
-
-  val cos_up: t -> t
-  val cos_down: t -> t
-  val sin_up: t -> t
-  val sin_down: t -> t
-  val tan_up: t -> t
-  val tan_down: t -> t
-
-  val acos_up: t -> t
-  val acos_down: t -> t
-  val asin_up: t -> t
-  val asin_down: t -> t
-  val atan_up: t -> t
-  val atan_down: t -> t
 
   val exp_up: t -> t
   val exp_down: t -> t

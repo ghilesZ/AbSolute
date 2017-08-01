@@ -46,18 +46,15 @@ let speclist =
   ("-pruning"      , Arg.Set pruning         , "Enables the \"pruning\" during the solving process");
   ("-trace"        , Arg.Set trace           , "Prints the solutions on standard output");
   ("-sure"         , Arg.Set sure            , "Keeps only the sure solutions");
-  ("-iter"         , Arg.Set iter            , "Enables the loop for the propagation");
   ("-rewrite"      , Arg.Set rewrite         , "Enables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
-  (*********************************************** ALIASES ********************************************************)
+  (*********************************************** ALIASES ************************************************)
   ("-t"            , Arg.Set trace           , "Alias for -trace");
   ("-s"            , Arg.Set sure            , "Alias for -sure");
   ("-v"            , Arg.Set visualization   , "Alias for -visualization");
   ("-p"            , Arg.Float set_prec      , "Alias for -precision");
   ("-d"            , Arg.String set_domain   , "Alias for -domain");
-  ("-i"            , Arg.Set iter            , "Alias for -iter");
-  ("-pi"           , Arg.Int set_pruning_iter, "Alias for -pruning_iter");
-]
+  ]
 
 let anonymous_arg = Constant.set_prob
 

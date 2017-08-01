@@ -14,3 +14,4 @@ This repository defines all the auxiliary modules that will be used by the solve
 - **ml_float.c** is a *C file* that provides a routine to set the rounding mode of the processor. It is used to provide a sound handling of the rounding erros.
 - **constant** defines a bunch of values that are initialized at the starting of the solver and used during the whole solving process
 - **polynom** provides few functions that perform symbolic computations over multivariate polynoms
+- **trigo** defines sound trigonometric utilities that can be used by domains

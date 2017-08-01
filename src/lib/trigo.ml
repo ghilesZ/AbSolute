@@ -8,14 +8,13 @@ module Make (B:Bound_sig.BOUND) = struct
   (* PI APPROXIMATION *)
   (********************)
 
-  (* pi approximation with double precision *)
+  (* pi approximation (double precision) *)
 
   let pi_down = 3.14159265358979312 (* closest smaller float than pi *)
   (* real pi  = 3.1415926535 89793238462.......... *)
   let pi_up   = 3.14159265358979356 (* closest bigger float than pi *)
 
   let pi_itv = pi_down,pi_up
-
 
   (*********************)
   (* SIN APPROXIMATION *)
@@ -41,6 +40,18 @@ module Make (B:Bound_sig.BOUND) = struct
     let a = cos (x+.pi_up) and b =  cos (x+.pi_down) in
     -. (max a b)
 
+  (*********************)
+  (* TAN APPROXIMATION *)
+  (*********************)
+
+  (* TODO: check division by zero *)
+
+  (* over-approximation of tan x *)
+  let tan_up x = tan x
+
+  (* under-approximation of tan x *)
+  let tan_down x =  -. (tan (-. x))
+
   (************************)
   (* ARCTAN APPROXIMATION *)
   (************************)
@@ -49,9 +60,9 @@ module Make (B:Bound_sig.BOUND) = struct
 
   let atan_up x = -. (atan (-.x))
 
-  (**********************************)
-  (* ARCCOS IN [-1;1] APPROXIMATION *)
-  (**********************************)
+  (************************)
+  (* ARCCOS APPROXIMATION *)
+  (************************)
 
   let acos_up r =
     if -1. <= r && r <= 1. then Bot.Nb (acos r)
@@ -60,6 +71,19 @@ module Make (B:Bound_sig.BOUND) = struct
   let acos_down r =
     if -1. <= r && r <= 1. then Bot.Nb (-. (acos (-.r)))
     else Bot.Bot
+
+  (************************)
+  (* ARCSIN APPROXIMATION *)
+  (************************)
+
+  let asin_up r =
+    if -1. <= r && r <= 1. then Bot.Nb (asin r)
+    else Bot.Bot
+
+  let asin_down r =
+    if -1. <= r && r <= 1. then Bot.Nb (-. (asin (-.r)))
+    else Bot.Bot
+
 
   (****************************************************)
   (*               INTERVAL COMPUTATION               *)
@@ -71,9 +95,6 @@ module Make (B:Bound_sig.BOUND) = struct
                                        "[%a; %a]"
                                        Format.pp_print_float l
                                        Format.pp_print_float u
-
-  (* constructors and conversions *)
-  let to_int (a,b) = (int_of_float a),(int_of_float b)
 
   open F
 
@@ -91,21 +112,24 @@ module Make (B:Bound_sig.BOUND) = struct
 
   (* trigonometry on intervals *)
 
-  (* the type of monotony of a function on a given interval *)
+  (* the type of monotony of a function on a given interval: *)
+  (* - Incr means strictly increasing*)
+  (* - Decr means stricly decreasing*)
+  (* - Change means than the function f is not monotonic on the given interval.
+       the boolean indicates if the function is firstly increasing (true)
+       or decreasing(false). The float list are the images of where the
+       monotony changes.
+       ex : Change(true,[f1,f2,f3 ...]) means that f is first increasing
+       than it changes its monotony at some point x1 and f(x1) = f1. then
+       it descreases until a point x2 such that f(x2) = f2 etc. *)
+  type monotony = Incr
+                | Decr
+                | Change of bool * float list
 
-  type monotony = Incr              (* strictly increasing*)
-                | Decr              (* stricly decreasing*)
-                | IncrDecr of float (* IncrDecr(a) means than the function f is
-                                    increasing until x, and f(x) = a.
-                                    then f decreases *)
-                | DecrIncr of float (* DecrIncr(a) means than the function f is
-                                    decreasing until x, and f(x) = a.
-                                    then f increases *)
-
-  (* bring the interval to [0;4pi[
+  (* bring the interval to [0;4pi[ (the lower bound in [0;2pi[ )
    - a < b
    - interval size should be smaller than 3pi/2, raise Exit if not *)
-  let normalize (a,b) =
+  let normalize ((a:float),(b:float)) =
     let rec aux a b =
       if threehalfpi_down <= (sub_up b a) then raise Exit
       else if twopiup <= a then aux (sub_down a twopiup) (sub_up b twopidown)
@@ -113,34 +137,43 @@ module Make (B:Bound_sig.BOUND) = struct
       else aux (add_down a twopidown) (add_up b twopiup)
     in aux a b
 
+  (* Check if itv1 contains itv2 *)
   let meet (a,b) (x,y) =
     a < y && x < b
 
   (* return the monotony of the cosinus function on the given itv. Raise exit if
    the itv is bigger than 3pi/2 anyway *)
-  let cosmonotony itv =
-  try let a,b = normalize itv in
-      if meet (a,b) twopi_itv then
-        IncrDecr(1.)
-      else if meet (a,b) pi_itv then
-        DecrIncr(-1.)
+  (* let cosmonotony itv = *)
+  (* try let a,b = normalize itv in *)
+  (*     if meet (a,b) twopi_itv then Change(true,[1.]) *)
+  (*     else if meet (a,b) pi_itv then Change(false,[-1.]) *)
+  (*     else *)
+  (*       (\* so it should be monoton *\) *)
+  (*       if meet (pi_down,twopiup) (a,b) then Incr *)
+  (*       else Decr *)
+  (* with Exit -> raise Exit *)
+  let cosmonotony ((a:float),(b:float)) =
+    if threehalfpi_down <= (sub_up b a) then raise Exit
+    else
+      let m_sin_a = -. (sin a) and m_sin_b = -. (sin b) in
+      if m_sin_a < 0. then
+        if m_sin_b < 0. then Decr
+        else Change(false,[-1.])
       else
-        (* so it should be monoton *)
-        if meet (pi_down,twopiup) (a,b) then Incr
-        else Decr
-  with Exit -> raise Exit
+        if m_sin_b > 0. then Incr
+        else Change(true,[1.])
 
   (* return the monotony of the sinus function on the given itv *)
   let sinmonotony itv =
     try let a,b = normalize itv in
         if meet (a,b) pihalf_itv then
-          IncrDecr(1.)
+          Change(true,[1.])
         else if meet (a,b) threehalfpi_itv then
-          DecrIncr(-1.)
+          Change(false,[-1.])
         else
           (* so it should be monoton *)
-          if meet (pi_down,twopiup) (a,b) then Incr
-          else Decr
+          if meet (pihalf_down,threehalfpi_up) (a,b) then Decr
+          else Incr
     with Exit -> raise Exit
 
   (* given an interval i, and a function f and its monotony,
@@ -149,16 +182,16 @@ module Make (B:Bound_sig.BOUND) = struct
     match monotony itv with
     | Incr     -> (f_down a),(f_up b)
     | Decr     -> (f_down b),(f_up a)
-    | IncrDecr max ->
+    | Change (true, [max]) ->
        let a' = f_down a and b'= f_down b in
        if a' < b' then (a',max) else (b',max)
-    | DecrIncr min ->
+    | Change(false, [min]) ->
        let a' = f_up a and b'= f_up b in
        if a' < b' then (min,b') else (min,a')
+    | _ (* change monotony more than once *)->  (-1.,1.)
     | exception Exit -> (-1.,1.)
 
-
-  (* Use float to do a computation then go back ti B.t *)
+  (* Use float to do a computation then go back to B.t *)
   let bound_float_convert (l,u) f =
     let i = (B.to_float_down l),(B.to_float_up u) in
     let l,u = f i
@@ -175,29 +208,18 @@ module Make (B:Bound_sig.BOUND) = struct
   (* interval acos *)
   let acos_itv (l,h) =
     let (l,h) = (B.to_float_down l),(B.to_float_up h) in
-    if  h < -1. || 1. < l then Bot.Bot
+    if 1. < l ||  h < -1. then Bot.Bot
     else
-      let res =
-        let minus_one = l < -1. and plus_one =  1. < h in
-        match minus_one, plus_one with
-        | true, true -> Bot.Nb (0., pi_up)
-        | true, false -> Bot.Nb ((acos_down h), pi_up)
-        | false, true -> Bot.Nb (0., (acos_up l))
-        | false, false -> Bot.Nb ((acos_down h), (acos_up l))
-      in
-      Bot.lift_bot (fun (l,h) ->(B.of_float_down l),(B.of_float_up h)) res
+      let l = if 1. < h then 0. else Bot.debot (acos_down h)
+      and u =  if l < -1. then pi_up else Bot.debot (acos_up l)
+      in Bot.Nb((B.of_float_down l),(B.of_float_up u))
 
-  (* interval acos *)
+  (* interval asin *)
   let asin_itv (l,h) =
     let (l,h) = (B.to_float_down l),(B.to_float_up h) in
-    if  h < -1. || 1. < l then Bot.Bot
+    if 1. < l ||  h < -1. then Bot.Bot
     else
-      let res =
-        let minus_one = l < -1. and plus_one =  1. < h in
-        match (minus_one, plus_one) with
-        | true, true -> Bot.Nb (-.pihalf_down,pihalf_up)
-        | true, false -> Bot.Nb ((asin_down h), pihalf_up)
-        | false, true -> Bot.Nb (-.pihalf_down, (asin_up l))
-        | false, false -> Bot.Nb ((asin_down h), (asin_up l))
-      in Bot.lift_bot (fun (l,h) ->(B.of_float_down l),(B.of_float_up h)) res
+      let l = if 1. < h then -.pihalf_down else Bot.debot (asin_down h)
+      and u = if l < -1. then pihalf_up else Bot.debot (asin_up l)
+      in Bot.Nb((B.of_float_down l),(B.of_float_up u))
 end

@@ -27,7 +27,7 @@ end
 
 module Make(R:Ring) = struct
 
-  type t      = cell list          (* monoms + constantes *)
+  type t      = cell list          (* monoms + constants *)
    and cell   = coeff * var list   (* c * v1*...*vn <- sorted in lexicographic order *)
    and var    = id * exp
    and id     = string
@@ -171,7 +171,7 @@ module Make(R:Ring) = struct
     with Exit -> None
 
   (* exponentation of two polynoms *)
-  (* return None if the division is not exact or if e2 = 0 *)
+  (* return None if the exponent is not constant *)
   let pow (e1:t) (e2:t) : t option =
     match e2 with
     | [c] -> if is_monom_constant c then
@@ -229,7 +229,6 @@ module FloatRing = struct
   let print fmt x = Format.fprintf fmt "%f" x
 
 end
-
 
 module Int = Make(IntRing)
 module Float = Make(FloatRing)

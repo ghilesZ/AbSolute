@@ -45,15 +45,10 @@ let to_string x = string_of_float (x+.0.)
 let to_float_up x : float = x
 let to_float_down x : float = x
 
-let to_rat = Q.of_float
-let of_rat_up rat = Q.to_float rat
-let of_rat_down x = -. (Q.to_float (Q.neg x))
-
 (* printing *)
 let print fmt x =
   if ceil x = x then Format.fprintf fmt "%0F" x
   else Format.fprintf fmt "%f" x
-
 
 (* useful constants *)
 
@@ -66,10 +61,8 @@ let minus_inf : t = neg_infinity
 let nan : t = nan
 
 (* exact operators *)
-
 let neg x = -. x
 let abs x = abs_float x
-
 
 (* operators with rounding *)
 let add_up a b = a +. b
@@ -119,48 +112,6 @@ let root_down x n =
   if x<0. && n mod 2 = 1 then -. (exp((log (-.x)) /. (float n)))
   else exp((log x) /. (float n))
 
-let pi = 3.141592653589793
-let twopi = 2.*.pi
-
-(* returns true is cos is monotonic and strictly decreasing around x; x in [0;2pi] *)
-let is_cos_decreasing x = x > 0. && x < pi
-
-let to_zero_twopi x = x -. ((x /. twopi) |> floor) *. twopi
-
-(* returns true is cos is monotonic and strictly decreasing around x*)
-let is_cos_decreasing x = is_cos_decreasing (to_zero_twopi x)
-
-let is_sin_decreasing x = is_cos_decreasing (x +. pi/.2.)
-
-(* let cos_up x = if is_cos_decreasing x then cos x else -.(cos (-.x)) *)
-
-(* let cos_down x =  *)
-(*   if is_cos_decreasing x then -. (cos (-.x)) else cos x *)
-
-(* let sin_up x =  *)
-(*   if is_sin_decreasing x then sin x else -.(sin (-.x)) *)
-
-(* let sin_down x =  *)
-(*   if is_sin_decreasing x then -.(sin (-.x)) else sin x *)
-
-let cos_up = cos
-let cos_down = cos
-
-let sin_up = sin
-let sin_down = sin
-
-let tan_up = tan
-let tan_down = tan
-
-let acos_up = acos
-let acos_down x = acos x
-
-let asin_up = asin
-let asin_down x = asin x
-
-let atan_up = atan
-let atan_down = atan
-
 let exp_up = exp
 let exp_down x = div_down 1. (exp_up (-. x))
 
@@ -169,18 +120,6 @@ let ln_down = log
 
 let log_up = log10
 let log_down = log10
-
-
-(* double-precision characteristics *)
-
-let mant_size = 52
-let min_exp = -1022
-let max_exp = 1023
-let min_denormal = ldexp 1. (min_exp-mant_size)
-let min_normal = ldexp 1. min_exp
-let max_normal = ldexp (2. -. ldexp 1. (-mant_size)) max_exp
-let max_exact = ldexp 1. mant_size
-let ulp = ldexp 1. (-mant_size)
 
 let floor = floor
 let ceil = ceil

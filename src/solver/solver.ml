@@ -16,8 +16,8 @@ module Solve(Abs : AbstractCP) = struct
       match consistency abs cstrs with
       | Empty     -> res
       | Full abs' -> add_s res abs'
-      | Maybe(abs',cstrs,comp) ->
-         if Abs.is_small abs' || depth >= !Constant.max_iter -1 then add_u res abs'
+      | Maybe(abs', cstrs, _) ->
+         if Abs.is_small abs' || depth >= !Constant.max_iter then add_u res abs'
          else
            List.fold_left (fun res elem ->
                aux elem cstrs (incr_step res) (depth +1)

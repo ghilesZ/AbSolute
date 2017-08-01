@@ -269,6 +269,14 @@ module Itv(B:BOUND) = struct
       | _ -> failwith "can only handle stricly positive roots"
     else failwith  "cant handle non_singleton roots"
 
+  (* min *)
+  let min ((l1, u1):t) ((l2, u2):t) =
+    validate (B.min l1 l2, B.min u1 u2)
+
+  (* max *)
+  let max ((l1, u1):t) ((l2, u2):t) =
+    validate (B.max l1 l2, B.max u1 u2)
+
   (****************)
   (* TRIGONOMETRY *)
   (****************)
@@ -285,13 +293,9 @@ module Itv(B:BOUND) = struct
   (* acos *)
   let asin = Trigo.asin_itv
 
-  (* min *)
-  let min ((l1, u1):t) ((l2, u2):t) =
-    validate (B.min l1 l2, B.min u1 u2)
-
-  (* max *)
-  let max ((l1, u1):t) ((l2, u2):t) =
-    validate (B.max l1 l2, B.max u1 u2)
+  (***********************)
+  (* FUNCTION EVALUATION *)
+  (***********************)
 
   (** runtime functions **)
   let eval_fun name args : t bot =
@@ -301,9 +305,9 @@ module Itv(B:BOUND) = struct
       | _ -> failwith (Format.sprintf "%s expect one argument" name)
     in
     let arity_1_bot (f: t -> t bot) : t bot =
-       match args with
-       | [i] ->
-          (match f i with
+      match args with
+      | [i] ->
+         (match f i with
           | Bot -> Bot
           | Nb i -> Nb i)
       | _ -> failwith (Format.sprintf "%s expect one argument" name)
@@ -326,6 +330,8 @@ module Itv(B:BOUND) = struct
     | "exp"   -> arity_1 exp
     | "cos"   -> arity_1 cos
     | "sin"   -> arity_1 sin
+    | "acos"  -> arity_1_bot acos
+    | "asin"  -> arity_1_bot asin
     | "max"   -> arity_2 max
     | "min"   -> arity_2 min
     | "nroot" -> arity_2_bot n_root
@@ -423,12 +429,12 @@ module Itv(B:BOUND) = struct
 
   (* r = cos i => i = arccos r *)
   let filter_cos (i:t) (r:t) : t bot =
-    (* TODO: finish *)
+    (* TODO:improve precision *)
     Nb i
 
   (* r = sin i => i = arcsin r *)
   let filter_sin (i:t) (r:t) : t bot =
-    (* TODO: finish *)
+    (* TODO:improve precision *)
     Nb i
 
   (* r = asin i => i = sin r *)
@@ -474,6 +480,8 @@ module Itv(B:BOUND) = struct
     | "exp"  -> arity_1 filter_exp
     | "cos"  -> arity_1 filter_cos
     | "sin"  -> arity_1 filter_sin
+    | "acos" -> arity_1 filter_acos
+    | "asin" -> arity_1 filter_asin
     | "ln"   -> arity_1 filter_ln
     | "max"  -> arity_2 filter_max
     | "min"  -> arity_2 filter_min

@@ -49,10 +49,6 @@ module Make (A: AbstractCP) = struct
     res.nb_sure + res.nb_unsure > !Constant.max_sol
     || res.nb_steps > !Constant.max_iter
 
-  (* tests if a result can't be pruned anymore *)
-  let prunable res =
-    !Constant.pruning && res.nb_steps < !Constant.pruning_iter
-
   (* prints a result *)
   let print fmt res =
     Format.fprintf fmt "\n#inner boxes: %d\n#boundary boxes: %d\n#created nodes: %d\n\ninner volume = %f\nboundary volume = %f\ntotal volume = %f%!\n"
