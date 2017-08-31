@@ -1,10 +1,12 @@
+(* This modules builds the csp and verifies that it is well formed *)
+(*******************************************************************)
+
 open Csp
 open Lexing
 
 (*****************************************)
 (*              AST CHECKING             *)
 (*****************************************)
-
 
 (*errors*)
 exception IllFormedAST of string
@@ -22,8 +24,7 @@ let illegal_var_draw2 v1 v2 =
 let illegal_constraint spec =
   Format.sprintf "Illegal constraint: %s" spec
 
-let runtime =
-  [
+let runtime = [
     ("sqrt",1);
     ("exp",1);
     ("ln",1);
@@ -42,7 +43,7 @@ let illegal_funcall func arity =
   if List.exists (fun (name,_) -> name = func) runtime then
     Format.sprintf "Illegal funcall: %s expects %d arguments but was given %d"
                    func
-                   (List.assq func runtime)
+                   (List.assoc func runtime)
                    arity
   else Format.sprintf "Illegal funcall: unknown function %s" func
 

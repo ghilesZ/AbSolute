@@ -27,7 +27,7 @@ end
 
 module Make(R:Ring) = struct
 
-  type t      = cell list          (* monoms + constants *)
+  type t      = cell list          (* monoms list <- sorted in lexicographic order *)
    and cell   = coeff * var list   (* c * v1*...*vn <- sorted in lexicographic order *)
    and var    = id * exp           (* id^exp *)
    and id     = string
@@ -46,8 +46,7 @@ module Make(R:Ring) = struct
 
   let clean (poly:t) : t =
     let remove_null : t = List.filter (fun (c,e) -> c<>R.zero) poly in
-    let exp (vl:var list) = List.fold_left (fun acc (_,exp) -> max exp acc) R.zero vl in
-    List.sort (fun (_,v1) (_,v2) -> if exp v1 > exp v2 then 1 else -1) remove_null
+    List.sort (fun (_,v1) (_,v2) -> if v1 >  v2 then 1 else -1) remove_null
 
   let print_varlist fmt =
     List.iter (fun (p,e) ->

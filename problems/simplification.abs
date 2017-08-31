@@ -12,4 +12,5 @@ constraints{
   (x+1)^2 > 0;
   (x+x)/(x-x+2) > 0;
   x^2-x=0;
+  sin(x^2 + y^2) = sin(y^2 + x^2);
 }

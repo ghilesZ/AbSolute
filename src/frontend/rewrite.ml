@@ -24,15 +24,18 @@ let fresh_name =
 (* We convert a tree expression to a polynomial form.
    sub-expression does not correspond to a polynom are bound to fresh
    variables *)
-let rec simplify env : expr -> (PI.t * string CoEnv.t) =
+let rec simplify env expr : (PI.t * string CoEnv.t) =
   let check_var e env =
-    try  let var = CoEnv.find e env in (PI.of_var var),env
+    try
+      let var = CoEnv.find e env in
+      (PI.of_var var),env
     with Not_found ->
       let new_var = fresh_name() in
       let newenv = CoEnv.add e new_var env in
       (PI.of_var new_var),newenv
   in
-  function
+  let p,env =
+  match expr with
   | Var v -> (PI.of_var v),env
   | Cst c -> (PI.of_float c),env
   | Binary (op,e1,e2) ->
@@ -73,9 +76,10 @@ let rec simplify env : expr -> (PI.t * string CoEnv.t) =
            (p::pargs,e)
          ) ([],env) args
      in
-     let args' = List.rev_map (fun p -> polynom_to_expr p env) p_args in
+     let args' = List.rev_map (fun p -> polynom_to_expr p env') p_args in
      let e = FunCall (name, args') in
      check_var e env'
+  in (PI.clean p),env
 
 (* polynom to expression conversion *)
 and polynom_to_expr (p:PI.t) (fake_vars: string CoEnv.t) : Csp.expr =
@@ -115,9 +119,9 @@ and polynom_to_expr (p:PI.t) (fake_vars: string CoEnv.t) : Csp.expr =
 (* simplify the polynomial part of a constraint *)
 let rewrite (cmp,e1,e2) : (cmpop * expr * expr) =
   (* we move e2 to left side to perform potentially more simplifications *)
-  let left = Binary(SUB,e1,e2) in
-  let polynom,fake_variables = simplify CoEnv.empty left in
-  let polynom = PI.clean polynom in
-  let simplified_left = polynom_to_expr polynom fake_variables in
+  let p1,env1 = simplify CoEnv.empty e1 in
+  let p2,env2 = simplify env1 e2 in
+  let polynom = PI.clean (PI.sub p1 p2) in
+  let simplified_left = polynom_to_expr polynom env2 in
   let e2 = Cst 0. in
   (cmp,simplified_left,e2)
