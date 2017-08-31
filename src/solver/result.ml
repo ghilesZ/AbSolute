@@ -29,6 +29,9 @@ module Make (A: AbstractCP) = struct
       best_value = 0.
     }
 
+  (* iterates over the list of sure elements *)
+  let iter_sure f res = List.iter f res.sure
+
   (* adds an unsure element to a result *)
   let add_u res u =
     {res with unsure     = u::res.unsure;

@@ -285,7 +285,6 @@ module MAKE(AP:ADomain) = struct
   let get_expr man (polyad:Polka.strict Polka.t A.t) =
     let poly = A.to_generator_array man polyad in
     let gen_env = poly.Generator1.array_env in
-    (*print_gen gens gen_env;*)
     let size = Environment.size gen_env in
     let gen_float_array = gen_to_array poly size in
     let (p1, p2, dist_max) = maxdisttab gen_float_array in
@@ -301,9 +300,14 @@ module MAKE(AP:ADomain) = struct
   let is_small man polyad =
     let poly = A.to_generator_array man polyad in
     let gen_env = poly.Generator1.array_env in
-    (*print_gen gens gen_env;*)
     let size = Environment.size gen_env in
     let gen_float_array = gen_to_array poly size in
     let (p1, p2, dist_max) = maxdisttab gen_float_array in
     (dist_max <= !Constant.precision)
+
+  let spawn polyad =
+    let poly = A.to_generator_array man polyad in
+    let gen_env = poly.Generator1.array_env in
+    failwith "spawners not implmented with apron domains"
+
 end

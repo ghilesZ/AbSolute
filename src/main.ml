@@ -15,6 +15,7 @@ module GoS (Abs:Domain_signature.AbstractCP)(Dr:Drawer with type t = Abs.t) = st
   module Print = Out.Make(Dr)
   let go prob =
     let res = Sol.solving prob in
+    Format.printf "end of the solving:\n%a\n" Sol.print res;
     Print.out prob res
 end
 
@@ -46,7 +47,7 @@ let speclist =
   ("-pruning"      , Arg.Set pruning         , "Enables the \"pruning\" during the solving process");
   ("-trace"        , Arg.Set trace           , "Prints the solutions on standard output");
   ("-sure"         , Arg.Set sure            , "Keeps only the sure solutions");
-  ("-rewrite"      , Arg.Set rewrite         , "Enables the constraint rewriting");
+  ("-no-rewrite"   , Arg.Set rewrite         , "Disables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
   (*********************************************** ALIASES ************************************************)
   ("-t"            , Arg.Set trace           , "Alias for -trace");
@@ -67,7 +68,7 @@ let parse_args () = Arg.parse speclist anonymous_arg ""
 let go() =
   let open Constant in
   parse_args ();
-  let prob = File_parser.parse !problem in
+  let prob = Builder.parse !problem in
   if !trace then Format.printf "%a" Csp.print prob;
   match !domain with
   | "box"   -> SBox.go prob

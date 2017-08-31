@@ -7,11 +7,10 @@ module Solve(Abs : AbstractCP) = struct
   include Splitter.Make(Abs)
 
   (* Module that handles few informations over the result of the solving *)
-  module Res = Result.Make(Abs)
+  include Result.Make(Abs)
 
   (* propagation/split loop *)
   let explore (abs:Abs.t) (constrs:Csp.constrs) =
-    let open Res in
     let rec aux abs cstrs res depth =
       match consistency abs cstrs with
       | Empty     -> res
@@ -27,7 +26,6 @@ module Solve(Abs : AbstractCP) = struct
 
   (* propagation/elimination/split loop*)
   let explorepruning (abs:Abs.t) (constrs:Csp.constrs) =
-    let open Res in
     let rec aux abs cstrs res depth =
       match consistency abs cstrs with
       | Empty     -> res
@@ -45,12 +43,8 @@ module Solve(Abs : AbstractCP) = struct
     in
     aux abs constrs empty_res 0
 
-
   (* entry point of the solver *)
   let solving prob =
     let abs = init prob in
-    Format.printf "abs = %a\tvolume = %f@." Abs.print abs (Abs.volume abs);
-    let res = (if !Constant.pruning then explorepruning else explore) abs prob.Csp.constraints in
-    Format.printf "\nsolving ends\n%!%a" Res.print res;
-    res
+    (if !Constant.pruning then explorepruning else explore) abs prob.Csp.constraints
 end

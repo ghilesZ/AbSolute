@@ -1,5 +1,8 @@
+(* This module provides a wrapper for a cartesion representation *)
+(* of the search space. It is parametrized by a domain (constraint-sense) *)
+(* representation: to each variable we associate a domain *)
+
 open Bot
-open Bound_sig
 open Itv_sig
 open Csp
 
@@ -110,15 +113,6 @@ module Box (I:ITV) = struct
   (* split *)
   (* ----- *)
 
-  let filter_bounds (a:t) : t =
-    let b = Env.mapi (fun v i ->
-      if is_integer v then
-	      match I.filter_bounds i with
-	      | Bot -> raise Bot_found
-	      | Nb e -> e
-      else i) a in
-    b
-
   let to_bot (a:I.t bot Env.t) : t bot =
     let is_bot = Env.exists (fun v i -> is_Bot i) a in
     if is_bot then Bot
@@ -166,10 +160,6 @@ module Box (I:ITV) = struct
           in (newsure,newunsure)
         ) a b ([],a)
     in goods,nogood
-    (* Format.printf "\n\npruning %a\n and\n %a\nobtaining:\ngoods \n" print a print b; *)
-    (* List.iter (Format.printf "%a\n" print) goods; *)
-    (* Format.printf "--------\nnogoods\n%a\n" print nogood; *)
-    (* assert false *)
 
   (************************************************************************)
   (* ABSTRACT OPERATIONS *)
@@ -299,6 +289,10 @@ module Box (I:ITV) = struct
 
   let is_enumerated a =
     Env.for_all (fun v i -> (is_integer v |> not) || I.is_singleton i) a
+
+  let spawn a =
+    Env.fold (fun k v acc -> M.add k (I.spawn v) acc) a M.empty
+
 end
 
 (*************)

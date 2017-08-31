@@ -1,5 +1,4 @@
 OPAMBIN   := $(shell opam config var bin)
-OCAMLC    := $(OPAMBIN)/ocamlc.opt
 OCAMLOPT  := $(OPAMBIN)/ocamlopt.opt
 OCAMLDEP  := $(OPAMBIN)/ocamldep
 OCAMLLEX  := $(OPAMBIN)/ocamllex
@@ -7,24 +6,24 @@ OCAMLYACC := $(OPAMBIN)/ocamlyacc
 CC        := gcc
 
 # libraries
-OPAMDIR   := $(shell opam config var lib)
-APRONDIR  := $(OPAMDIR)/apron
-GMPDIR    := $(OPAMDIR)/gmp
-ZARITHDIR := $(OPAMDIR)/zarith
-OCAMLDIR  := $(OPAMDIR)/ocaml
+OPAMDIR    := $(shell opam config var lib)
+APRONDIR   := $(OPAMDIR)/apron
+GMPDIR     := $(OPAMDIR)/gmp
+ZARITHDIR  := $(OPAMDIR)/zarith
+OCAMLDIR   := $(OPAMDIR)/ocaml
 
 #ocaml libraries
-LIBS         := bigarray gmp zarith apron polkaMPQ octD boxMPQ str unix graphics
-OCAMLLIBS    := $(LIBS:%=%.cma) $(CCLIB)
-OCAMLOPTLIBS := $(LIBS:%=%.cmxa) $(CCLIB)
+LIBS         := bigarray gmp zarith apron polkaMPQ octD boxMPQ \
+                str unix graphics
+OCAMLOPTLIBS := $(LIBS:%=%.cmxa)
 
-# directories to include
+#sources directories
+SOURCESINC := -I src -I src/domains -I src/frontend -I src/print -I src/solver
+
+# directories to include : sources + lib
 OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) -I $(ZARITHDIR) \
              -I src -I src/lib -I src/domains -I src/frontend -I src/print \
-             -I src/solver
-
-# targets
-TARGETS = solver.opt
+						 -I src/solver
 
 AUTOGEN =\
   src/frontend/parser.ml \
@@ -41,22 +40,22 @@ MLFILES = \
 	src/lib/linconsext.ml \
 	src/lib/tconsext.ml \
 	src/lib/abstractext.ml \
-  src/lib/constant.ml \
-  src/lib/apron_utils.ml \
-  src/lib/bot.ml \
-  src/lib/mapext.ml \
-  src/lib/bound_sig.ml \
-  src/lib/bound_sig_simple.ml \
-  src/lib/bound_float.ml \
-  src/lib/trigo.ml \
-  src/lib/itv_sig.ml \
-  src/lib/itv.ml \
-  src/lib/itv_simple.ml \
-  src/frontend/csp.ml \
+	src/lib/constant.ml \
+	src/lib/apron_utils.ml \
+	src/lib/bot.ml \
+	src/lib/mapext.ml \
+	src/lib/bound_sig.ml \
+	src/lib/bound_sig_simple.ml \
+	src/lib/bound_float.ml \
+	src/lib/trigo.ml \
+	src/lib/itv_sig.ml \
+	src/lib/itv_simple.ml \
+	src/lib/itv.ml \
+	src/frontend/csp.ml \
 	src/frontend/rewrite.ml \
-  src/frontend/parser.ml \
-  src/frontend/lexer.ml \
-  src/frontend/file_parser.ml \
+	src/frontend/parser.ml \
+	src/frontend/lexer.ml \
+	src/frontend/builder.ml \
   src/domains/apron_domain.ml \
   src/domains/cartesian.ml \
   src/domains/domain_signature.ml \
@@ -64,43 +63,56 @@ MLFILES = \
   src/solver/result.ml \
   src/solver/splitter.ml \
   src/solver/solver.ml \
-	src/solver/checker.ml \
   src/print/view.ml \
   src/print/objgen.ml \
 	src/print/latex.ml \
   src/print/drawer_sig.ml \
 	src/print/box_drawer.ml \
 	src/print/apron_drawer.ml \
-  src/print/out.ml \
-	src/main.ml
+  src/print/out.ml
 
-CFILES = \
-  src/lib/ml_float.c
+
+# targets
+TARGETS = solver.opt
+
+# mains
+ABS   = src/main.ml
+CHECK = src/solver/checker.ml \
+				src/check.ml
 
 # object files
 CMIFILES = $(MLIFILES:%.ml=%.cmi)
-CMOFILES = $(MLFILES:%.ml=%.cmo)
 CMXFILES = $(MLFILES:%.ml=%.cmx)
-OFILES   = $(CFILES:%.c=%.o)
+
+# c files
+CFILES = src/lib/ml_float.c
+OFILES = $(CFILES:%.c=%.o)
 
 # rules
 all: $(TARGETS)
 	@mkdir -p out
 
-solver.opt: $(OFILES) $(CMXFILES)
+solver.opt: $(OFILES) $(CMXFILES) $(ABS)
 	$(OCAMLOPT) -o $@ $(OCAMLINC) $(OCAMLOPTLIBS) $+
 
-#minimizer.opt: $(CMXFILES)
-#	$(OCAMLOPT) -o $@ $(OCAMLOPTFLAGS) $(OCAMLINC) -cclib "$(CLIBS)" $(OCAMLOPTLIBS) $+
+check: checker.opt
+	@./checker.opt
+	@rm checker.opt
+
+checker.opt: $(OFILES) $(CMXFILES) $(CHECK)
+	@$(OCAMLOPT) -o $@ $(OCAMLINC) $(OCAMLOPTLIBS) $+
 
 %.cmx: %.ml %.cmi
 	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAMLINC) -c $*.ml
 
 %.cmi: %.mli %.ml
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -c $*.mli
+	$(OCAMLOPT) $(OCAMLFLAGS) $(OCAMLINC) -c $*.mli
 
 %.cmx: %.ml
 	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAMLINC)  -c $*.ml
+
+%.o: %.c
+	$(CC) -I $(OCAMLDIR) -o $@ -c $+
 
 %.ml: %.mll
 	$(OCAMLLEX) $*.mll
@@ -108,22 +120,19 @@ solver.opt: $(OFILES) $(CMXFILES)
 %.ml %.mli: %.mly
 	$(OCAMLYACC) $*.mly
 
-%.o: %.c
-	$(CC) -I $(OCAMLDIR) -o $@ -c $+
-
 clean:
 	rm -f .depend $(TARGETS) $(AUTOGEN)
-	rm -f `find . -name "*.o"`
 	rm -f `find . -name "*.a"`
 	rm -f `find . -name "*.cm*"`
 	rm -f `find . -name "*~"`
+	rm -f `find . -name "*.o"`
 	rm -f out/*
 	rm -f -R out
 
-MLSOURCES = $(MLFILES) $(MLIFILES)
+MLSOURCES = $(MLFILES) $(ABS) $(CHECK) $(MLIFILES)
 
 .depend: $(MLSOURCES) Makefile
-	-$(OCAMLDEP) -native $(OCAMLINC) $(MLSOURCES) > .depend
+	@-$(OCAMLDEP) $(OCAMLINC) -native $(MLSOURCES) > .depend
 
 .phony:	all clean
 

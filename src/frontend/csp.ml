@@ -1,6 +1,8 @@
 (* variables are identified by a string *)
 type var = string
 
+module M = Map.Make(String)
+
 (* constants are floats (the domain of the variable *)
 type i = float
 
@@ -45,6 +47,10 @@ type constrs = bexpr list
 (* program *)
 type prog = { init: decls; constraints: constrs}
 
+(* the instance type *)
+(* we associate a float value to each variable *)
+type instance = float M.t
+
 (*****************************************)
 (*        USEFUL FUNCTION ON AST         *)
 (*****************************************)
@@ -79,10 +85,21 @@ let rec iter_expr f = function
 
 (* iter on constraints *)
 let rec iter_constr f_expr f_constr = function
-  | Cmp (c,e1,e2) as constr -> f_constr constr; iter_expr f_expr e1; iter_expr f_expr e2
-  | And (b1,b2) as constr -> f_constr constr; iter_constr f_expr f_constr b1; iter_constr f_expr f_constr b2
-  | Or  (b1,b2) as constr -> f_constr constr; iter_constr f_expr f_constr b1; iter_constr f_expr f_constr b2
-  | Not b as constr -> f_constr constr; iter_constr f_expr f_constr b
+  | Cmp (c,e1,e2) as constr ->
+     f_constr constr;
+     iter_expr f_expr e1;
+     iter_expr f_expr e2
+  | And (b1,b2) as constr ->
+     f_constr constr;
+     iter_constr f_expr f_constr b1;
+     iter_constr f_expr f_constr b2
+  | Or  (b1,b2) as constr ->
+     f_constr constr;
+     iter_constr f_expr f_constr b1;
+     iter_constr f_expr f_constr b2
+  | Not b as constr ->
+     f_constr constr;
+     iter_constr f_expr f_constr b
 
 (* cmp operator negation *)
 let neg = function
@@ -218,6 +235,7 @@ let print fmt prog =
 (****************** EXPRESSION ANNOTATIONS ********************)
 (*         A unique type for the anotated expr tree           *)
 (* useful to unify the treatment of tree expression traversal *)
+(**************************************************************)
 type 'a annot_expr = 'a ex * 'a
 and 'a ex =
   | AFunCall of var   * 'a annot_expr list

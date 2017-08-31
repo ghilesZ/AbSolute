@@ -29,7 +29,7 @@ module Make(R:Ring) = struct
 
   type t      = cell list          (* monoms + constants *)
    and cell   = coeff * var list   (* c * v1*...*vn <- sorted in lexicographic order *)
-   and var    = id * exp
+   and var    = id * exp           (* id^exp *)
    and id     = string
    and exp    = R.t
    and coeff  = R.t

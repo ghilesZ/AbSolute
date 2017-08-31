@@ -2,9 +2,10 @@
    It is able to perform simplification over multivariate polynoms
    and multiple occurences of a same expression *)
 open Csp
-module Env = Map.Make(String)
+
+module Env   = Map.Make(String)
 module CoEnv = Map.Make(struct type t = expr let compare = compare end)
-module PI = Polynom.Int
+module PI    = Polynom.Int
 
 let reverse_map (m1 : string CoEnv.t) : expr Env.t =
   CoEnv.fold (fun k v env ->
@@ -21,7 +22,7 @@ let fresh_name =
   "%reserved_"^(string_of_int (!cpt))
 
 (* We convert a tree expression to a polynomial form.
-   sub-expression does not correspond to a polynom are bound to symbolic
+   sub-expression does not correspond to a polynom are bound to fresh
    variables *)
 let rec simplify env : expr -> (PI.t * string CoEnv.t) =
   let check_var e env =
@@ -50,10 +51,10 @@ let rec simplify env : expr -> (PI.t * string CoEnv.t) =
            let e = Binary (DIV,e1,e2) in
            check_var e env'')
       | POW ->
+         (* only constant exponentiation *)
          (match PI.pow p1 p2 with
          | Some p -> p,env''
          | None ->
-         (*TODO: add constant exponentiation *)
          let e1 = polynom_to_expr p1 env'' and e2 = polynom_to_expr p2 env'' in
          let e = Binary (POW,e1,e2) in
          check_var e env''))
@@ -113,7 +114,7 @@ and polynom_to_expr (p:PI.t) (fake_vars: string CoEnv.t) : Csp.expr =
 
 (* simplify the polynomial part of a constraint *)
 let rewrite (cmp,e1,e2) : (cmpop * expr * expr) =
-  (* we move e2 to left side to perform a bit more simplifications *)
+  (* we move e2 to left side to perform potentially more simplifications *)
   let left = Binary(SUB,e1,e2) in
   let polynom,fake_variables = simplify CoEnv.empty left in
   let polynom = PI.clean polynom in

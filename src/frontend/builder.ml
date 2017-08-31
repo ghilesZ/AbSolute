@@ -22,18 +22,44 @@ let illegal_var_draw2 v1 v2 =
 let illegal_constraint spec =
   Format.sprintf "Illegal constraint: %s" spec
 
+let runtime =
+  [
+    ("sqrt",1);
+    ("exp",1);
+    ("ln",1);
+    ("pow",1);
+    ("cos",1);
+    ("sin",1);
+    ("tan",1);
+    ("acos",1);
+    ("asin",1);
+    ("atan",1);
+    ("max",2);
+    ("min",2);
+  ]
+
+let illegal_funcall func arity =
+  if List.exists (fun (name,_) -> name = func) runtime then
+    Format.sprintf "Illegal funcall: %s expects %d arguments but was given %d"
+                   func
+                   (List.assq func runtime)
+                   arity
+  else Format.sprintf "Illegal funcall: unknown function %s" func
+
 let check_ast p =
   let h = Hashtbl.create 10 in
   let check_vars () =
-    List.iter (fun (_,v,_) -> if Hashtbl.mem h v then
-	raise (IllFormedAST (Format.sprintf "two variables share the same name: %s" v))
-      else Hashtbl.add h v true
-    ) p.init
+    List.iter (fun (_,v,_) ->
+        if Hashtbl.mem h v then
+	        raise (IllFormedAST (Format.sprintf "two variables share the same name: %s" v))
+        else Hashtbl.add h v true
+      ) p.init
   and check_dom () =
     let aux (_, var, d) =
       match d with
-      | Finite (f1,f2) -> if f1 > f2 then
-	  raise (IllFormedAST (Format.sprintf "Illegal domain for var %s:[%f;%f]" var f1 f2))
+      | Finite (f1,f2) ->
+         if f1 > f2 then
+	         raise (IllFormedAST (Format.sprintf "Illegal domain for var %s:[%f;%f]" var f1 f2))
       | _ -> ()
     in List.iter aux p.init
   and check_constrs () =
@@ -42,6 +68,13 @@ let check_ast p =
          if not (Hashtbl.mem h v) then
            let msg = illegal_constraint ("non-declared variable "^v) in
            Hashtbl.iter (fun a _ -> Format.printf "%s\n" a) h;
+           raise (IllFormedAST msg)
+      | FunCall(name,args) ->
+         let nb_args = List.length args in
+         if not (List.exists (fun (funname,arrity) ->
+             name = funname && nb_args = arrity
+                   ) runtime) then
+           let msg = illegal_funcall name nb_args in
            raise (IllFormedAST msg)
       | _ -> ()
     in

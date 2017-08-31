@@ -10,7 +10,8 @@ let trace           = ref false
 let debug           = ref false
 let pruning         = ref false
 let sure            = ref false
-let rewrite         = ref false
+let rewrite         = ref true
+let check           = ref false
 
 let set_prec f =
   if f > 0. then precision := f
@@ -28,4 +29,7 @@ let set_prob s =
   if Sys.file_exists s then problem := Some s
   else failwith (Format.sprintf "%s : file not found" s)
 
-let set_domain d = domain := d
+let set_domain d =
+  match d with
+  | "box" | "oct" | "poly" -> domain := d
+  | _ -> "domain "^d^" undefined. should be one among : box, boxCP, poly, oct" |> failwith

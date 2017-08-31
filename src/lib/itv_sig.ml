@@ -118,7 +118,7 @@ module type ITV = sig
   val filter_neq: t -> t -> (t * t) bot
 
   (* given the interval argument(s) and the expected interval result of
-     a numeric operation, returns refined interval argument(s) where
+     a numeric operation, returns a refined interval argument(s) where
      points that cannot contribute to a value in the result are
      removed;
      may also return Bot if no point in an argument can lead to a
@@ -145,4 +145,6 @@ module type ITV = sig
   (* bound tightening over Integers values *)
   val filter_bounds: t -> t bot
 
+  (* generate a random float within the given interval *)
+  val spawn : t -> float
 end

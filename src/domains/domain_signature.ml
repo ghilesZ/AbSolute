@@ -45,4 +45,9 @@ module type AbstractCP = sig
   (* volume *)
   val volume : t -> float
 
+
+  (* concretization function. we call it a spawner.
+     useful to do tests, and to reuse the results.
+     values are generated randomly *)
+  val spawn : t -> instance
  end
