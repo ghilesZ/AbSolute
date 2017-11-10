@@ -50,7 +50,7 @@ module Make (Abs : AbstractCP) = struct
   module Topology = struct
     (* This module defines the topology of a problem : *)
     (* - where are all the solutions *)
-    (* - where are for each constraint the nogoods *)
+    (* - where are for each constraint the no-goods *)
     type t = {
         (* over-approx of the solution space *)
         sols:Abs.t;

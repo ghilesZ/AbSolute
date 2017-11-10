@@ -306,8 +306,8 @@ module MAKE(AP:ADomain) = struct
     (dist_max <= !Constant.precision)
 
   let spawn polyad =
-    let poly = A.to_generator_array man polyad in
-    let gen_env = poly.Generator1.array_env in
+    (* let poly = A.to_generator_array man polyad in
+    let gen_env = poly.Generator1.array_env in *)
     failwith "spawners not implmented with apron domains"
 
 end

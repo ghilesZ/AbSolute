@@ -4,37 +4,37 @@ open Csp
 
 
 /* tokens */
-%token TOK_LBRACE
-%token TOK_RBRACE
-%token TOK_LBRACKET
-%token TOK_RBRACKET
-%token TOK_LPAREN
-%token TOK_RPAREN
-%token TOK_PIPE
-%token TOK_COMMA
-%token TOK_SEMICOLON
-%token TOK_COLON
-%token TOK_PLUS
-%token TOK_MINUS
-%token TOK_MULTIPLY
-%token TOK_DIVIDE
-%token TOK_POW
-%token TOK_LESS
-%token TOK_GREATER
-%token TOK_LESS_EQUAL
-%token TOK_GREATER_EQUAL
-%token TOK_EQUAL_EQUAL
-%token TOK_NOT_EQUAL
-%token TOK_ASSIGN
-%token TOK_AND
-%token TOK_OR
-%token TOK_NOT
-%token TOK_INT
-%token TOK_REAL
-%token TOK_INIT
-%token TOK_CONSTR
-%token TOK_MINF
-%token TOK_INF
+%token TOK_LBRACE        /* { */
+%token TOK_RBRACE        /* } */
+%token TOK_LBRACKET      /* [ */
+%token TOK_RBRACKET      /* ] */
+%token TOK_LPAREN        /* ( */
+%token TOK_RPAREN        /* ) */
+%token TOK_PIPE          /* | */
+%token TOK_COMMA         /* , */
+%token TOK_SEMICOLON     /* ; */
+%token TOK_COLON         /* : */
+%token TOK_PLUS          /* + */
+%token TOK_MINUS         /* - */
+%token TOK_MULTIPLY      /* * */
+%token TOK_DIVIDE        /* / */
+%token TOK_POW           /* ^ */
+%token TOK_LESS          /* < */
+%token TOK_GREATER       /* > */
+%token TOK_LESS_EQUAL    /* <= */
+%token TOK_GREATER_EQUAL /* >= */
+%token TOK_EQUAL_EQUAL   /* == */
+%token TOK_NOT_EQUAL     /* != */
+%token TOK_ASSIGN        /* = */
+%token TOK_AND           /* && */
+%token TOK_OR            /* || */
+%token TOK_NOT           /* ! */
+%token TOK_INT           /* int */
+%token TOK_REAL          /* real */
+%token TOK_INIT          /* init */
+%token TOK_CONSTR        /* constraints */
+%token TOK_MINF          /* -oo */
+%token TOK_INF           /* oo */
 
 %token <string> TOK_id
 %token <float> TOK_const
@@ -99,6 +99,12 @@ init:
   | TOK_LBRACKET TOK_MINF TOK_SEMICOLON const TOK_RBRACKET       {Minf ($4)}
   | TOK_LBRACKET const TOK_SEMICOLON TOK_INF TOK_RBRACKET        {Inf ($2)}
   | TOK_LBRACKET const TOK_SEMICOLON const TOK_RBRACKET          {Finite($2,$4)}
+  | TOK_LBRACE set TOK_RBRACE                                    {Set ($2)}
+
+set:
+  | const TOK_SEMICOLON set {$1::$3}
+  | const {[$1]}
+  | {[]}
 
 const:
   | TOK_const {$1}
@@ -111,7 +117,6 @@ bexpr:
   | TOK_NOT bexpr                       {Not ($2)}
   | TOK_LPAREN bexpr TOK_RPAREN         { $2 }
 
-
 expr:
   | TOK_LPAREN expr TOK_RPAREN          { $2 }
   | binop_expr                          { $1 }
@@ -119,7 +124,6 @@ expr:
   | TOK_PIPE expr TOK_PIPE              { Unary (ABS, $2) }
   | TOK_id TOK_LPAREN args TOK_RPAREN   { FunCall ($1,$3) }
   | leaf                                { $1 }
-
 
 args:
   | expr                {[$1]}

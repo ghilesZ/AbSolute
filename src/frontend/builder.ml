@@ -112,10 +112,15 @@ let parse (filename:string option) : prog =
     fileparser lex
   with
   | Failure s ->
-      Printf.eprintf "Error near %s\n%s\n"
+      Format.eprintf "Error near %s\n%s\n%!"
         (string_of_position lex.lex_start_p)
 	      s;
       failwith "Parse error"
+  | Parsing.Parse_error ->
+     Format.eprintf "Error near %s\n\n%!"
+                    (string_of_position lex.lex_start_p);
+     failwith "Parse error"
+
 
 let parse fn =
   let p = parse fn in

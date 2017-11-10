@@ -59,6 +59,7 @@ MLFILES = \
   src/domains/apron_domain.ml \
   src/domains/cartesian.ml \
   src/domains/domain_signature.ml \
+  src/domains/domain_signature2.ml	\
   src/domains/relational.ml \
   src/solver/result.ml \
   src/solver/splitter.ml \

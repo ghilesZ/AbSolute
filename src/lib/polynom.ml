@@ -27,8 +27,8 @@ end
 
 module Make(R:Ring) = struct
 
-  type t      = cell list          (* monoms list <- sorted in lexicographic order *)
-   and cell   = coeff * var list   (* c * v1*...*vn <- sorted in lexicographic order *)
+  type t      = cell list          (* monoms list <- sorted in lex. order *)
+   and cell   = coeff * var list   (* c * v1*...*vn <- sorted in lex. order *)
    and var    = id * exp           (* id^exp *)
    and id     = string
    and exp    = R.t

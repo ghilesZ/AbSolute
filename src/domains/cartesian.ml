@@ -33,7 +33,6 @@ module Box (I:ITV) = struct
 
   let is_integer var = var.[String.length var - 1] = '%'
 
-
   (************************************************************************)
   (* PRINTING *)
   (************************************************************************)
@@ -175,6 +174,8 @@ module Box (I:ITV) = struct
      errors (e.g. division by zero) return no result, so:
      - we raise Bot_found in case the expression only evaluates to error values
      - otherwise, we return only the non-error values
+
+     this is the bottom-up part of hc4
    *)
   let rec eval (a:t) (e:expr) : evalexpr =
     match e with
@@ -216,12 +217,14 @@ module Box (I:ITV) = struct
        in
        ABinary (o,b1,b2), r
 
-
   (* returns a box included in its argument, by removing points such that
      the evaluation is not in the interval;
      not all such points are removed, due to interval abstraction;
      iterating eval and refine can lead to better reults (but is more costly);
-     can raise Bot_found *)
+     can raise Bot_found
+
+     this is the top-down part of hc4
+ *)
   let rec refine (a:t) ((e,x):evalexpr) : t =
     match e with
     | AFunCall(name,args) ->
@@ -229,8 +232,8 @@ module Box (I:ITV) = struct
        let res = I.filter_fun name itv x in
        List.fold_left2 (fun acc e1 e2 ->
            refine acc (e2,e1)) a (debot res) bexpr
-    | AVar (v,annot) ->
-       (try Env.add v (debot (I.meet x annot)) a
+    | AVar (v,_) ->
+       (try Env.add v (debot (I.meet x (Env.find v a))) a
         with Not_found -> failwith ("variable not found: "^v))
     | ACst (c,i) -> ignore (debot (I.meet x i)); a
     | AUnary (o,(e1,i1)) ->
@@ -283,7 +286,8 @@ module Box (I:ITV) = struct
     let itv =
       match dom with
       | Finite (l,u) -> I.of_floats l u
-      | _ -> failwith "can only handle finite domains"
+      | Set (h::tl) -> List.fold_left (fun acc e -> I.join acc (I.of_float e)) (I.of_float h) tl
+      | _ -> failwith "can only handle finite non-empty domains"
     in
     Env.add (if typ = INT then (var^"%") else var) itv abs
 
