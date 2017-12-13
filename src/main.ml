@@ -13,18 +13,33 @@ open Drawer_sig
 module GoS (Abs:Domain_signature.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct
   module Sol = Solver.Solve(Abs)
   module Print = Out.Make(Dr)
+
   let go prob =
     let res = Sol.solving prob in
     Format.printf "end of the solving:\n%a\n" Sol.print res;
     Print.out prob res
 end
 
+module GoS2 (Abs:Domain_signature2.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct
+  module Sol = Solver2.Make(Abs)
+  module Print = Out.Make(Dr)
+
+  let go prob =
+    let res = Sol.solve prob in
+    Format.printf "end of the solving:\n%a\n" Sol.print res;
+    Print.out prob res
+end
+
+
 (************************)
 (* THE SOLVER INSTANCES *)
 (************************)
 
 (* interval domain instance. Only large constraints *)
-module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
+
+(* module SBox      = GoS (Cartesian.BoxF)(Box_drawer) *)
+
+module SBox      = GoS2(Wrapper.WCBoxF)(Wrapper_drawer)
 
 (* apron domain based instances *)
 module SOctCP    = GoS (Relational.OctBoxCP)(Apron_drawer.OctDrawer)
@@ -74,6 +89,6 @@ let go() =
   | "box"   -> SBox.go prob
   | "oct"   -> SOctCP.go prob
   | "poly"  -> SPolyCP.go prob
-  | _ -> "domain undefined "^(!domain)^". should be one among : box, boxCP, poly, oct" |> failwith
+  | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct" |> failwith
 
 let _ = go()

@@ -12,8 +12,14 @@ type 'a res = {
     best_value : float      (* best value found during the optimization *)
   }
 
+module type Res = sig
+  type t
+  val volume : t -> float
+end
+
+
 (* the abstract result type we'll be manipulating *)
-module Make (A: AbstractCP) = struct
+module Make (A: Res) = struct
 
   type t = A.t res
 

@@ -66,7 +66,7 @@ module Make (Abs : AbstractCP) = struct
         ) cstrs compl
 
     (* we build a topology within an abstract element *)
-    (* we only keep the constraints/complmentary element that the element
+    (* we only keep the constraints/complementary element that the element
      does not satisfy yet *)
     (* return Bot if the element doesnt satisfy at all the constraints *)
     let build abs constrs : t Bot.bot =

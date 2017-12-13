@@ -80,6 +80,8 @@ module type ITV = sig
   (* INTERVAL ARITHMETICS (FORWARD EVALUATION) *)
   (************************************************************************)
 
+  val sign : t -> int
+
   val neg: t -> t
   val abs: t -> t
 

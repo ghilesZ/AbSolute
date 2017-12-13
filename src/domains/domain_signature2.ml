@@ -10,16 +10,24 @@ module type AbstractCP = sig
   (* this type allows a custom representation of the constraints + variables *)
   type t
 
+  type consistency =
+    | Empty
+    | Full of t
+    | Maybe of t
+
   (*** Initialization ***)
   val init : Csp.prog -> t
 
   (*** termination: tests if an abstract element is too small to be cut *)
   val is_small : t -> bool
 
+  (*** volume *)
+  val volume : t -> float
+
   (*** OPERATIONS ***)
 
   (* removes inconsistent values from the search space *)
-  val propagation : t -> t
+  val consistency : t -> consistency
 
   (* splits an abstract element *)
   val exploration : t -> t list

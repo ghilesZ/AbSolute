@@ -2,19 +2,19 @@
    It is able to perform simplification over multivariate polynoms
    and multiple occurences of a same expression *)
 open Csp
+open Tools
 
-module Env   = Map.Make(String)
 module CoEnv = Map.Make(struct type t = expr let compare = compare end)
 module PI    = Polynom.Int
 
-let reverse_map (m1 : string CoEnv.t) : expr Env.t =
+let reverse_map (m1 : string CoEnv.t) : expr VMap.t =
   CoEnv.fold (fun k v env ->
-      Env.add v k env
-    ) m1 Env.empty
+      VMap.add v k env
+    ) m1 VMap.empty
 
 exception Empty
 
-(* sepcial variables begin with a '%' character to avoid name clash *)
+(* special variables begin with a '%' character to avoid name clash *)
 let fresh_name =
   let cpt = ref 0 in
   fun () ->
@@ -85,7 +85,7 @@ let rec simplify env expr : (PI.t * string CoEnv.t) =
 and polynom_to_expr (p:PI.t) (fake_vars: string CoEnv.t) : Csp.expr =
   let fake_vars = reverse_map fake_vars in
   let of_id id =
-    try Env.find id fake_vars
+    try VMap.find id fake_vars
     with Not_found -> Var id
   in
   let var_to_expr ((id,exp):PI.var) : expr =

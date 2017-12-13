@@ -17,9 +17,6 @@ LIBS         := bigarray gmp zarith apron polkaMPQ octD boxMPQ \
                 str unix graphics
 OCAMLOPTLIBS := $(LIBS:%=%.cmxa)
 
-#sources directories
-SOURCESINC := -I src -I src/domains -I src/frontend -I src/print -I src/solver
-
 # directories to include : sources + lib
 OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) -I $(ZARITHDIR) \
              -I src -I src/lib -I src/domains -I src/frontend -I src/print \
@@ -35,6 +32,8 @@ AUTOGEN =\
 
 # source files
 MLFILES = \
+	src/lib/mapext.ml \
+	src/lib/tools.ml \
 	src/lib/polynom.ml \
 	src/lib/array_maker.ml \
 	src/lib/linconsext.ml \
@@ -43,7 +42,6 @@ MLFILES = \
 	src/lib/constant.ml \
 	src/lib/apron_utils.ml \
 	src/lib/bot.ml \
-	src/lib/mapext.ml \
 	src/lib/bound_sig.ml \
 	src/lib/bound_sig_simple.ml \
 	src/lib/bound_float.ml \
@@ -57,18 +55,22 @@ MLFILES = \
 	src/frontend/lexer.ml \
 	src/frontend/builder.ml \
   src/domains/apron_domain.ml \
-  src/domains/cartesian.ml \
+	src/domains/hc4.ml \
+	src/domains/cartesian.ml \
   src/domains/domain_signature.ml \
   src/domains/domain_signature2.ml	\
+	src/domains/wrapper.ml \
   src/domains/relational.ml \
   src/solver/result.ml \
   src/solver/splitter.ml \
   src/solver/solver.ml \
-  src/print/view.ml \
+	src/solver/solver2.ml \
+	src/print/view.ml \
   src/print/objgen.ml \
 	src/print/latex.ml \
   src/print/drawer_sig.ml \
 	src/print/box_drawer.ml \
+	src/print/wrapper_drawer.ml \
 	src/print/apron_drawer.ml \
   src/print/out.ml
 

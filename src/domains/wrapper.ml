@@ -1,79 +1,113 @@
-module Make(D:Domain_signature.AbstractCP)= struct
+module Make(D:Domain_signature.AbstractCP) = struct
 
-  type t = {search_space : D.t; constraints : Csp.bexpr list}
+  (* a filtering functions takes a search space as input and return the
+    filtered search_space *)
+  type filter = D.t -> D.t
 
+  (* filter function without exception but possible bottom value instead *)
+  let filter_bot (f:filter) abs =
+    let open Bot in
+    try
+      let filtered = f abs in
+      if D.is_bottom filtered then Bot
+      else Nb filtered
+    with Bot_found -> Bot
+
+  (* builds ONLY ONCE a filtering function f from a constraint.
+     f will be used to filter the search_space *)
+  let rec to_filterer : Csp.bexpr -> filter =
+    let open Csp in
+    function
+    | And (b1,b2) ->
+       let f1 = to_filterer b1 and f2 = to_filterer b2 in
+       fun sp -> f2 (f1 sp)
+    | Or (b1,b2) ->
+       let f1 = to_filterer b1 and f2 = to_filterer b2 in
+       fun sp ->
+       let open Bot in
+       (match (filter_bot f1 sp),(filter_bot f2 sp) with
+        | (Nb a1),(Nb a2) -> D.join a1 a2
+        | Bot, (Nb x) | (Nb x), Bot -> x
+        | _ -> raise Bot.Bot_found)
+    | Not b -> to_filterer (neg_bexpr b)
+    | Cmp (binop,e1,e2) -> D.to_filterer (e1,binop,e2)
+
+  (* The abstract value we manipulate is a search_space
+     and a list of filtering function that will be called in turn
+     over the space *)
+  type t = {
+      search_space : D.t;
+      filters      : (filter * filter) list;
+    }
+
+  (* initialization of the problem *)
   let init (problem:Csp.prog) =
-    let search_space = List.fold_left D.add_var D.empty Csp.(problem.init) in
-    {search_space; constraints=Csp.(problem.constraints)}
-
-  let is_small {search_space; constraints} = D.is_small search_space
-
-  let propagation {search_space; constraints} : t =
-    let rec aux (sp:D.t) =
-      let open Csp in
-      function
-      | And (b1,b2) -> aux (aux sp b2) b1
-      | Or (b1,b2) ->
-         let a1 = try Some(aux sp b1) with Bot.Bot_found -> None
-         and a2 = try Some(aux sp b2) with Bot.Bot_found -> None in
-         (match (a1,a2) with
-          | (Some a1),(Some a2) -> D.join a1 a2
-          | None, (Some x) | (Some x), None -> x
-          | _ -> raise Bot.Bot_found)
-      | Not b -> aux sp (neg_bexpr b)
-      | Cmp (binop,e1,e2) -> D.filter sp (e1,binop,e2)
+    let open Csp in
+    (* for each constraint, we build two filtering function :
+       - one that filters according to the constraint
+       - one that filters according to the complementary constraint
+       ex : a + b < c
+       and  a + b >= c
+     *)
+    let filters =
+      List.map (fun c ->
+          (to_filterer c),(to_filterer (Csp.neg_bexpr c)))
+               (problem.constraints)
     in
-    {search_space = List.fold_left aux search_space constraints; constraints}
+    let search_space = List.fold_left D.add_var D.empty (problem.init) in
+    {search_space; filters}
 
-  let exploration {search_space; constraints} =
+  (* termination condition *)
+  let is_small {search_space; filters} = D.is_small search_space
+
+  (* splitting *)
+  let exploration ({search_space; filters} as a) =
     let splited = D.split search_space in
-    List.map (fun sp -> {search_space=sp; constraints}) splited
+    List.rev_map (fun sp -> {a with search_space=sp}) splited
 
-  let prune t1 t2 = failwith "todo pruning"
+  let build_topology {search_space;filters} =
+    try
+      let filtered = List.fold_left (fun acc (f,_) -> f acc) search_space filters in
+      if D.is_bottom filtered then raise Bot.Bot_found
+      else
+        let complementary =
+          List.fold_left
+            (fun (acc1,acc2,acc3) (f,g) ->
+              let acc3 = f acc3 in
+              match filter_bot g acc3 with
+              | Bot.Bot ->
+                 (* constraint satisfied, we discard it *)
+                 (acc1,acc2,acc3)
+              | Bot.Nb b ->
+                 (* constraint unsatisfied, we keep it, and we keep the nogoods *)
+                 ((f,g)::acc1),(b::acc2),acc3
+            ) ([],[],search_space) filters
+        in Bot.Nb complementary
+    with Bot.Bot_found -> Bot.Bot
 
-  let print fmt {search_space; constraints} =
-    Format.fprintf fmt "%a\n%!" D.print search_space;
-    List.iter (Format.fprintf fmt "%a;\n" Csp.print_bexpr) constraints
+  type consistency =
+    | Empty
+    | Full of t
+    | Maybe of t
 
-  let spawn {search_space; constraints} = D.spawn search_space
+  let consistency abs =
+    match build_topology abs with
+    | Bot.Bot -> Empty
+    | Bot.Nb ([],_,elm) -> Full abs
+    | Bot.Nb (filters,no_goods,elm) -> Maybe {search_space=elm;filters}
 
+  let prune abs = assert false
 
-  module Topology = struct
-    (* This module defines the topology of a problem : *)
-    (* - where are all the solutions *)
-    (* - where are for each constraint the no-goods *)
-    type t = {
-        (* over-approx of the solution space *)
-        sols:D.t;
-        (*Foreach constraint we associate the over-approx of its complementary*)
-        complementary: (Csp.bexpr list) * (D.t list)
-      }
+  (* volume of the search_space *)
+  let volume {search_space} = D.volume search_space
 
-    (* printer *)
-    let print fmt {sols;complementary=cstrs,compl} =
-      Format.fprintf fmt "good : %a\nnogoods:\n" D.print sols;
-      List.iter2 (fun e1 e2 ->
-          Format.fprintf fmt "%a -> %a\n" Csp.print_bexpr e1 D.print e2
-        ) cstrs compl
+  (* test *)
+  let spawn {search_space; filters} = D.spawn search_space
 
-    (* we build a topology within an abstract element *)
-    (* we only keep the constraints/complmentary element that the element
-     does not satisfy yet *)
-    (* return Bot if the element doesnt satisfy at all the constraints *)
-    let build ({search_space;constraints} as abs): t Bot.bot =
-      try
-        let abs' = propagation abs in
-        if D.is_bottom abs'.search_space then Bot.Bot
-        else
-          let complementary =
-            List.fold_left
-              (fun (acc1,acc2) c ->
-                match filter_bot abs' (Csp.neg_bexpr c) with
-                | Bot.Bot -> acc1,acc2
-                | Bot.Nb comp -> (c::acc1),(comp::acc2)
-              ) ([],[]) constrs
-          in Bot.Nb {sols=abs';complementary}
-      with Bot.Bot_found -> Bot.Bot
-  end
+  (* printer *)
+  let print fmt {search_space; filters} =
+    Format.fprintf fmt "%a\n%!" D.print search_space
 
 end
+
+module WCBoxF = Make(Cartesian.BoxF)

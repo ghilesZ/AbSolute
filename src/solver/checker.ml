@@ -1,4 +1,5 @@
 open Csp
+open Tools
 
 module Make(Abs : Domain_signature.AbstractCP) = struct
 
@@ -9,7 +10,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
   (****************)
 
   let print_instance fmt instance =
-    let bindings = M.bindings instance in
+    let bindings = VMap.bindings instance in
     let print_bind fmt (var,value) =
       Format.fprintf fmt "%s:%a"
                      var
@@ -33,7 +34,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
   (* evaluate an expression according to an instance *)
   let eval instance expr =
     let rec aux = function
-      | Var v -> M.find v instance
+      | Var v -> VMap.find v instance
       | Cst c -> c
       | Binary(op,e1,e2) ->
          let e1' = aux e1 and e2' = aux e2 in
@@ -97,7 +98,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
       | Finite (l,u) -> l < value && value < u
     | _ -> failwith "cant handle infinite domains for now"
     in
-    let value = M.find var instance in
+    let value = VMap.find var instance in
     check_type typ value  && check_dom dom value
 
   (* checks if an instance satisfies a csp *)

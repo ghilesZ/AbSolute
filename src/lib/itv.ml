@@ -326,15 +326,20 @@ module Itv(B:BOUND) = struct
       | _ -> failwith (Format.sprintf "%s expect two arguments" name)
     in
     match name with
+    | "pow"   -> arity_2 pow
+    | "nroot" -> arity_2_bot n_root
     | "sqrt"  -> arity_1_bot sqrt
     | "exp"   -> arity_1 exp
+    | "ln"    -> arity_1_bot ln
+    | "log"   -> arity_1_bot log
+    (* trigonometry *)
     | "cos"   -> arity_1 cos
     | "sin"   -> arity_1 sin
     | "acos"  -> arity_1_bot acos
     | "asin"  -> arity_1_bot asin
+    (* min max *)
     | "max"   -> arity_2 max
     | "min"   -> arity_2 min
-    | "nroot" -> arity_2_bot n_root
     | s -> failwith (Format.sprintf "unknown eval function : %s" s)
 
   (************************************************************************)
@@ -499,6 +504,11 @@ module Itv(B:BOUND) = struct
   let spawn (l,h) =
     let r = Random.float 1. in
     B.add_up l (B.mul_up (B.sub_up h l) (B.of_float_up r))
+
+  let sign (l,h) =
+    if B.lt h B.zero then -1
+    else if B.gt l B.zero then 1
+    else 0
 
 end
 
