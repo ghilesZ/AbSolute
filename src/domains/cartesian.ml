@@ -82,9 +82,9 @@ module Box (I:ITV) = struct
   let volume (a:t) : float =
     VMap.fold (fun _ x v -> (I.range x) *. v) a 1.
 
-
-  (* split *)
-  (* ----- *)
+  (************************)
+  (* splitting strategies *)
+  (************************)
 
   let split_along (a:t) (v:var) : t list =
     let i = VMap.find v a in
@@ -117,14 +117,10 @@ module Box (I:ITV) = struct
         ) a b ([],a)
     in goods,nogood
 
-  module Hc4Normal = Hc4.Regular(I)
-  module Hc4Opt = Hc4.Filters(I)
+  module Hc4 = Hc4.Make(I)
 
   let filter (a:t) (e1,binop,e2) : t =
-    Hc4Normal.test a e1 binop e2
-
-  let to_filterer (e1,binop,e2) : t -> t =
-    Hc4Opt.test e1 binop e2
+    Hc4.test a e1 binop e2
 
   let empty : t = VMap.empty
 
@@ -137,9 +133,7 @@ module Box (I:ITV) = struct
     in
     VMap.add (if typ = INT then (var^"%") else var) itv abs
 
-  let is_enumerated a =
-    VMap.for_all (fun v i -> (is_integer v |> not) || I.is_singleton i) a
-
+  (* returns an randomly (uniformly?) chosen instanciation of the variables *)
   let spawn a =
     VMap.fold (fun k v acc -> VMap.add k (I.spawn v) acc) a VMap.empty
 

@@ -4,8 +4,8 @@
 
 (******************************************************************)
 (* An instance of the solver is parmetrized by an abstract domain *)
-(* which will be used in the abstract solving process and a       *)
-(* rendering module witch fits the domain we use                  *)
+(* which will be used in the solving process and a  rendering     *)
+(* module witch fits the domain we use                            *)
 (******************************************************************)
 
 open Drawer_sig
@@ -20,15 +20,15 @@ module GoS (Abs:Domain_signature.AbstractCP)(Dr:Drawer with type t = Abs.t) = st
     Print.out prob res
 end
 
-module GoS2 (Abs:Domain_signature2.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct
-  module Sol = Solver2.Make(Abs)
-  module Print = Out.Make(Dr)
+(* module GoS2 (Abs:Domain_signature.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct *)
+(*   module Sol = Solver2.Make(Abs) *)
+(*   module Print = Out.Make(Dr) *)
 
-  let go prob =
-    let res = Sol.solve prob in
-    Format.printf "end of the solving:\n%a\n" Sol.print res;
-    Print.out prob res
-end
+(*   let go prob = *)
+(*     let res = Sol.solve prob in *)
+(*     Format.printf "end of the solving:\n%a\n" Sol.print res; *)
+(*     Print.out prob res *)
+(* end *)
 
 
 (************************)
@@ -36,10 +36,7 @@ end
 (************************)
 
 (* interval domain instance. Only large constraints *)
-
-(* module SBox      = GoS (Cartesian.BoxF)(Box_drawer) *)
-
-module SBox      = GoS2(Wrapper.WCBoxF)(Wrapper_drawer)
+module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
 
 (* apron domain based instances *)
 module SOctCP    = GoS (Relational.OctBoxCP)(Apron_drawer.OctDrawer)

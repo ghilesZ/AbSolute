@@ -23,13 +23,11 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
   let err_constr instance cstr e1 cmp e2 =
     Format.eprintf "the instance %a do not satisfy the constraint %a\n"
                    print_instance instance
-                 print_bexpr cstr;
+                   print_bexpr cstr;
     Format.eprintf "it evaluates to %a %a %a\n"
                    Format.pp_print_float e1
                    print_cmpop cmp
                    Format.pp_print_float e2
-
-
 
   (* evaluate an expression according to an instance *)
   let eval instance expr =
@@ -110,9 +108,10 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
   let check_sure csp =
     let total_sure = ref 0 in
     solving csp |>
-      iter_sure (fun e -> incr total_sure;
-                          let i = Abs.spawn e in ignore (check_instance i csp)
-                );
+      iter_sure (fun e ->
+          incr total_sure;
+          let i = Abs.spawn e in ignore (check_instance i csp)
+        );
     !total_sure
 
 end

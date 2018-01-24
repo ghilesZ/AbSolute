@@ -40,9 +40,6 @@ module type AbstractCP = sig
   (* filters an abstract element according to a constraint *)
   val filter : t -> (expr * cmpop * expr) -> t
 
-  (* builds a filtering function from a constraint *)
-  val to_filterer : (expr * cmpop * expr) -> (t -> t)
-
   (* printing *)
   val print : Format.formatter -> t -> unit
 
