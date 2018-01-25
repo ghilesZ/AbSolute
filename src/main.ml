@@ -20,15 +20,15 @@ module GoS (Abs:Domain_signature.AbstractCP)(Dr:Drawer with type t = Abs.t) = st
     Print.out prob res
 end
 
-(* module GoS2 (Abs:Domain_signature.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct *)
-(*   module Sol = Solver2.Make(Abs) *)
-(*   module Print = Out.Make(Dr) *)
+module GoS2 (Abs:Domain_signature2.AbstractCP)(Dr:Drawer with type t = Abs.t) = struct
+  module Sol = Solver2.Make(Abs)
+  module Print = Out.Make(Dr)
 
-(*   let go prob = *)
-(*     let res = Sol.solve prob in *)
-(*     Format.printf "end of the solving:\n%a\n" Sol.print res; *)
-(*     Print.out prob res *)
-(* end *)
+  let go prob =
+    let res = Sol.solve prob in
+    Format.printf "end of the solving:\n%a\n" Sol.print res;
+    Print.out prob res
+end
 
 
 (************************)
@@ -37,6 +37,7 @@ end
 
 (* interval domain instance. Only large constraints *)
 module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
+(* module SBox      = GoS2 (Wrapper.WCBoxF)(Wrapper_drawer) *)
 
 (* apron domain based instances *)
 module SOctCP    = GoS (Relational.OctBoxCP)(Apron_drawer.OctDrawer)
@@ -77,7 +78,7 @@ let parse_args () = Arg.parse speclist anonymous_arg ""
 (* entry point *)
 (***************)
 
-let go() =
+let go () =
   let open Constant in
   parse_args ();
   let prob = Builder.parse !problem in

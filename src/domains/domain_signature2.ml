@@ -9,11 +9,12 @@ module type AbstractCP = sig
   (* abstract element : search space + constraints *)
   (* this type allows a custom representation of the constraints + variables *)
   type t
+  type frontier
 
   type consistency =
     | Empty
     | Full of t
-    | Maybe of t
+    | Maybe of frontier * t
 
   (*** Initialization ***)
   val init : Csp.prog -> t
@@ -33,7 +34,7 @@ module type AbstractCP = sig
   val exploration : t -> t list
 
   (* pruning *)
-  val prune : t -> t -> t list * t
+  val prune : t -> frontier -> t list * t list
 
   (* printing *)
   val print : Format.formatter -> t -> unit

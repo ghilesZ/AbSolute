@@ -1,5 +1,10 @@
 open Domain_signature
 
+(**************************************************)
+(* constraints are handled in a round-robin order *)
+(**************************************************)
+
+
 (* Solver *)
 module Solve(Abs : AbstractCP) = struct
 
@@ -24,7 +29,7 @@ module Solve(Abs : AbstractCP) = struct
     in
     aux abs constrs empty_res 0
 
-  (* propagation/elimination/split loop*)
+  (* propagation/elimination/split loop *)
   let explorepruning (abs:Abs.t) (constrs:Csp.constrs) =
     let rec aux abs cstrs res depth =
       match consistency abs cstrs with
