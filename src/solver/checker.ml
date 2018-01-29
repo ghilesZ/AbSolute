@@ -84,7 +84,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
       | Not c      -> not (aux c)
     in aux cstr
 
-(*checks if the value of variable of an instance belong to the cooresponding domain *)
+  (*checks if the value of variable of an instance belong to the cooresponding domain *)
   let belong_to instance (typ,var,dom) =
     let check_type typ value =
       match typ with
@@ -105,13 +105,34 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
     && List.for_all (check_cstr instance) csp.constraints
 
   (* checks that the sure value DO satisfy the constraints *)
-  let check_sure csp =
+  let check_sure csp result =
     let total_sure = ref 0 in
-    solving csp |>
-      iter_sure (fun e ->
-          incr total_sure;
-          let i = Abs.spawn e in ignore (check_instance i csp)
-        );
+    iter_sure (fun e ->
+        incr total_sure;
+        let i = Abs.spawn e in ignore (check_instance i csp)
+      ) result;
     !total_sure
+
+  (* checks that the problem's known solutions belong to an astract element*)
+  let check_known_solutions csp result =
+    let open Result in
+    let covered_by i abs_list =
+      List.exists (fun e -> Abs.is_abstraction e i) abs_list
+    in
+    try
+      List.iter (fun instance ->
+          if not (covered_by instance result.sure
+                  || covered_by instance result.unsure)
+          then
+            begin
+              Format.eprintf "the instance %a is not covered by any abstract element\n%!"
+                             print_instance instance;
+              raise Exit
+            end
+        ) csp.solutions;
+      true
+    with Exit -> false
+
+  let result csp = solving csp
 
 end

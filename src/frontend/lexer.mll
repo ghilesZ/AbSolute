@@ -12,6 +12,7 @@ let _ =
    [
      "init",           TOK_INIT;
      "constraints",    TOK_CONSTR;
+     "solutions",      TOK_SOL;
      "int",            TOK_INT;
      "real",           TOK_REAL;
      "oo",             TOK_INF;

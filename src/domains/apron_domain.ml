@@ -309,4 +309,10 @@ module MAKE(AP:ADomain) = struct
     let gen_env = poly.Generator1.array_env in *)
     failwith "spawners not implmented with apron domains"
 
+  let is_abstraction polyad f =
+    (* let poly = A.to_generator_array man polyad in
+    let gen_env = poly.Generator1.array_env in *)
+    failwith "is_abstraction not implmented with apron domains"
+
+
 end

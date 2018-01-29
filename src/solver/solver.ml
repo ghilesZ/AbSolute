@@ -36,7 +36,7 @@ module Solve(Abs : AbstractCP) = struct
       | Empty     -> res
       | Full abs' -> add_s res abs'
       | Maybe(abs',cstrs,comp) ->
-         if Abs.is_small abs' || depth >= !Constant.max_iter -1 then add_u res abs'
+         if Abs.is_small abs' || depth >= !Constant.max_iter then add_u res abs'
          else
            let ls,lu = prune_topo abs' comp in
            let res = List.fold_left (fun r x -> add_s r x) res ls in

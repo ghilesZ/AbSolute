@@ -134,9 +134,17 @@ module Box (I:ITV) = struct
     VMap.add (if typ = INT then (var^"%") else var) itv abs
 
   (* returns an randomly (uniformly?) chosen instanciation of the variables *)
-  let spawn a =
+  let spawn a : instance =
     VMap.fold (fun k v acc -> VMap.add k (I.spawn v) acc) a VMap.empty
 
+  let is_abstraction a (i:instance) =
+    try
+      VMap.iter (fun k v ->
+          if not (I.is_abstraction (VMap.find k a) v) then
+            raise Exit
+        ) i;
+      true
+    with Exit -> false
 
 end
 

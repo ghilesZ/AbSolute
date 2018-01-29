@@ -38,6 +38,9 @@ module Make (A: Res) = struct
   (* iterates over the list of sure elements *)
   let iter_sure f res = List.iter f res.sure
 
+  (* iterates over the list of unsure elements *)
+  let iter_unsure f res = List.iter f res.unsure
+
   (* adds an unsure element to a result *)
   let add_u res u =
     {res with unsure     = u::res.unsure;

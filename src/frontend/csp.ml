@@ -44,18 +44,22 @@ type decls =  assign list
 (* statements *)
 type constrs = bexpr list
 
-(* program *)
-type prog = { init: decls; constraints: constrs}
-
 (* the instance type *)
 (* we associate a float value to each variable *)
 type instance = float VMap.t
+
+(* program *)
+type prog = {
+    init        : decls;        (* the declarations of the variables *)
+    constraints : constrs;      (* the constraints of the problem *)
+    solutions   : instance list (* known solutions to check the soundness *)
+  }
 
 (*****************************************)
 (*        USEFUL FUNCTION ON AST         *)
 (*****************************************)
 
-let empty = {init = []; constraints= []}
+let empty = {init = []; constraints = []; solutions = [];}
 
 let get_vars p =
   List.map (fun (_,v,_) -> v) p.init

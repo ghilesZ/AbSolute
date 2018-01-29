@@ -149,4 +149,8 @@ module type ITV = sig
 
   (* generate a random float within the given interval *)
   val spawn : t -> float
+
+  (* tests if an interval abstracts a float *)
+  val is_abstraction : t -> float -> bool
+
 end

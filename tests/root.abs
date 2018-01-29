@@ -8,3 +8,7 @@ init {
 constraints {
   y <= sqrt(x);
 }
+
+solutions {
+  {y=3;x=10};
+}

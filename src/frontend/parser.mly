@@ -1,5 +1,8 @@
 %{
-open Csp
+    open Tools
+    open Csp
+
+    let list_to_map = List.fold_left (fun acc (k,m) -> VMap.add k m acc) VMap.empty
 %}
 
 
@@ -33,6 +36,7 @@ open Csp
 %token TOK_REAL          /* real */
 %token TOK_INIT          /* init */
 %token TOK_CONSTR        /* constraints */
+%token TOK_SOL           /* solutions */
 %token TOK_MINF          /* -oo */
 %token TOK_INF           /* oo */
 
@@ -51,7 +55,6 @@ open Csp
 
 %type <typ> typ
 %type <dom> init
-%type <assign> decl
 %type <bexpr> bexpr
 %type <Csp.prog> file
 
@@ -63,10 +66,11 @@ open Csp
 file:
   domains
   constraints
+  solutions
   TOK_EOF
   {{init=$1;
     constraints=$2;
-  }}
+    solutions=$3;}}
 
 domains:
  | TOK_INIT TOK_LBRACE decls TOK_RBRACE {$3}
@@ -74,25 +78,33 @@ domains:
 constraints:
  | TOK_CONSTR TOK_LBRACE bexprs TOK_RBRACE {$3}
 
-varlist:
-  | TOK_id varlist {$1::$2}
-  | {[]}
+solutions:
+ | TOK_SOL TOK_LBRACE instances TOK_RBRACE {$3}
+ | {[]}
+
+instances:
+ | TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {(list_to_map $2)::$5}
+ | TOK_LBRACE sols TOK_RBRACE {[list_to_map $2]}
+ | {[]}
+
+sols:
+ | TOK_id TOK_ASSIGN const TOK_SEMICOLON sols {($1,$3)::$5}
+ | TOK_id TOK_ASSIGN const {[($1,$3)]}
+ | {[]}
 
 decls:
-  | decl decls {$1::$2}
-  | {[]}
+ | typ TOK_id TOK_ASSIGN init TOK_SEMICOLON decls {($1, $2, $4)::$6}
+ | typ TOK_id TOK_ASSIGN init {[($1, $2, $4)]}
+ | {[]}
 
 bexprs:
   | bexpr TOK_SEMICOLON bexprs {$1::$3}
+  | bexpr {[$1]}
   | {[]}
 
 typ:
   | TOK_INT       {INT}
   | TOK_REAL      {REAL}
-
-decl:
-  | typ TOK_id TOK_ASSIGN init TOK_SEMICOLON
-    { ($1, $2, $4) }
 
 init:
   | TOK_LBRACKET TOK_MINF TOK_SEMICOLON TOK_INF TOK_RBRACKET     {Top}

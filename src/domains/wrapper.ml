@@ -6,8 +6,6 @@ module Make(D:Domain_signature.AbstractCP) = struct
       (* the constraint and their complementary *)
     }
 
-  type frontier = (Csp.bexpr * Csp.bexpr) list * D.t list
-
   let init (problem:Csp.prog) =
     let open Csp in
     let search_space = List.fold_left D.add_var D.empty Csp.(problem.init) in
@@ -52,12 +50,16 @@ module Make(D:Domain_signature.AbstractCP) = struct
 
   let exploration ({search_space} as dom) =
     let splited = D.split search_space in
-    List.map (fun sp -> {dom with search_space=sp}) splited
+    List.rev_map (fun sp -> {dom with search_space=sp}) splited
 
   (* for each unsatisfied constraint, we store its nogoods,
      i.e the over-approx of of the values that dont satisfy it *)
+  type frontier = (Csp.bexpr * Csp.bexpr) list * D.t list
+
   let build_topology {search_space; constraints} : (D.t * frontier) Bot.bot =
     try
+      (* here, filtered can be empty.
+         The next line should raise Bot_found in this case, and we skip the rest *)
       let filtered =
         List.fold_left
           (fun sp (c,_) -> filter sp c) search_space constraints
@@ -111,7 +113,6 @@ module Make(D:Domain_signature.AbstractCP) = struct
 	         aux u (tl,tlnogoods) false s' u'
 	        with Bot.Bot_found -> aux abs (tl,tlnogoods) is_sure sures unsures)
       | _ -> failwith "constraint list and nogoods list should be of the same size"
-
     in aux domain.search_space frontier true [] []
 
   (* volume of the search_space *)
