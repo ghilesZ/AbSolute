@@ -8,6 +8,7 @@ let _ =
   Format.printf "regression test of the solver\n";
   Constant.set_max_iter 10;
   let goods = ref 0 in
+  let not_bads = ref 0 in
   let files = Sys.readdir "tests" in
     Array.iter (fun fn ->
       Format.printf "%s\t: " fn;
@@ -16,9 +17,12 @@ let _ =
       let known_sol = CheckBox.check_known_solutions prob res in
       match CheckBox.check_sure prob res, known_sol with
       | _,false -> Format.printf "could'nt find any covering abstract element\n"
-      | 0,_     -> Format.printf "could'nt find any solution\n"
+      | 0,_     ->
+         incr not_bads;
+         Format.printf "could'nt find any solution\n"
       | nb_sol,true ->
          Format.printf "%i solutions verified\n" nb_sol;
-         incr goods
+         incr goods;
+         incr not_bads
     ) files;
-  Format.printf "success : %i/%i\n" (!goods) (Array.length files)
+  Format.printf "success : %i/%i with %i confirmed\n" (!not_bads) (Array.length files) (!goods)

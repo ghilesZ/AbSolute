@@ -505,9 +505,6 @@ module Itv(B:BOUND) = struct
     let r = Random.float 1. in
     B.add_up l (B.mul_up (B.sub_up h l) (B.of_float_up r))
 
-  let is_abstraction (l,h) f =
-    B.to_float_up l < f && f < B.to_float_down h
-
   let sign (l,h) =
     if B.lt h B.zero then -1
     else if B.gt l B.zero then 1

@@ -140,7 +140,7 @@ module Box (I:ITV) = struct
   let is_abstraction a (i:instance) =
     try
       VMap.iter (fun k v ->
-          if not (I.is_abstraction (VMap.find k a) v) then
+          if not (I.contains_float (VMap.find k a) v) then
             raise Exit
         ) i;
       true
