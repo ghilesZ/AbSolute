@@ -8,3 +8,8 @@ init {
 constraints{
   y < x^2;
 }
+
+solutions {
+  {x=10; y=0};
+  !{x=2; y=4}  /* this instance sould be false */
+}

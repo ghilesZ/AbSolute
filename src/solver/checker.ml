@@ -98,7 +98,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
     | _ -> failwith "cant handle infinite domains for now"
     in
     let value = VMap.find var instance in
-    check_type typ value  && check_dom dom value
+    check_type typ value && check_dom dom value
 
   (* checks if an instance satisfies a csp *)
   let check_instance print instance csp =
@@ -114,7 +114,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
       ) result;
     !total_sure
 
-  (* compute the ration of unsure value that DO satisfy the constraints *)
+  (* compute the ratio of unsure value that DO satisfy the constraints *)
   let check_unsure csp result =
     let total = ref 0 and unsure = ref 0 in
     iter_unsure (fun e ->
@@ -124,21 +124,34 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
       ) result;
     (float !unsure) /. (float !total)
 
-  (* checks that the problem's known solutions belong to an astract element*)
+  (* checks that the problem's known solutions belong to an astract element *)
+  (* and that sme inconsistent instance does not belong to sure solutions *)
   let check_known_solutions csp result =
     let open Result in
     let covered_by i abs_list =
       List.exists (fun e -> Abs.is_abstraction e i) abs_list
     in
     try
-      List.iter (fun instance ->
-          if not (covered_by instance result.sure
-                  || covered_by instance result.unsure)
-          then
-            begin
-              Format.eprintf "the instance %a is not covered by any abstract element\n%!"
-                             print_instance instance;
-              raise Exit
+      List.iter (fun (instance,good) ->
+          let covered_sure = covered_by instance result.sure in
+          let covered_unsure = covered_by instance result.unsure in
+          if good then
+            if not (covered_sure || covered_unsure)
+            then
+              begin
+                Format.eprintf "the instance %a is not covered by any abstract element\n%!"
+                               print_instance instance;
+                raise Exit
+              end
+            else ()
+          else begin
+              (*the instance sould not be covered by a sure element *)
+              if covered_sure then
+              begin
+                Format.eprintf "the instance %a shouldn't be covered by an abstract element\n%!"
+                               print_instance instance;
+                raise Exit
+              end
             end
         ) csp.solutions;
       true

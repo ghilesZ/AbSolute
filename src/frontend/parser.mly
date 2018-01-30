@@ -83,8 +83,10 @@ solutions:
  | {[]}
 
 instances:
- | TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {(list_to_map $2)::$5}
- | TOK_LBRACE sols TOK_RBRACE {[list_to_map $2]}
+ | TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((list_to_map $2),true)::$5}
+ | TOK_LBRACE sols TOK_RBRACE {[(list_to_map $2),true]}
+ | TOK_NOT TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((list_to_map $3),false)::$6}
+ | TOK_NOT TOK_LBRACE sols TOK_RBRACE {[(list_to_map $3),false]}
  | {[]}
 
 sols:

@@ -50,9 +50,9 @@ type instance = float VMap.t
 
 (* program *)
 type prog = {
-    init        : decls;        (* the declarations of the variables *)
-    constraints : constrs;      (* the constraints of the problem *)
-    solutions   : instance list (* known solutions to check the soundness *)
+    init        : decls;               (* the declarations of the variables *)
+    constraints : constrs;             (* the constraints of the problem *)
+    solutions   : (instance*bool) list (* known instances to check the soundness *)
   }
 
 (*****************************************)
