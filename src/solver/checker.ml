@@ -63,7 +63,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
     in aux expr
 
   (* check if an instance is valid wrt to a constraint *)
-  let check_cstr instance cstr =
+  let check_cstr print instance cstr =
     let rec aux = function
       | Cmp(op,e1,e2) ->
          let e1' = eval instance e1 and e2' = eval instance e2 in
@@ -77,7 +77,8 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
             | LEQ -> e1' <= e2'
            )
          in
-         if not res then err_constr instance cstr e1' op e2';
+         if not res then
+           if print then err_constr instance cstr e1' op e2';
          res
       | Or(c1,c2)  -> aux c1 || aux c2
       | And(c1,c2) -> aux c1 && aux c2
@@ -100,18 +101,28 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
     check_type typ value  && check_dom dom value
 
   (* checks if an instance satisfies a csp *)
-  let check_instance instance csp =
+  let check_instance print instance csp =
     List.for_all (belong_to instance) csp.init
-    && List.for_all (check_cstr instance) csp.constraints
+    && List.for_all (check_cstr print instance) csp.constraints
 
   (* checks that the sure value DO satisfy the constraints *)
   let check_sure csp result =
     let total_sure = ref 0 in
     iter_sure (fun e ->
         incr total_sure;
-        let i = Abs.spawn e in ignore (check_instance i csp)
+        let i = Abs.spawn e in ignore (check_instance true i csp)
       ) result;
     !total_sure
+
+  (* compute the ration of unsure value that DO satisfy the constraints *)
+  let check_unsure csp result =
+    let total = ref 0 and unsure = ref 0 in
+    iter_unsure (fun e ->
+        incr total;
+        let i = Abs.spawn e in
+        if check_instance false i csp then incr unsure
+      ) result;
+    (float !unsure) /. (float !total)
 
   (* checks that the problem's known solutions belong to an astract element*)
   let check_known_solutions csp result =
