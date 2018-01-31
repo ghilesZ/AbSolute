@@ -4,10 +4,26 @@
 
 module CheckBox = Checker.Make(Cartesian.BoxF)
 
+let print_sep () =
+  Format.printf "-----------------------------------------------------------------\n"
+
+let print_results not_bads goods nb_files =
+  Format.printf "%s success : %i/%i with %i confirmed\n"
+                (if not_bads = nb_files then "\027[32m" else "\027[31m")
+                not_bads
+                nb_files
+                goods
+
+let print_frontier fmt f =
+  if classify_float f <> FP_normal then
+    Format.fprintf fmt "(no frontier)"
+  else
+    Format.fprintf fmt "(frontier %.2f%%)" (f*. 100.)
+
 let _ =
   Random.self_init();
   Format.printf "regression test of the solver\n";
-  Format.printf "-----------------------------------------------------------------\n";
+  print_sep();
   Constant.set_max_iter 10;
   let goods = ref 0 in
   let not_bads = ref 0 in
@@ -30,18 +46,7 @@ let _ =
           Format.printf "%i generated solutions" nb_sol;
           incr goods;
           incr not_bads);
-      Format.printf "\t(frontier %.2f%%)\n" (frontier *. 100.)
+      Format.printf "\t%a\n" print_frontier frontier
     ) files;
-  Format.printf "-----------------------------------------------------------------\n";
-  if (!not_bads) = (Array.length files) then
-    Format.printf "\027[32m success : %i/%i with %i confirmed, (frontier %.2f%%)\n"
-                  (!not_bads)
-                  (Array.length files)
-                  (!goods)
-                  (100. *. !frontier_ratio /. (Array.length files |> float))
-  else
-    Format.printf "\027[31m success : %i/%i with %i confirmed, (frontier %.2f%%)\n"
-                  (!not_bads)
-                  (Array.length files)
-                  (!goods)
-                  (100. *. !frontier_ratio /. (Array.length files |> float))
+  print_sep();
+  print_results (!not_bads) (!goods) (Array.length files)

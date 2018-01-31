@@ -138,14 +138,7 @@ module Box (I:ITV) = struct
     VMap.fold (fun k v acc -> VMap.add k (I.spawn v) acc) a VMap.empty
 
   let is_abstraction a (i:instance) =
-    try
-      VMap.iter (fun k v ->
-          if not (I.contains_float (VMap.find k a) v) then
-            raise Exit
-        ) i;
-      true
-    with Exit -> false
-
+    VMap.for_all (fun k v -> I.contains_float (VMap.find k a) v) i
 end
 
 (*************)

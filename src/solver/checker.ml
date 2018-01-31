@@ -109,18 +109,29 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
   let check_sure csp result =
     let total_sure = ref 0 in
     iter_sure (fun e ->
-        incr total_sure;
-        let i = Abs.spawn e in ignore (check_instance true i csp)
+        let cpt = ref 0 in
+        while !cpt < 10 do
+          incr total_sure;
+          incr cpt;
+          (* we try to spawn at least 10 points *)
+          let i = Abs.spawn e in
+          ignore (check_instance true i csp)
+        done
       ) result;
     !total_sure
 
   (* compute the ratio of unsure value that DO satisfy the constraints *)
   let check_unsure csp result =
     let total = ref 0 and unsure = ref 0 in
+    (* we try to spawn at least 10 points *)
     iter_unsure (fun e ->
-        incr total;
-        let i = Abs.spawn e in
-        if check_instance false i csp then incr unsure
+        let cpt = ref 0 in
+        while !cpt < 10 do
+          incr total;
+          incr cpt;
+          let i = Abs.spawn e in
+          if check_instance false i csp then incr unsure
+        done
       ) result;
     (float !unsure) /. (float !total)
 

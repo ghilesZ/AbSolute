@@ -1,8 +1,6 @@
 %{
     open Tools
     open Csp
-
-    let list_to_map = List.fold_left (fun acc (k,m) -> VMap.add k m acc) VMap.empty
 %}
 
 
@@ -83,10 +81,10 @@ solutions:
  | {[]}
 
 instances:
- | TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((list_to_map $2),true)::$5}
- | TOK_LBRACE sols TOK_RBRACE {[(list_to_map $2),true]}
- | TOK_NOT TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((list_to_map $3),false)::$6}
- | TOK_NOT TOK_LBRACE sols TOK_RBRACE {[(list_to_map $3),false]}
+ | TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((VMap.of_list $2),true)::$5}
+ | TOK_LBRACE sols TOK_RBRACE {[(VMap.of_list $2),true]}
+ | TOK_NOT TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((VMap.of_list $3),false)::$6}
+ | TOK_NOT TOK_LBRACE sols TOK_RBRACE {[(VMap.of_list $3),false]}
  | {[]}
 
 sols:

@@ -435,6 +435,7 @@ module Itv(B:BOUND) = struct
   (* r = cos i => i = arccos r *)
   let filter_cos (i:t) (r:t) : t bot =
     (* TODO:improve precision *)
+    let acos_r = acos r in
     Nb i
 
   (* r = sin i => i = arcsin r *)
