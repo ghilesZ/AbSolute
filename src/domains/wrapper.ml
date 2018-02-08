@@ -6,21 +6,18 @@ module Make(D:Domain_signature.AbstractCP) = struct
       (* the constraint and their complementary *)
     }
 
-  let init (problem:Csp.prog) =
+  let init (prob:Csp.prog) =
     let open Csp in
-    let search_space = List.fold_left D.add_var D.empty Csp.(problem.init) in
-    {
-      search_space;
-      (* we calculate the negation of the constraints only once,
-         at initialization *)
-      constraints =
-        List.map
-          (fun c -> c, (Csp.neg_bexpr c))
-          problem.Csp.constraints;
-    }
+    let search_space = List.fold_left D.add_var D.empty prob.init in
+    (* we compute the negation of the constraints only once,
+       at initialization *)
+    let constraints = List.rev_map (fun c -> c,(neg_bexpr c)) prob.constraints in
+    {search_space; constraints}
 
   let is_small {search_space} = D.is_small search_space
 
+  (* filters an abstract value according to a constraint.
+     raises Bot.Bot_found if the value is entirely filtered *)
   let filter sp cstr =
     let rec aux (sp:D.t) =
       let open Csp in
@@ -38,22 +35,18 @@ module Make(D:Domain_signature.AbstractCP) = struct
     in
     aux sp cstr
 
+  (* same as precedent but returns None istead of raising an exception *)
   let filter_bot sp constraints =
-    try Bot.Nb(filter sp constraints)
+    try
+      let filtered = filter sp constraints in
+      if D.is_bottom filtered then Bot.Bot
+      else Bot.Nb filtered
     with Bot.Bot_found -> Bot.Bot
 
-  let propagation ({search_space; constraints} as dom) : t =
-    {dom with search_space =
-                List.fold_left (fun sp (c,_) -> filter sp c)
-                               search_space
-                               constraints}
-
-  let exploration ({search_space} as dom) =
-    let splited = D.split search_space in
-    List.rev_map (fun sp -> {dom with search_space=sp}) splited
-
   (* for each unsatisfied constraint, we store its nogoods,
-     i.e the over-approx of of the values that dont satisfy it *)
+     i.e the over-approx of of the values that dont satisfy it.
+     we only keep the constraints/complementary element that the element
+     does not satisfy yet *)
   type frontier = (Csp.bexpr * Csp.bexpr) list * D.t list
 
   let build_topology {search_space; constraints} : (D.t * frontier) Bot.bot =
@@ -64,21 +57,22 @@ module Make(D:Domain_signature.AbstractCP) = struct
         List.fold_left
           (fun sp (c,_) -> filter sp c) search_space constraints
       in
-      if D.is_bottom filtered then raise Bot.Bot_found
+      if D.is_bottom filtered then Bot.Bot
       else
         let res =
           List.fold_left
-            (fun ((sp,(cstrs,nogoods)) as acc) (c,nc) ->
-              match filter_bot sp nc with
+            (fun ((cstrs,nogoods) as acc) ((_,nc) as c_nc) ->
+              match filter_bot filtered nc with
               | Bot.Bot ->
-                 (* constraint satisfied, we discard it
-                  and return the accumulator unchanged *)
+                 (* constraint satisfied:
+                  we discard it and return the accumulator unchanged *)
                  acc
-              | Bot.Nb b ->
-                 (* constraint unsatisfied, we keep it, and we keep the nogoods *)
-                 (sp,((c,nc)::cstrs,(b::nogoods)))
-            ) (search_space,([],[])) constraints
-        in Bot.Nb res
+              | Bot.Nb comp ->
+                 (* constraint satisfied yet:
+                    we keep it, and we keep the nogoods *)
+                 (c_nc::cstrs,(comp::nogoods))
+            ) ([],[]) constraints
+        in Bot.Nb (filtered,res)
     with Bot.Bot_found -> Bot.Bot
 
   type consistency =
@@ -92,6 +86,10 @@ module Make(D:Domain_signature.AbstractCP) = struct
     | Bot.Nb (elm,([],[])) -> Full {abs with search_space = elm}
     | Bot.Nb (elm,((cstrs,nogoods) as frontier)) ->
        Maybe (frontier,{search_space=elm; constraints= cstrs})
+
+  let exploration ({search_space} as dom) (frontier:frontier) =
+    let splited = D.split search_space in
+    List.rev_map (fun sp -> {dom with search_space=sp}) splited
 
   (* using elimination technique *)
   let prune (domain:t) (frontier:frontier) : t list * t list =

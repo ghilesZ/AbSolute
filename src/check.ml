@@ -18,7 +18,7 @@ let print_frontier fmt f =
   if classify_float f <> FP_normal then
     Format.fprintf fmt "(no frontier)"
   else
-    Format.fprintf fmt "(frontier %.2f%%)" (f*. 100.)
+    Format.fprintf fmt "(frontier %.2f%%)" (f *. 100.)
 
 let _ =
   Random.self_init();
