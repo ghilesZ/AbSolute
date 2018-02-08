@@ -122,6 +122,10 @@ module Box (I:ITV) = struct
   let filter (a:t) (e1,binop,e2) : t =
     Hc4.test a e1 binop e2
 
+  (* filtering function that also returns a candidate varibale fr splitting *)
+  let filter_maxvar (a:t) (e1,binop,e2) : t * (var*float)=
+    Hc4.test_maxvar a e1 binop e2
+
   let empty : t = VMap.empty
 
   let add_var abs (typ,var,dom) : t =

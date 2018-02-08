@@ -31,7 +31,7 @@ module type AbstractCP = sig
   val consistency : t -> consistency
 
   (* splits an abstract element *)
-  val exploration : t -> t list
+  val exploration : t -> frontier -> t list
 
   (* pruning *)
   val prune : t -> frontier -> t list * t list

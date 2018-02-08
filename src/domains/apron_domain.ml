@@ -314,5 +314,9 @@ module MAKE(AP:ADomain) = struct
     let gen_env = poly.Generator1.array_env in *)
     failwith "is_abstraction not implmented with apron domains"
 
+  let filter_maxvar _ =
+    failwith "max_var is not disponible with apron domains"
 
+  let  split_along  _ =
+    failwith "split_along is not disponible with apron domains"
 end

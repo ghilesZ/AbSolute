@@ -37,8 +37,14 @@ module type AbstractCP = sig
   (* splits an abstract element *)
   val split : t -> t list
 
+  (* splits an abstract element *)
+  val split_along : t -> var -> t list
+
   (* filters an abstract element according to a constraint *)
   val filter : t -> (expr * cmpop * expr) -> t
+
+  (* filters an abstract element according to a constraint *)
+  val filter_maxvar : t -> (expr * cmpop * expr) -> t * (var*float)
 
   (* printing *)
   val print : Format.formatter -> t -> unit

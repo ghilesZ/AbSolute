@@ -120,4 +120,68 @@ module Make (I:ITV) = struct
       let j1,j2 = debot j in
       refine (refine a (b1,j1)) (b2,j2)
     ) a
+
+  (* test transfer function *)
+  let test_maxvar (a:t) (e1:expr) (o:cmpop) (e2:expr) : (t* (var * float))  =
+    let biggest_var = ref None in
+    let update v i =
+      match !biggest_var with
+      | None -> biggest_var := Some(v,I.range i)
+      | Some (v',old_range) ->
+         let new_range = I.range i in
+         if new_range > old_range then
+           biggest_var := Some(v,new_range)
+    in
+    (* same as refine but also returns the biggest constrained variable *)
+    let refine_maxvar (a:t) (evalexpr:evalexpr) : t =
+      let rec refine (a:t) ((e,x):evalexpr) : t  =
+        match e with
+        | AFunCall(name,args) ->
+           let bexpr,itv = List.split args in
+           let res = I.filter_fun name itv x in
+           List.fold_left2 (fun acc e1 e2 ->
+               refine acc (e2,e1)) a (debot res) bexpr
+        | AVar (v,_) ->
+           (try
+              let new_itv = debot (I.meet x (VMap.find v a)) in
+              update v new_itv;
+              VMap.add v new_itv a
+            with Not_found -> failwith ("variable not found: "^v))
+        | ACst (c,i) -> ignore (debot (I.meet x i)); a
+        | AUnary (o,(e1,i1)) ->
+           let j = match o with
+             | NEG -> I.filter_neg i1 x
+             | ABS -> I.filter_abs i1 x
+           in
+           refine a (e1,(debot j))
+        | ABinary (o,(e1,i1),(e2,i2)) ->
+           let j = match o with
+             | ADD -> I.filter_add i1 i2 x
+             | SUB -> I.filter_sub i1 i2 x
+             | MUL -> I.filter_mul i1 i2 x
+             | DIV -> I.filter_div i1 i2 x
+	           | POW -> I.filter_pow i1 i2 x
+           in
+           let j1,j2 = debot j in
+           refine (refine a (e1,j1)) (e2,j2)
+      in
+      refine a evalexpr
+    in
+    let (b1,i1), (b2,i2) = eval a e1, eval a e2 in
+    let j = match o with
+    | EQ  -> I.filter_eq i1 i2
+    | LEQ -> I.filter_leq i1 i2
+    | GEQ -> I.filter_geq i1 i2
+    | NEQ -> I.filter_neq i1 i2
+    | GT  -> I.filter_gt i1 i2
+    | LT  -> I.filter_lt i1 i2
+    in
+    (fun a ->
+      let j1,j2 = debot j in
+      let a = refine_maxvar (refine_maxvar a (b1,j1)) (b2,j2) in
+      match !biggest_var with
+      | None -> failwith "no var in constraint"
+      | Some ((v,range) as var) -> a,var
+    ) a
+
 end

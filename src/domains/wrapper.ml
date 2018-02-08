@@ -16,29 +16,35 @@ module Make(D:Domain_signature.AbstractCP) = struct
 
   let is_small {search_space} = D.is_small search_space
 
+  let best_var ((v1,r1) as var1) ((v2,r2) as var2) =
+    if r1 > r2 then var1 else var2
+
   (* filters an abstract value according to a constraint.
      raises Bot.Bot_found if the value is entirely filtered *)
   let filter sp cstr =
     let rec aux (sp:D.t) =
       let open Csp in
       function
-      | And (b1,b2) -> aux (aux sp b2) b1
+      | And (b1,b2) ->
+         let sp,v1 = aux sp b2 in
+         let sp,v2 =  aux sp b1 in
+         sp,(best_var v1 v2)
       | Or (b1,b2) ->
          let a1 = try Some(aux sp b1) with Bot.Bot_found -> None
          and a2 = try Some(aux sp b2) with Bot.Bot_found -> None in
          (match (a1,a2) with
-          | (Some a1),(Some a2) -> D.join a1 a2
+          | (Some (a1,v1)),(Some (a2,v2)) -> (D.join a1 a2),(best_var v1 v2)
           | None, (Some x) | (Some x), None -> x
           | _ -> raise Bot.Bot_found)
       | Not b -> aux sp (neg_bexpr b)
-      | Cmp (binop,e1,e2) -> D.filter sp (e1,binop,e2)
+      | Cmp (binop,e1,e2) -> D.filter_maxvar sp (e1,binop,e2)
     in
     aux sp cstr
 
   (* same as precedent but returns None istead of raising an exception *)
   let filter_bot sp constraints =
     try
-      let filtered = filter sp constraints in
+      let filtered,maxv = filter sp constraints in
       if D.is_bottom filtered then Bot.Bot
       else Bot.Nb filtered
     with Bot.Bot_found -> Bot.Bot
@@ -47,15 +53,18 @@ module Make(D:Domain_signature.AbstractCP) = struct
      i.e the over-approx of of the values that dont satisfy it.
      we only keep the constraints/complementary element that the element
      does not satisfy yet *)
-  type frontier = (Csp.bexpr * Csp.bexpr) list * D.t list
+  type frontier = ((Csp.bexpr * Csp.bexpr) list * D.t list) * Csp.var
 
   let build_topology {search_space; constraints} : (D.t * frontier) Bot.bot =
     try
       (* here, filtered can be empty.
          The next line should raise Bot_found in this case, and we skip the rest *)
-      let filtered =
+      let filtered,(vars,_) =
         List.fold_left
-          (fun sp (c,_) -> filter sp c) search_space constraints
+          (fun (sp,var) (c,_) ->
+            let sp',v = filter sp c in
+            sp',(best_var var v)
+          ) (search_space,("dummy",0.)) constraints
       in
       if D.is_bottom filtered then Bot.Bot
       else
@@ -72,7 +81,7 @@ module Make(D:Domain_signature.AbstractCP) = struct
                     we keep it, and we keep the nogoods *)
                  (c_nc::cstrs,(comp::nogoods))
             ) ([],[]) constraints
-        in Bot.Nb (filtered,res)
+        in Bot.Nb (filtered,(res,vars))
     with Bot.Bot_found -> Bot.Bot
 
   type consistency =
@@ -83,16 +92,16 @@ module Make(D:Domain_signature.AbstractCP) = struct
   let consistency abs =
     match build_topology abs with
     | Bot.Bot -> Empty
-    | Bot.Nb (elm,([],[])) -> Full {abs with search_space = elm}
-    | Bot.Nb (elm,((cstrs,nogoods) as frontier)) ->
+    | Bot.Nb (elm,(([],[]),v)) -> Full {abs with search_space = elm}
+    | Bot.Nb (elm,(((cstrs,nogoods),v) as frontier)) ->
        Maybe (frontier,{search_space=elm; constraints= cstrs})
 
-  let exploration ({search_space} as dom) (frontier:frontier) =
-    let splited = D.split search_space in
+  let exploration ({search_space} as dom) ((_,v):frontier) =
+    let splited = D.split_along search_space v in
     List.rev_map (fun sp -> {dom with search_space=sp}) splited
 
   (* using elimination technique *)
-  let prune (domain:t) (frontier:frontier) : t list * t list =
+  let prune (domain:t) ((frontier,_):frontier) : t list * t list =
     let rec aux abs (c_list,nogoods) is_sure sures unsures =
       match c_list,nogoods with
       | [],[] ->

@@ -15,7 +15,7 @@ module Make (D:Domain_signature2.AbstractCP) = struct
          else
            List.fold_left (fun res elem ->
                aux elem (incr_step res) (depth +1)
-	           ) res (D.exploration abs')
+	           ) res (D.exploration abs' frontier)
     in
     aux abs empty_res 0
 
@@ -34,7 +34,7 @@ module Make (D:Domain_signature2.AbstractCP) = struct
            List.fold_left (fun res x ->
                List.fold_left (fun res elem ->
                    aux elem (incr_step res) (depth +1)
-                 ) res (D.exploration x)
+                 ) res (D.exploration x frontier)
 	           ) res lu
     in
     aux abs empty_res 0
