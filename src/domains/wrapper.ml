@@ -57,8 +57,6 @@ module Make(D:Domain_signature.AbstractCP) = struct
 
   let build_topology {search_space; constraints} : (D.t * frontier) Bot.bot =
     try
-      (* here, filtered can be empty.
-         The next line should raise Bot_found in this case, and we skip the rest *)
       let filtered,(vars,_) =
         List.fold_left
           (fun (sp,var) (c,_) ->
@@ -74,7 +72,7 @@ module Make(D:Domain_signature.AbstractCP) = struct
               match filter_bot filtered nc with
               | Bot.Bot ->
                  (* constraint satisfied:
-                  we discard it and return the accumulator unchanged *)
+                    we discard it and return the accumulator unchanged *)
                  acc
               | Bot.Nb comp ->
                  (* constraint satisfied yet:

@@ -1,8 +1,19 @@
-(* This modules defines sound operators for trogonometrical functions *)
+(*
+  This modules defines sound operators for trogonometrical functions
+  It uses floating point precision
+  It plugs itself over a interval arithmetic module
+  The interface is functional.
+*)
+
+open Bot
 
 module F = Bound_float
 
-module Make (B:Bound_sig.BOUND) = struct
+module Make (I:Itv_sig.ITV) = struct
+
+  (* All the classical interval computations are keeped *)
+  include I
+
 
   (********************)
   (* PI APPROXIMATION *)
@@ -65,24 +76,24 @@ module Make (B:Bound_sig.BOUND) = struct
   (************************)
 
   let acos_up r =
-    if -1. <= r && r <= 1. then Bot.Nb (acos r)
-    else Bot.Bot
+    if -1. <= r && r <= 1. then Nb (acos r)
+    else Bot
 
   let acos_down r =
-    if -1. <= r && r <= 1. then Bot.Nb (-. (acos (-.r)))
-    else Bot.Bot
+    if -1. <= r && r <= 1. then Nb (-. (acos (-.r)))
+    else Bot
 
   (************************)
   (* ARCSIN APPROXIMATION *)
   (************************)
 
   let asin_up r =
-    if -1. <= r && r <= 1. then Bot.Nb (asin r)
-    else Bot.Bot
+    if -1. <= r && r <= 1. then Nb (asin r)
+    else Bot
 
   let asin_down r =
-    if -1. <= r && r <= 1. then Bot.Nb (-. (asin (-.r)))
-    else Bot.Bot
+    if -1. <= r && r <= 1. then Nb (-. (asin (-.r)))
+    else Bot
 
 
   (****************************************************)
@@ -137,22 +148,9 @@ module Make (B:Bound_sig.BOUND) = struct
       else aux (add_down a twopidown) (add_up b twopiup)
     in aux a b
 
-  (* Check if itv1 contains itv2 *)
-  let meet (a,b) (x,y) =
-    a < y && x < b
-
-  (* return the monotony of the cosinus function on the given itv. Raise exit if
-   the itv is bigger than 3pi/2 anyway *)
-  (* let cosmonotony itv = *)
-  (* try let a,b = normalize itv in *)
-  (*     if meet (a,b) twopi_itv then Change(true,[1.]) *)
-  (*     else if meet (a,b) pi_itv then Change(false,[-1.]) *)
-  (*     else *)
-  (*       (\* so it should be monoton *\) *)
-  (*       if meet (pi_down,twopiup) (a,b) then Incr *)
-  (*       else Decr *)
-  (* with Exit -> raise Exit *)
-  let cosmonotony ((a:float),(b:float)) =
+   (* return the monotony of the sinus function on the given itv *)
+  (* monotony is computed according to the value of the derivative *)
+  let cosmonotony (a,b) =
     if threehalfpi_down <= (sub_up b a) then raise Exit
     else
       let m_sin_a = -. (sin a) and m_sin_b = -. (sin b) in
@@ -164,17 +162,7 @@ module Make (B:Bound_sig.BOUND) = struct
         else Change(true,[1.])
 
   (* return the monotony of the sinus function on the given itv *)
-  let sinmonotony itv =
-    try let a,b = normalize itv in
-        if meet (a,b) pihalf_itv then
-          Change(true,[1.])
-        else if meet (a,b) threehalfpi_itv then
-          Change(false,[-1.])
-        else
-          (* so it should be monoton *)
-          if meet (pihalf_down,threehalfpi_up) (a,b) then Decr
-          else Incr
-    with Exit -> raise Exit
+  let sinmonotony (a,b) = cosmonotony ((a-.pihalf_down),(b+.pihalf_down))
 
   (* given an interval i, and a function f and its monotony,
    return the image of i by f *)
@@ -192,34 +180,103 @@ module Make (B:Bound_sig.BOUND) = struct
     | exception Exit -> (-1.,1.)
 
   (* Use float to do a computation then go back to B.t *)
-  let bound_float_convert (l,u) f =
-    let i = (B.to_float_down l),(B.to_float_up u) in
-    let l,u = f i
-    in (B.of_float_down l),(B.of_float_up u)
+  let bound_float_convert i f =
+    let i = I.to_float_range i in
+    let (l,u) = f i
+    in I.of_floats l u
+
+  (****************************************************)
+  (* INTERVAL EVALUTATION OF TTRIGONOMETRIC FUNCTIONS *)
+  (****************************************************)
 
   (* cosinus of an interval *)
   let cos_itv i =
     bound_float_convert i (itv cosmonotony cos_down cos_up)
 
+   (* interval acos *)
+  let acos_itv i =
+    let (l,h) = I.to_float_range i in
+    if 1. < l ||  h < -1. then Bot
+    else
+      let l = if 1. < h then 0. else debot (acos_down h)
+      and u =  if l < -1. then pi_up else debot (acos_up l)
+      in Nb(I.of_floats l u)
+
   (* sinus of an interval *)
   let sin_itv i =
     bound_float_convert i (itv sinmonotony sin_down sin_up)
 
-  (* interval acos *)
-  let acos_itv (l,h) =
-    let (l,h) = (B.to_float_down l),(B.to_float_up h) in
-    if 1. < l ||  h < -1. then Bot.Bot
-    else
-      let l = if 1. < h then 0. else Bot.debot (acos_down h)
-      and u =  if l < -1. then pi_up else Bot.debot (acos_up l)
-      in Bot.Nb((B.of_float_down l),(B.of_float_up u))
-
   (* interval asin *)
-  let asin_itv (l,h) =
-    let (l,h) = (B.to_float_down l),(B.to_float_up h) in
-    if 1. < l ||  h < -1. then Bot.Bot
+  let asin_itv i =
+    let (l,h) = I.to_float_range i in
+    if 1. < l ||  h < -1. then Bot
     else
-      let l = if 1. < h then -.pihalf_down else Bot.debot (asin_down h)
-      and u = if l < -1. then pihalf_up else Bot.debot (asin_up l)
-      in Bot.Nb((B.of_float_down l),(B.of_float_up u))
+      let l = if 1. < h then -.pihalf_down else debot (asin_down h)
+      and u = if l < -1. then pihalf_up else debot (asin_up l)
+      in Nb(I.of_floats l u)
+
+  (* tangent of an interval *)
+  let tan_itv i = I.div  (sin_itv i) (cos_itv i)
+
+  (* we augment the function evaluator to add to it the trigonometrical stuff *)
+  let eval_fun name args =
+    let arity_1 (f: I.t -> I.t) : I.t bot =
+      match args with
+      | [i] -> Nb (f i)
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    let arity_1_bot (f: I.t -> I.t bot) : I.t bot =
+      match args with
+      | [i] -> f i
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    match name with
+    | "cos" -> arity_1 cos_itv
+    | "sin"   -> arity_1 sin_itv
+    | "acos"  -> arity_1_bot acos_itv
+    | "asin"  -> arity_1_bot asin_itv
+    | _ -> I.eval_fun name args
+
+  (***************************************)
+  (* FILTERING (TEST TRANSFER FUNCTIONS) *)
+  (***************************************)
+
+   (* r = cos i => i = arccos r *)
+  let filter_cos (i:I.t) (r:I.t) : I.t bot =
+    (* TODO:improve precision *)
+    (* let acos_r = acos_itv r in *)
+    Nb i
+
+  (* r = sin i => i = arcsin r *)
+  let filter_sin (i:I.t) (r:I.t) : I.t bot =
+    (* TODO:improve precision *)
+    (* let asin_r = asin_itv r in *)
+    Nb i
+
+  (* r = asin i => i = sin r *)
+  let filter_asin i r =
+    I.meet i (sin_itv r)
+
+  (* r = acos i => i = cos r *)
+  let filter_acos i r =
+    I.meet i (cos_itv r)
+
+  (* we augment the function filterer to add to it the trigonometrical stuff *)
+  let filter_fun name args r : (I.t list) bot =
+   let arity_1 (f: I.t -> I.t -> I.t bot) : (I.t list) bot =
+      match args with
+      | [i] ->
+         (match f i r with
+         | Bot -> Bot
+         | Nb i -> Nb [i])
+      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+    in
+    match name with
+    | "cos"  -> arity_1 filter_cos
+    | "sin"  -> arity_1 filter_sin
+    | "acos" -> arity_1 filter_acos
+    | "asin" -> arity_1 filter_asin
+    | _ -> I.filter_fun name args r
 end
+
+module ItvF = Make(Itv.ItvF)

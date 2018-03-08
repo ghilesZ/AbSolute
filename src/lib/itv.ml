@@ -10,8 +10,6 @@ open Bound_sig
 
 module Itv(B:BOUND) = struct
 
-  module Trigo = Trigo.Make(B)
-
   (************************************************************************)
   (* TYPES *)
   (************************************************************************)
@@ -277,22 +275,6 @@ module Itv(B:BOUND) = struct
   let max ((l1, u1):t) ((l2, u2):t) =
     validate (B.max l1 l2, B.max u1 u2)
 
-  (****************)
-  (* TRIGONOMETRY *)
-  (****************)
-
-  (* cos *)
-  let cos = Trigo.cos_itv
-
-   (* sin *)
-  let sin = Trigo.sin_itv
-
-  (* acos *)
-  let acos = Trigo.acos_itv
-
-  (* acos *)
-  let asin = Trigo.asin_itv
-
   (***********************)
   (* FUNCTION EVALUATION *)
   (***********************)
@@ -306,10 +288,7 @@ module Itv(B:BOUND) = struct
     in
     let arity_1_bot (f: t -> t bot) : t bot =
       match args with
-      | [i] ->
-         (match f i with
-          | Bot -> Bot
-          | Nb i -> Nb i)
+      | [i] -> f i
       | _ -> failwith (Format.sprintf "%s expect one argument" name)
     in
     let arity_2 (f: t -> t -> t) : t bot  =
@@ -332,11 +311,6 @@ module Itv(B:BOUND) = struct
     | "exp"   -> arity_1 exp
     | "ln"    -> arity_1_bot ln
     | "log"   -> arity_1_bot log
-    (* trigonometry *)
-    | "cos"   -> arity_1 cos
-    | "sin"   -> arity_1 sin
-    | "acos"  -> arity_1_bot acos
-    | "asin"  -> arity_1_bot asin
     (* min max *)
     | "max"   -> arity_2 max
     | "min"   -> arity_2 min
@@ -432,25 +406,6 @@ module Itv(B:BOUND) = struct
   let filter_root i r n =
     merge_bot2 (meet i (pow r n)) (Nb n)
 
-  (* r = cos i => i = arccos r *)
-  let filter_cos (i:t) (r:t) : t bot =
-    (* TODO:improve precision *)
-    let acos_r = acos r in
-    Nb i
-
-  (* r = sin i => i = arcsin r *)
-  let filter_sin (i:t) (r:t) : t bot =
-    (* TODO:improve precision *)
-    Nb i
-
-  (* r = asin i => i = sin r *)
-  let filter_asin i r =
-    meet i (sin r)
-
-  (* r = acos i => i = cos r *)
-  let filter_acos i r =
-    meet i (cos r)
-
   (* r = min (i1, i2) *)
   let filter_min (l1, u1) (l2, u2) (lr, ur) =
     merge_bot2
@@ -484,10 +439,6 @@ module Itv(B:BOUND) = struct
     match name with
     | "sqrt" -> arity_1 filter_sqrt
     | "exp"  -> arity_1 filter_exp
-    | "cos"  -> arity_1 filter_cos
-    | "sin"  -> arity_1 filter_sin
-    | "acos" -> arity_1 filter_acos
-    | "asin" -> arity_1 filter_asin
     | "ln"   -> arity_1 filter_ln
     | "max"  -> arity_2 filter_max
     | "min"  -> arity_2 filter_min

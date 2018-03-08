@@ -149,4 +149,4 @@ end
 (* INSTANCES *)
 (*************)
 
-module BoxF = Box(Itv.ItvF)
+module BoxF = Box(Trigo.ItvF)

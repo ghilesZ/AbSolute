@@ -45,10 +45,10 @@ MLFILES = \
 	src/lib/bound_sig.ml \
 	src/lib/bound_sig_simple.ml \
 	src/lib/bound_float.ml \
-	src/lib/trigo.ml \
 	src/lib/itv_sig.ml \
 	src/lib/itv_simple.ml \
 	src/lib/itv.ml \
+	src/lib/trigo.ml \
 	src/frontend/csp.ml \
 	src/frontend/rewrite.ml \
 	src/frontend/parser.ml \
