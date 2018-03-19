@@ -256,7 +256,7 @@ module Make (I:Itv_sig.ITV) = struct
   (***************************************)
 
   (* bring the interval to [0;4pi[ (the lower bound in [0;2pi[ )
-     interval size should be smaller than pi, it raises Exit if not *)
+     interval size should be smaller than 2pi, it raises Exit if not *)
   let normalize i =
     if twopidown <= I.range i then raise Exit
     else
@@ -267,46 +267,50 @@ module Make (I:Itv_sig.ITV) = struct
       if twopidown <= I.range i' then raise Exit
       else i',dist
 
-  (* 0 < x < 2pi && cos(x) = r <=> x = arcos r || x = arcos(-r)+pi *)
-  let arcos_0_2pi =
-    let zero_pi   = I.of_floats 0. pi_up in
-    let pi_2pi    = I.of_floats pi_down twopiup in
+  (* general function for both arcsin and arcos *)
+  let arc return_range fun_itv=
+    let other = I.add return_range pi_itv in
     let open Bot in
     fun itv result ->
-    match (I.intersect itv zero_pi),(I.intersect itv pi_2pi) with
-    | false,true  -> Bot.lift_bot (I.add pi_itv) (acos_itv (I.neg result))
-    | true,false  -> acos_itv result
-    | true,true   ->
-       Bot.lift_bot (I.add pi_itv) (acos_itv (I.neg result)) |>
-         Bot.join_bot2 I.join (acos_itv result)
+    (* handling of the symetry *)
+    match (I.intersect itv return_range),(I.intersect itv other) with
     | false,false -> Bot
+    | true,false  -> fun_itv result
+    | false,true  -> lift_bot (I.add pi_itv) (fun_itv (I.neg result))
+    | true,true   ->
+       lift_bot (I.add pi_itv) (fun_itv (I.neg result))
+       |> join_bot2 I.join (acos_itv result)
 
-  (* r = cos i => i mod 2pi = arccos r *)
-  let filter_cos =
-    let zero_2pi   = I.of_floats 0. twopiup in
-    let twopi_4pi  = I.add twopi_itv zero_2pi in
+  (* 0 < x < 2pi && cos(x) = r <=> x = arcos r || x = arcos(-r)+pi *)
+  let arcos_0_2pi = arc (I.of_floats 0. pi_up) acos_itv
+
+  (* -pi/2 < x < 3pi/2 && sin(x) = r <=> x = arcsin r *)
+  let arcsin_mpih_pih = arc (I.sub (I.of_floats 0. pi_up) pihalf_itv) asin_itv
+
+  (* general function for both filter_sin and filetr_cos *)
+  let filter domain_range fun_itv =
+    let other = I.add twopi_itv domain_range in
     fun (i:I.t) (r:I.t) : I.t bot ->
     try
       let i',delta  = normalize i in
-      let first_part = Bot.lift_bot (I.add delta) (arcos_0_2pi i' r) in
+      let first_part = Bot.lift_bot (I.add delta) (fun_itv i' r) in
       let second_part =
-      match (I.meet i' twopi_4pi) with
+      match (I.meet i' other) with
       | Nb x ->
          let x' = I.sub x twopi_itv in
-         Bot.lift_bot (I.add (I.add delta twopi_itv)) (arcos_0_2pi x' r)
+         Bot.lift_bot (I.add (I.add delta twopi_itv)) (fun_itv x' r)
       | Bot -> Bot
       in Bot.join_bot2 I.join first_part second_part
     with
     | Exit -> Nb i
 
+  (* r = cos i => i mod 2pi = arccos r *)
+  let filter_cos =
+    filter (I.of_floats 0. twopiup) arcos_0_2pi
+
   (* r = sin i => i mod 2pi = arcsin r *)
-  let filter_sin (i:I.t) (r:I.t) : I.t bot =
-    (* try *)
-    (*   let i',delta =  normalize i in *)
-    (*   let ri' = asin_itv i' in *)
-    (*   meet i (I.add (debot ri') delta) *)
-    (* with *)
-    (* | Exit | Bot_found -> *) Nb i
+  let filter_sin =
+    filter (I.sub (I.of_floats 0. twopiup) pihalf_itv) arcsin_mpih_pih
 
   (* r = tan i => i mod 2pi = arctan r *)
   let filter_tan (i:I.t) (r:I.t) : I.t bot =

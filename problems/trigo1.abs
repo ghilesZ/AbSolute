@@ -1,7 +1,7 @@
 /* parametric equation of a circle */
 
 init{
-  real x = [-20; 20];
+  real x = [-50; 50];
   real y = [-4;4];
 }
 
