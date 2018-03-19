@@ -1,13 +1,11 @@
 /* parametric equation of a circle */
 
 init{
-  real x = [-20;20];
-  real y = [-10;10];
+  real x = [-20; 20];
+  real y = [-4;4];
 }
 
 constraints{
-  y-1 <= cos(x);
-  y+1 >= cos(x);
-  // y+1 >= sin(x);
-  // y-1 <= sin(x);
+  y < sin(x) + 1;
+  y > cos(x) - 1;
 }

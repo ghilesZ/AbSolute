@@ -26,7 +26,11 @@ module Itv(B:BOUND) = struct
 
   (* not all pairs of rationals are valid intervals *)
   let validate ((l,h):t) : t =
-    if B.gt l h then invalid_arg "int.validate"
+    if B.gt l h then invalid_arg
+                       ("int.validate: "
+                        ^ string_of_float (B.to_float_down l)
+                        ^" "
+                        ^string_of_float (B.to_float_up h))
     else l,h
 
   (* maps empty intervals to explicit bottom *)
@@ -166,7 +170,6 @@ module Itv(B:BOUND) = struct
   (************************************************************************)
   (* INTERVAL ARITHMETICS (FORWARD EVALUATION) *)
   (************************************************************************)
-
 
   let neg ((l,h):t) : t =
     B.neg h, B.neg l

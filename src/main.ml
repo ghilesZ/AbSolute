@@ -36,9 +36,9 @@ end
 (************************)
 
 (* interval domain instance. Only large constraints *)
-(* module SBox      = GoS (Cartesian.BoxF)(Box_drawer) *)
+module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
 
-module SBox      = GoS2 (Wrapper.WCBoxF)(Wrapper_drawer)
+(* module SBox      = GoS2 (Wrapper.WCBoxF)(Wrapper_drawer) *)
 
 (* apron domain based instances *)
 module SOctCP    = GoS (Relational.OctBoxCP)(Apron_drawer.OctDrawer)
