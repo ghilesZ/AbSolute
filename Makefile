@@ -11,14 +11,15 @@ APRONDIR   := $(OPAMDIR)/apron
 GMPDIR     := $(OPAMDIR)/gmp
 ZARITHDIR  := $(OPAMDIR)/zarith
 OCAMLDIR   := $(OPAMDIR)/ocaml
+VPLDIR     := $(OPAMDIR)/vpl
 
 #ocaml libraries
 LIBS         := bigarray gmp zarith apron polkaMPQ octD boxMPQ \
-                str unix graphics
+                str unix graphics vpl
 OCAMLOPTLIBS := $(LIBS:%=%.cmxa)
 
 # directories to include : sources + lib
-OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) -I $(ZARITHDIR) \
+OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) -I $(ZARITHDIR) -I $(VPLDIR) \
              -I src -I src/lib -I src/domains -I src/frontend -I src/print \
 						 -I src/solver
 
@@ -55,6 +56,7 @@ MLFILES = \
 	src/frontend/lexer.ml \
 	src/frontend/builder.ml \
   src/domains/apron_domain.ml \
+    src/domains/vpl_domain.ml \
 	src/domains/hc4.ml \
 	src/domains/cartesian.ml \
   src/domains/domain_signature.ml \
