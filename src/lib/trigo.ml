@@ -164,8 +164,7 @@ module Make (I:Itv_sig.ITV) = struct
     let mono_once (a,b) =
       let m_sin_a = -. (sin a) and m_sin_b = -. (sin b) in
       if m_sin_a = 0. then
-        if m_sin_b < 0. then Decr
-        else Incr
+        if m_sin_b < 0. then Decr else Incr
       else
       if m_sin_a < 0. then
         if m_sin_b <= 0. then Decr
@@ -255,20 +254,20 @@ module Make (I:Itv_sig.ITV) = struct
   (* FILTERING (TEST TRANSFER FUNCTIONS) *)
   (***************************************)
 
-  (* bring the interval to [0;4pi[ (the lower bound in [0;2pi[ )
-     interval size should be smaller than 2pi, it raises Exit if not *)
-  let normalize i =
-    if twopidown <= I.range i then raise Exit
+  (* bring an interval to target (the lower bound )
+     interval size should be smaller than maxsize, it raises Exit if not *)
+  let normalize target maxsize i =
+    if maxsize <= I.range i then raise Exit
     else
       let (a,b) = I.to_float_range i in
-      let nb_2pi = floor (F.div_down a twopidown) in
-      let dist = I.mul (I.of_float nb_2pi) twopi_itv in
+      let nb = floor (F.div_down (a-.target) maxsize) in
+      let dist = I.mul (I.of_float nb) (I.of_float maxsize) in
       let i' = I.sub i dist in
-      if twopidown <= I.range i' then raise Exit
+      if maxsize <= I.range i' then raise Exit
       else i',dist
 
   (* general function for both arcsin and arcos *)
-  let arc return_range fun_itv=
+  let arc return_range fun_itv =
     let other = I.add return_range pi_itv in
     let open Bot in
     fun itv result ->
@@ -279,7 +278,7 @@ module Make (I:Itv_sig.ITV) = struct
     | false,true  -> lift_bot (I.add pi_itv) (fun_itv (I.neg result))
     | true,true   ->
        lift_bot (I.add pi_itv) (fun_itv (I.neg result))
-       |> join_bot2 I.join (acos_itv result)
+       |> join_bot2 I.join (fun_itv result)
 
   (* 0 < x < 2pi && cos(x) = r <=> x = arcos r || x = arcos(-r)+pi *)
   let arcos_0_2pi = arc (I.of_floats 0. pi_up) acos_itv
@@ -287,20 +286,25 @@ module Make (I:Itv_sig.ITV) = struct
   (* -pi/2 < x < 3pi/2 && sin(x) = r <=> x = arcsin r *)
   let arcsin_mpih_pih = arc (I.sub (I.of_floats 0. pi_up) pihalf_itv) asin_itv
 
-  (* general function for both filter_sin and filetr_cos *)
+  (* general function for both filter_sin and filter_cos *)
   let filter domain_range fun_itv =
     let other = I.add twopi_itv domain_range in
     fun (i:I.t) (r:I.t) : I.t bot ->
     try
-      let i',delta  = normalize i in
-      let first_part = Bot.lift_bot (I.add delta) (fun_itv i' r) in
+      let i',delta  = normalize 0. twopiup i in
+      let first_part =
+        match (I.meet i' domain_range) with
+        | Bot -> Bot
+        | Nb i' -> lift_bot (I.add delta) (fun_itv i' r)
+      in
       let second_part =
-      match (I.meet i' other) with
-      | Nb x ->
-         let x' = I.sub x twopi_itv in
-         Bot.lift_bot (I.add (I.add delta twopi_itv)) (fun_itv x' r)
-      | Bot -> Bot
-      in Bot.join_bot2 I.join first_part second_part
+        match (I.meet i' other) with
+        | Nb x ->
+           let x' = I.sub x twopi_itv in
+           lift_bot (I.add (I.add delta twopi_itv)) (fun_itv x' r)
+        | Bot -> Bot
+      in
+      join_bot2 I.join first_part second_part
     with
     | Exit -> Nb i
 
@@ -312,14 +316,17 @@ module Make (I:Itv_sig.ITV) = struct
   let filter_sin =
     filter (I.sub (I.of_floats 0. twopiup) pihalf_itv) arcsin_mpih_pih
 
-  (* r = tan i => i mod 2pi = arctan r *)
+  (* -pi/2 < x < 3pi/2 && tan(x) = r <=> x = arctan r *)
+  let arctan_mpih_pih =
+    arc (I.sub (I.of_floats 0. pi_up) pihalf_itv) (fun i -> Nb (atan_itv i))
+
+  (* r = tan i => i = artan r) => *)
   let filter_tan (i:I.t) (r:I.t) : I.t bot =
-    (* try *)
-    (*   let i',delta = normalize i in *)
-    (*   let ri' = atan_itv i' in *)
-    (*   meet i (I.add ri' delta) *)
-    (* with *)
-    (* | Exit | Bot_found -> *) Nb i
+    try
+      let i',delta = normalize (-. pihalf_up) pi_up i in
+      lift_bot (I.add delta) (I.meet i' (atan_itv r))
+    with
+    | Exit -> Nb i
 
   (* r = asin i => i = sin r *)
   let filter_asin i r =
