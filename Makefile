@@ -74,6 +74,7 @@ MLFILES = \
 	src/print/box_drawer.ml \
 	src/print/wrapper_drawer.ml \
 	src/print/apron_drawer.ml \
+	src/print/vpl_drawer.ml \
   src/print/out.ml
 
 

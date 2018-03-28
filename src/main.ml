@@ -44,6 +44,9 @@ module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
 module SOctCP    = GoS (Relational.OctBoxCP)(Apron_drawer.OctDrawer)
 module SPolyCP   = GoS (Relational.PolyCP)(Apron_drawer.PolyDrawer)
 
+(* VPL domain based instance *)
+module SVplCP = GoS (Vpl_domain.VplCP)(Vpl_drawer)
+
 (********************)
 (* OPTIONS HANDLING *)
 (********************)
@@ -88,6 +91,7 @@ let go () =
   | "box"   -> SBox.go prob
   | "oct"   -> SOctCP.go prob
   | "poly"  -> SPolyCP.go prob
-  | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct" |> failwith
+  | "vpl" -> SVplCP.go prob
+  | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct, vpl" |> failwith
 
 let _ = go()

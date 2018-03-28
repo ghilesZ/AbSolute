@@ -31,5 +31,5 @@ let set_prob s =
 
 let set_domain d =
   match d with
-  | "box" | "oct" | "poly" -> domain := d
-  | _ -> "domain "^d^" undefined. should be one among : box, boxCP, poly, oct" |> failwith
+  | "box" | "oct" | "poly" | "vpl" -> domain := d
+  | _ -> "domain "^d^" undefined. should be one among : box, boxCP, poly, oct, vpl" |> failwith

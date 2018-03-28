@@ -54,39 +54,37 @@ module VPL = struct
 
 end
 
-module VPLBinding : Domain_signature.AbstractCP = struct
+module VplCP : Domain_signature.AbstractCP = struct
 
     include VPL
 
-    let empty : t = bottom
+    let empty : t = top
 
     let add_var : t -> Csp.typ * Csp.var * Csp.dom -> t
-        = fun state _ -> state
+        = fun p _ -> p
 
     (* TODO: how to test this? *)
     let is_small : t -> bool
-        = fun state -> true
+        = fun p -> false
 
-    (* TODO: what is pruning? *)
+    (* Note: the last t is the intersection between the two operands *)
     let prune : t -> t -> t list * t
-        = fun _ _ ->
-        Pervasives.failwith "prune: unimplemented"
+        = fun p1 p2 ->
+        (diff p1 p2, meet p1 p2)
 
-    (* TODO: use PLP *)
     let split : t -> t list
-        = fun _ ->
-        Pervasives.failwith "split: unimplemented"
+        = fun p ->
+        get_regions p
 
     (* TODO: can we use this variable? *)
     let split_along : t -> Csp.var -> t list
-        = fun state _ -> split state
+        = fun _ _ -> Pervasives.failwith "split_along: unimplemented"
 
-    (* TODO: is it really a guard? *)
     let filter : t -> (Csp.expr * Csp.cmpop * Csp.expr) -> t
         = fun state (e1,cmp,e2) ->
         User.assume (to_cond (Csp.Cmp (cmp, e1, e2))) state
 
-    (* TODO: what is this function expected to do? *)
+    (* TODO: Should return the variable with the maximal range as well. *)
     let filter_maxvar : t -> (Csp.expr * Csp.cmpop * Csp.expr) -> t * (Csp.var*float)
         = fun _ _ ->
         Pervasives.failwith "filter_maxvar: unimplemented"
@@ -96,10 +94,11 @@ module VPLBinding : Domain_signature.AbstractCP = struct
         = fun _ _ ->
         Pervasives.failwith "print: unimplemented"
 
-    (* TODO: to define *)
     let volume : t -> float
-        = fun _ ->
-        Pervasives.failwith "volume: unimplemented"
+        = fun p ->
+        match size p with
+        | Some value -> Scalar.Rat.to_float value
+        | None -> max_float
 
     (* TODO: to define *)
     let spawn : t -> Csp.instance
