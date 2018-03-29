@@ -6,6 +6,7 @@ https://git.frama-c.com/frama-c/frama-c/blob/save/feature/eva/vpl/src/plugins/va
 *)
 
 module Coeff = Scalar.Rat
+module Domain = CDomain.PedraQWrapper
 include Interface(Coeff)
 
 module Expr = struct
@@ -33,8 +34,8 @@ end
 
 module VPL = struct
 
-	include Interface(NCDomain.NCVPL_Unit.Q)(Expr)
-	(*include Interface(CDomain.PedraQWrapper)(Expr)*)
+	(*include Interface(NCDomain.NCVPL_Unit.Q)(Expr)*)
+	include Interface(Domain)(Expr)
 
 	let translate_cmp : Csp.cmpop -> Cstr.cmpT_extended
 		= function
@@ -61,7 +62,20 @@ module VplCP : Domain_signature.AbstractCP = struct
     let empty : t = top
 
     let add_var : t -> Csp.typ * Csp.var * Csp.dom -> t
-        = fun p _ -> p
+        = fun p (_,var,dom) ->
+        if dom = Csp.Top then p
+        else
+            let cond = begin match dom with
+            | Csp.Finite (bi,bs) -> Csp.And
+                (Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Cst bs),
+                Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Cst bi))
+            | Csp.Minf bs -> Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Cst bs)
+            | Csp.Inf bi -> Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Cst bi)
+            | _ -> Pervasives.invalid_arg "add_var"
+            end
+            |> to_cond
+            in
+            User.assume cond p
 
     (* TODO: how to test this? *)
     let is_small : t -> bool
@@ -89,10 +103,10 @@ module VplCP : Domain_signature.AbstractCP = struct
         = fun _ _ ->
         Pervasives.failwith "filter_maxvar: unimplemented"
 
-    (* TODO: never used Format yet. *)
+    (* TODO: use Format *)
     let print : Format.formatter -> t -> unit
-        = fun _ _ ->
-        Pervasives.failwith "print: unimplemented"
+        = fun _ p ->
+        print_endline (to_string Expr.Ident.get_string p)
 
     let volume : t -> float
         = fun p ->
@@ -111,3 +125,11 @@ module VplCP : Domain_signature.AbstractCP = struct
         Pervasives.failwith "is_abstraction: unimplemented"
 
 end
+
+let enable_debug : unit -> unit
+    = fun () ->
+    Handelman.Debug.enable DebugTypes.([Title ; Normal ; Detail ; MInput ; MOutput]);
+    Debug.enable();
+    Debug.print_enable();
+    Debug.set_colors();
+    PSplx.Debug.disable()

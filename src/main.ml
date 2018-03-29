@@ -87,6 +87,7 @@ let go () =
   parse_args ();
   let prob = Builder.parse !problem in
   if !trace then Format.printf "%a" Csp.print prob;
+  if !debug then Vpl_domain.enable_debug();
   match !domain with
   | "box"   -> SBox.go prob
   | "oct"   -> SOctCP.go prob
