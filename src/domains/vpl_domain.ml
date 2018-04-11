@@ -6,7 +6,8 @@ https://git.frama-c.com/frama-c/frama-c/blob/save/feature/eva/vpl/src/plugins/va
 *)
 
 module Coeff = Scalar.Rat
-module Domain = CDomain.PedraQWrapper
+(*module Domain = CDomain.PedraQWrapper*)
+module Domain = NCDomain.NCVPL_Cstr.Q
 include Interface(Coeff)
 
 module Expr = struct
@@ -34,7 +35,6 @@ end
 
 module VPL = struct
 
-	(*include Interface(NCDomain.NCVPL_Unit.Q)(Expr)*)
 	include Interface(Domain)(Expr)
 
 	let translate_cmp : Csp.cmpop -> Cstr.cmpT_extended
@@ -55,7 +55,7 @@ module VPL = struct
 
 end
 
-module VplCP : Domain_signature.AbstractCP = struct
+module VplCP (* : Domain_signature.AbstractCP *)= struct
 
     include VPL
 
@@ -77,9 +77,16 @@ module VplCP : Domain_signature.AbstractCP = struct
             in
             User.assume cond p
 
+    let volume : t -> float
+        = fun p ->
+        match size p with
+        | Some value -> Scalar.Rat.to_float value
+        | None -> max_float
+
     (* TODO: how to test this? *)
     let is_small : t -> bool
-        = fun p -> false
+        = fun p ->
+        volume p <= !Constant.precision
 
     (* Note: the last t is the intersection between the two operands *)
     let prune : t -> t -> t list * t
@@ -108,12 +115,6 @@ module VplCP : Domain_signature.AbstractCP = struct
         = fun _ p ->
         print_endline (to_string Expr.Ident.get_string p)
 
-    let volume : t -> float
-        = fun p ->
-        match size p with
-        | Some value -> Scalar.Rat.to_float value
-        | None -> max_float
-
     (* TODO: to define *)
     let spawn : t -> Csp.instance
         = fun _ ->
@@ -128,8 +129,8 @@ end
 
 let enable_debug : unit -> unit
     = fun () ->
-    Handelman.Debug.enable DebugTypes.([Title ; Normal ; Detail ; MInput ; MOutput]);
-    Debug.enable();
+    (*Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput]);*)
+    Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput]);
     Debug.print_enable();
     Debug.set_colors();
     PSplx.Debug.disable()
