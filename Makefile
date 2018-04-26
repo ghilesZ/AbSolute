@@ -56,7 +56,7 @@ MLFILES = \
 	src/frontend/lexer.ml \
 	src/frontend/builder.ml \
   src/domains/apron_domain.ml \
-    src/domains/vpl_domain.ml \
+  src/domains/vpl_domain.ml \
 	src/domains/hc4.ml \
 	src/domains/cartesian.ml \
   src/domains/domain_signature.ml \
@@ -75,7 +75,9 @@ MLFILES = \
 	src/print/wrapper_drawer.ml \
 	src/print/apron_drawer.ml \
 	src/print/vpl_drawer.ml \
-  src/print/out.ml
+  src/print/out.ml \
+	src/solver/step_by_step.ml
+
 
 
 # targets
