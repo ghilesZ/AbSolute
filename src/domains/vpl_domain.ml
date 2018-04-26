@@ -5,6 +5,8 @@ open UserInterface
 https://git.frama-c.com/frama-c/frama-c/blob/save/feature/eva/vpl/src/plugins/value/domains/vpl/vpl_binding.ok.ml
 *)
 
+module VPL_CP_Profile = Profile.Profile(struct let name = "VPL_CP" end)
+
 module Coeff = Scalar.Rat
 (*module Domain = CDomain.PedraQWrapper*)
 module Domain = NCDomain.NCVPL_Cstr.Q
@@ -80,8 +82,8 @@ module VplCP (* : Domain_signature.AbstractCP *)= struct
     let volume : t -> float
         = fun p ->
         match size p with
-        | Some value -> Scalar.Rat.to_float value
         | None -> max_float
+        | Some value -> Scalar.Rat.to_float value
 
     (* TODO: how to test this? *)
     let is_small : t -> bool
@@ -129,8 +131,13 @@ end
 
 let enable_debug : unit -> unit
     = fun () ->
-    (*Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput]);*)
-    Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput]);
+    Debug.enable();
+    Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
+    IOtypes2.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
+    IOtypes2.Debug.print_enable();
+    (*Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);*)
     Debug.print_enable();
     Debug.set_colors();
-    PSplx.Debug.disable()
+    PSplx.Debug.disable();
+    Vpl.Profile.enable();
+    Vpl.Profile.reset()

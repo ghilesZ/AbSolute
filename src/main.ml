@@ -92,7 +92,12 @@ let go () =
   | "box"   -> SBox.go prob
   | "oct"   -> SOctCP.go prob
   | "poly"  -> SPolyCP.go prob
-  | "vpl" -> SVplCP.go prob
+  | "vpl" -> begin
+        Vpl_domain.VPL_CP_Profile.start "vpl";
+        SVplCP.go prob ;
+        Vpl_domain.VPL_CP_Profile.stop "vpl";
+        Vpl.Profile.report() |> print_endline
+    end
   | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct, vpl" |> failwith
 
 let _ = go()

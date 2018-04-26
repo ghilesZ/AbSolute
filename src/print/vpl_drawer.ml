@@ -270,13 +270,13 @@ let bound : t -> Csp.var -> float * float
 
 let draw2d : t -> (Csp.var * Csp.var) -> Graphics.color -> unit
     = fun pol (x,y) ->
-    print_endline "draw";
+
     let cond = Vpl_domain.VplCP.get_cond pol in
     let x' = Vpl_domain.Expr.Ident.toVar x |> Pol.Var.to_string
     and y' = Vpl_domain.Expr.Ident.toVar y |> Pol.Var.to_string
     in
     let pol_apron = Binding_VPL_Apron.Polka_Strict.assume cond Binding_VPL_Apron.Polka_Strict.top in
-    Binding_VPL_Apron.Polka_Strict.print pol_apron;
+    (*Binding_VPL_Apron.Polka_Strict.print pol_apron;*)
     Apron_drawer.PolyDrawer.draw2d pol_apron (x',y')
 
 let print : Format.formatter -> t -> unit
