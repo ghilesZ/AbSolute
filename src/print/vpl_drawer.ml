@@ -251,11 +251,6 @@ type t = Vpl_domain.VplCP.t
 
 let bound : t -> Csp.var -> float * float
     = fun pol var ->
-    Printf.sprintf "bounding %s in %s"
-        var
-        (Vpl_domain.VplCP.to_string
-            (fun v -> Vpl_domain.Expr.Ident.ofVar v |> Vpl_domain.Expr.Ident.to_string) pol)
-        |> print_endline;
     let term = Vpl_domain.Expr.to_term (Csp.Var var) in
     let itv = Vpl_domain.VplCP.itvize pol term in
     let low = match itv.low with
@@ -265,7 +260,6 @@ let bound : t -> Csp.var -> float * float
         | Infty -> max_float
     	| Open r | Closed r -> Scalar.Rat.to_float r
     in
-    Printf.sprintf "%.2f,%.2f" low up |> print_endline;
     (low,up)
 
 let draw2d : t -> (Csp.var * Csp.var) -> Graphics.color -> unit
