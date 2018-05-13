@@ -47,7 +47,8 @@ module SPolyCP   = GoS (Relational.PolyCP)(Apron_drawer.PolyDrawer)
 (* VPL domain based instance *)
 module SVplCP = GoS (Vpl_domain.VplCP)(Vpl_drawer)
 
-module SBS_POL = Step_by_step.Make(Vpl_domain.VplCP)(Vpl_drawer)
+module SBS_POLY = Step_by_step.Make(Relational.PolyCP)(Apron_drawer.PolyDrawer)
+module SBS_VPL = Step_by_step.Make(Vpl_domain.VplCP)(Vpl_drawer)
 
 (********************)
 (* OPTIONS HANDLING *)
@@ -96,10 +97,14 @@ let go () =
   match !domain with
   | "box"   -> SBox.go prob
   | "oct"   -> SOctCP.go prob
-  | "poly"  -> SPolyCP.go prob
+  | "poly"  -> begin
+    if !step_by_step
+    then SBS_POLY.solving prob
+    else SPolyCP.go prob
+    end
   | "vpl" -> begin
         Vpl_domain.VPL_CP_Profile.start "vpl";
-        if !step_by_step then SBS_POL.solving prob else SVplCP.go prob ;
+        if !step_by_step then SBS_VPL.solving prob else SVplCP.go prob ;
         Vpl_domain.VPL_CP_Profile.stop "vpl";
         Vpl.Profile.report() |> print_endline
     end
