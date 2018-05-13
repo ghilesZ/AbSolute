@@ -10,7 +10,7 @@ module VPL_CP_Profile = Profile.Profile(struct let name = "VPL_CP" end)
 module Coeff = Scalar.Rat
 (*module Domain = CDomain.PedraQWrapper*)
 module Domain = NCDomain.NCVPL_Cstr.Q
-include Interface(Coeff)
+include MakeInterface(Coeff)
 
 module Expr = struct
     module Ident = UserInterface.Lift_Ident (struct
@@ -37,7 +37,7 @@ end
 
 module VPL = struct
 
-	include Interface(Domain)(Expr)
+	include Lift(Domain)(Expr)
 
 	let translate_cmp : Csp.cmpop -> Cstr.cmpT_extended
 		= function
@@ -133,8 +133,8 @@ let enable_debug : unit -> unit
     = fun () ->
     Debug.enable();
     Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
-    IOtypes2.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
-    IOtypes2.Debug.print_enable();
+    (*IOtypes2.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
+    IOtypes2.Debug.print_enable();*)
     (*Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);*)
     Debug.print_enable();
     Debug.set_colors();
