@@ -47,9 +47,13 @@ module SPolyCP   = GoS (Relational.PolyCP)(Apron_drawer.PolyDrawer)
 (* VPL domain based instance *)
 module SVplCP = GoS (Vpl_domain.VplCP)(Vpl_drawer)
 
+module SBS_POL = Step_by_step.Make(Vpl_domain.VplCP)(Vpl_drawer)
+
 (********************)
 (* OPTIONS HANDLING *)
 (********************)
+
+let step_by_step = ref false
 
 let speclist =
   let open Constant in
@@ -66,6 +70,7 @@ let speclist =
   ("-sure"         , Arg.Set sure            , "Keeps only the sure solutions");
   ("-no-rewrite"   , Arg.Set rewrite         , "Disables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
+  ("-sbs"          , Arg.Set step_by_step    , "");
   (*********************************************** ALIASES ************************************************)
   ("-t"            , Arg.Set trace           , "Alias for -trace");
   ("-s"            , Arg.Set sure            , "Alias for -sure");
@@ -94,7 +99,7 @@ let go () =
   | "poly"  -> SPolyCP.go prob
   | "vpl" -> begin
         Vpl_domain.VPL_CP_Profile.start "vpl";
-        SVplCP.go prob ;
+        if !step_by_step then SBS_POL.solving prob else SVplCP.go prob ;
         Vpl_domain.VPL_CP_Profile.stop "vpl";
         Vpl.Profile.report() |> print_endline
     end
