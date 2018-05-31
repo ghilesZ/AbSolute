@@ -4,7 +4,7 @@ module Binding_VPL_Apron = struct
 
     module Coeff = Scalar.Rat
 
-    module I = CWrappers.Interface(Coeff)
+    module I = WrapperTraductors.Interface(Coeff)
 
     module E = Apron.Texpr1
 
@@ -119,12 +119,12 @@ module Binding_VPL_Apron = struct
          		in
           	Some ([relation expr' cmp'], env)
           	end
-          | I.Cond.BinL (t1, CWrappers.AND, t2) -> begin
+          | I.Cond.BinL (t1, WrapperTraductors.AND, t2) -> begin
           	match (cond' positive env t1, cond' positive env t2) with
           	| None, _ | _, None -> None
           	| Some (l1, env1), Some (l2, env2) -> Some (l1 @ l2, Apron.Environment.lce env1 env2)
           	end
-          | I.Cond.BinL (t1, CWrappers.OR, t2) -> Pervasives.invalid_arg "Apron_binding.cond : OR"
+          | I.Cond.BinL (t1, WrapperTraductors.OR, t2) -> Pervasives.invalid_arg "Apron_binding.cond : OR"
           | I.Cond.Not t -> cond' (not positive) env t
 
     	let cond : Apron.Environment.t -> I.Cond.t -> (Apron.Tcons1.t list * Apron.Environment.t) option
@@ -213,7 +213,7 @@ module Binding_VPL_Apron = struct
     		|> List.fold_left
         (fun cond (term,cmp) ->
             let atom = I.Cond.Atom (term, cmp, I.Term.Cte Cs.Vec.Coeff.z) in
-    				I.Cond.BinL (cond, CWrappers.AND, atom))
+    				I.Cond.BinL (cond, WrapperTraductors.AND, atom))
     			(I.Cond.Basic true)
 
     	let mk : Cs.t list -> t

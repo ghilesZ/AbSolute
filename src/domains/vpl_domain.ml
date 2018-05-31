@@ -51,8 +51,8 @@ module VPL = struct
     let rec to_cond : Csp.bexpr -> UserCond.t
         = function
         | Csp.Cmp (cmp, e1, e2) -> UserCond.Atom (e1, translate_cmp cmp, e2)
-        | Csp.And (e1, e2) -> UserCond.BinL(to_cond e1, CWrappers.AND, to_cond e2)
-        | Csp.Or (e1, e2) -> UserCond.BinL(to_cond e1, CWrappers.OR, to_cond e2)
+        | Csp.And (e1, e2) -> UserCond.BinL(to_cond e1, WrapperTraductors.AND, to_cond e2)
+        | Csp.Or (e1, e2) -> UserCond.BinL(to_cond e1, WrapperTraductors.OR, to_cond e2)
         | Csp.Not e -> UserCond.Not (to_cond e)
 
 end
@@ -129,10 +129,22 @@ module VplCP (* : Domain_signature.AbstractCP *)= struct
 
 end
 
+let setup_flags : unit -> unit
+    = fun () ->
+    Flags.handelman_timeout := None
+
+let set_lin s =
+    match s with
+    | "handelman" -> Flags.lin := Flags.Handelman
+    | "itv" -> Flags.lin := Flags.Intervalization
+    | "both" -> Flags.lin := Flags.Both
+    | _ -> "Linearization " ^ s ^ "undefined. Should be among : handelman, itv, both" |> failwith
+
 let enable_debug : unit -> unit
     = fun () ->
     Debug.enable();
     Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
+    Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
     (*IOtypes2.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
     IOtypes2.Debug.print_enable();*)
     (*Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);*)

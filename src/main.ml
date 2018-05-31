@@ -72,6 +72,7 @@ let speclist =
   ("-no-rewrite"   , Arg.Set rewrite         , "Disables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
   ("-sbs"          , Arg.Set step_by_step    , "");
+  ("-lin"          , Arg.String Vpl_domain.set_lin      , "Sets the linearization algorithm of the VPL");
   (*********************************************** ALIASES ************************************************)
   ("-t"            , Arg.Set trace           , "Alias for -trace");
   ("-s"            , Arg.Set sure            , "Alias for -sure");
@@ -104,6 +105,7 @@ let go () =
     end
   | "vpl" -> begin
         Vpl_domain.VPL_CP_Profile.start "vpl";
+        Vpl_domain.setup_flags();
         if !step_by_step then SBS_VPL.solving prob else SVplCP.go prob ;
         Vpl_domain.VPL_CP_Profile.stop "vpl";
         Vpl.Profile.report() |> print_endline
