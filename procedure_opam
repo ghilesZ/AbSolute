@@ -1,8 +1,0 @@
-# How to make an OPAM package
-
-This page explains how to make a OPAM package accessible from a local repository.
-It means that the package won't directly be accessible from the official OPAM repository, but the user will need to `opam repo add` your local repository.
-
-The running example will be to make an opam package for a library called Foo.
-
-1. Create a repository opam-foo
