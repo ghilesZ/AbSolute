@@ -97,7 +97,13 @@ module VplCP (* : Domain_signature.AbstractCP *)= struct
 
     let split : t -> t list
         = fun p ->
+        VPL_CP_Profile.start "split";
+        let res = split_in_half p in
+        VPL_CP_Profile.stop "split";
+        res
+        (*
         get_regions p
+        *)
 
     (* TODO: can we use this variable? *)
     let split_along : t -> Csp.var -> t list
@@ -150,6 +156,4 @@ let enable_debug : unit -> unit
     (*Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);*)
     Debug.print_enable();
     Debug.set_colors();
-    PSplx.Debug.disable();
-    Vpl.Profile.enable();
-    Vpl.Profile.reset()
+    PSplx.Debug.disable()

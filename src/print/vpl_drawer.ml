@@ -253,12 +253,12 @@ let bound : t -> Csp.var -> float * float
     = fun pol var ->
     let term = Vpl_domain.Expr.to_term (Csp.Var var) in
     let itv = Vpl_domain.VplCP.itvize pol term in
-    let low = match itv.low with
-        | Infty -> min_float
-    	| Open r | Closed r -> Scalar.Rat.to_float r
-    and up = match itv.up with
-        | Infty -> max_float
-    	| Open r | Closed r -> Scalar.Rat.to_float r
+    let low = match itv.Pol.low with
+        | Pol.Infty -> min_float
+    	| Pol.Open r | Pol.Closed r -> Scalar.Rat.to_float r
+    and up = match itv.Pol.up with
+        | Pol.Infty -> max_float
+    	| Pol.Open r | Pol.Closed r -> Scalar.Rat.to_float r
     in
     (low,up)
 

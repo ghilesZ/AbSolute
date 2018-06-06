@@ -104,6 +104,8 @@ let go () =
     else SPolyCP.go prob
     end
   | "vpl" -> begin
+        Vpl_domain.VPL_CP_Profile.enable();
+        Vpl_domain.VPL_CP_Profile.reset();
         Vpl_domain.VPL_CP_Profile.start "vpl";
         Vpl_domain.setup_flags();
         if !step_by_step then SBS_VPL.solving prob else SVplCP.go prob ;
