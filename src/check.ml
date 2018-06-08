@@ -22,16 +22,17 @@ let print_frontier fmt f =
 
 let _ =
   Random.self_init();
+  let dir = "problems/" in
   Format.printf "regression test of the solver\n";
   print_sep();
   Constant.set_max_iter 10;
   let goods = ref 0 in
   let not_bads = ref 0 in
   let frontier_ratio = ref 0. in
-  let files = Sys.readdir "tests" in
+  let files = Sys.readdir dir in
   Array.iter (fun fn ->
       Format.printf "%s\t: " fn;
-      let prob = Builder.parse (Some ("tests/"^fn)) in
+      let prob = Builder.parse (Some (dir^fn)) in
       let res = CheckBox.result prob in
       let known_sol = CheckBox.check_known_solutions prob res in
       let frontier = CheckBox.check_unsure prob res in
