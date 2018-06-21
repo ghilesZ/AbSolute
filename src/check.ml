@@ -22,7 +22,7 @@ let print_frontier fmt f =
 
 let _ =
   Random.self_init();
-  let dir = "problems/" in
+  let dir = "tests/" in
   Format.printf "regression test of the solver\n";
   print_sep();
   Constant.set_max_iter 10;

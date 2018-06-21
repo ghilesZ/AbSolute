@@ -61,7 +61,7 @@ let speclist =
   ("-pruning"      , Arg.Set pruning         , "Enables the \"pruning\" during the solving process");
   ("-trace"        , Arg.Set trace           , "Prints the solutions on standard output");
   ("-sure"         , Arg.Set sure            , "Keeps only the sure solutions");
-  ("-no-rewrite"   , Arg.Set rewrite         , "Disables the constraint rewriting");
+  ("-no-rewrite"   , Arg.Unit toggle_rewrite         , "Disables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
   (*********************************************** ALIASES ************************************************)
   ("-t"            , Arg.Set trace           , "Alias for -trace");

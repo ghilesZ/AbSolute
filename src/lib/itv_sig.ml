@@ -1,11 +1,4 @@
 (*
-  An abstract fixpoint solver based on Constraint Programming
-
-  Author: Antoine Mine
-  Copyright 2014
-*)
-
-(*
    Generic signature for intervals.
    The interface is functional.
  *)
@@ -20,8 +13,7 @@ module type ITV = sig
 
   (* an interval is a pair of bounds (lower,upper);
      intervals are always non-empty: lower <= upper;
-     functions that can return an empty interval return it as Bot
-   *)
+     functions that can return an empty interval return it as Bot *)
   type t (* = bound * bound *)
 
   (************************************************************************)
@@ -35,6 +27,9 @@ module type ITV = sig
   val of_int : int -> t
   val of_float : float -> t
   (* {a} *)
+
+  (* maps empty intervals to explicit bottom *)
+  val check_bot: t -> t bot
 
   (************************************************************************)
   (* PRINTING and CONVERSIONS *)
@@ -60,7 +55,6 @@ module type ITV = sig
   val contains_float: t -> float -> bool
   val intersect: t -> t -> bool
   val is_singleton: t -> bool
-  val check_bot: t -> t bot
 
   (* mesure *)
   (* ------ *)
@@ -68,9 +62,7 @@ module type ITV = sig
 
   (* split *)
   (* ----- *)
-  val mean: t -> float list
-  val split: t -> float list -> (t bot) list
-  val split_integer: t -> float list -> (t bot) list
+  val split: t -> (t bot) list
 
   (* pruning *)
   (* ------- *)
@@ -79,8 +71,6 @@ module type ITV = sig
   (************************************************************************)
   (* INTERVAL ARITHMETICS (FORWARD EVALUATION) *)
   (************************************************************************)
-
-  val sign : t -> int
 
   val neg: t -> t
   val abs: t -> t

@@ -18,7 +18,7 @@ type cmpop =
 
 (* numeric expressions *)
 type expr =
-  | FunCall of var * expr list
+  | FunCall of string * expr list
   | Unary   of unop * expr
   | Binary  of binop * expr * expr
   | Var     of var
@@ -31,9 +31,14 @@ type bexpr =
   | Or  of bexpr * bexpr
   | Not of bexpr
 
+(* variable type *)
 type typ = INT | REAL
 
-type dom = Finite of i*i | Minf of i | Inf of i | Top | Set of i list
+type dom = Finite of i*i    (* [a  ; b] *)
+         | Minf of i        (* [-oo; b] *)
+         | Inf of i         (* [a  ; +oo] *)
+         | Top              (* [-oo; +oo] *)
+         | Set of i list    (* {a; b; c; ...} *)
 
 (* assign *)
 type assign = (typ * var * dom)
@@ -187,7 +192,7 @@ let print_typ fmt = function
   | INT ->  Format.fprintf fmt "int"
   | REAL ->  Format.fprintf fmt "real"
 
-let print_var fmt s = Format.fprintf fmt "%s" s
+let print_var fmt name = Format.fprintf fmt "%s" name
 
 let print_dom fmt = function
   | Finite (a,b) ->  Format.fprintf fmt "[%.2f; %.2f]" a b
@@ -218,7 +223,7 @@ let rec print_expr fmt = function
     Format.fprintf fmt "%a %a" print_unop u print_expr e
   | Binary (b, e1 , e2) ->
     Format.fprintf fmt "%a %a %a" print_expr e1 print_binop b print_expr e2
-  | Var v -> Format.fprintf fmt "%s" v
+  | Var name -> Format.fprintf fmt "%s" name
   | Cst c ->
      let c_int = int_of_float c in
      if float_of_int c_int = c then Format.fprintf fmt "%i" c_int

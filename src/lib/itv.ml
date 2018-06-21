@@ -123,14 +123,11 @@ module Itv(B:BOUND) = struct
   (* split *)
   (* ----- *)
 
-  (* find the mean of the interval;
-     when a bound is infinite, then "mean" is some value strictly inside the
-     interval
-   *)
+  (* finds the mean of the interval *)
   let mean ((l,h):t) : B.t list = [B.div_up (B.add_up l h) B.two]
 
-  (* splits in two, around m *)
-  let split ((l,h):t) (m:bound list) : (t bot) list =
+  (* splits in two, around the middle *)
+  let split ((l,h) as i :t) : (t bot) list =
     let rec aux acc cur bounds =
       match bounds with
       |  hd::tl ->
@@ -139,21 +136,7 @@ module Itv(B:BOUND) = struct
       | [] ->
 	       let itv = check_bot (cur,h) in
 	       itv::acc
-    in aux [] l m
-
-  let split_integer ((l,h):t) (m:bound list) : (t bot) list =
-    let to_pair = ref l in
-    let list =
-      List.rev_map (fun e ->
-	      let ll,hh =
-          let a, b = B.floor e, B.ceil e in
-          if B.equal a b then a, B.add_up b B.one
-	        else a, b
-        in
-	      let res = (!to_pair,ll) in to_pair := hh ; res)
-	      m
-    in
-    List.rev_map check_bot ((!to_pair,h)::list)
+    in aux [] l (mean i)
 
   let prune (((l,h) as a):t) (((l',h') as b):t) : t list * t  =
     if subseteq a b then [],a else
@@ -460,11 +443,6 @@ module Itv(B:BOUND) = struct
   let spawn (l,h) =
     let r = Random.float 1. in
     B.add_up l (B.mul_up (B.sub_up h l) (B.of_float_up r))
-
-  let sign (l,h) =
-    if B.lt h B.zero then -1
-    else if B.gt l B.zero then 1
-    else 0
 
 end
 
