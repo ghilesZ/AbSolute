@@ -273,8 +273,6 @@ module Itv(B:BOUND) = struct
   let filter_fun name args r : (t list) bot =
     failwith (Format.sprintf "unknown filter function : %s" name)
 
-  let filter_bounds (l,h) = failwith "filter bounds"
-
   let to_float_range (l,h) =
     (B.to_float l),(B.to_float h)
 end

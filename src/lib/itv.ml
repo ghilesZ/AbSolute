@@ -431,11 +431,6 @@ module Itv(B:BOUND) = struct
     | "min"  -> arity_2 filter_min
     | s -> failwith (Format.sprintf "unknown filter function : %s" s)
 
-  let filter_bounds (l,h) =
-    let inf = B.ceil l
-    and sup = B.floor h in
-    check_bot (inf, sup)
-
   let to_float_range (l,h) =
     (B.to_float_down l),(B.to_float_up h)
 

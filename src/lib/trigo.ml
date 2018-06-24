@@ -216,10 +216,7 @@ module Make (I:Itv_sig.ITV) = struct
     cos_itv (I.sub i pihalf_itv)
 
   (* interval asin (arcos + arcsin = pi/2) *)
-  let asin_itv i =
-    match acos_itv i with
-    | Bot -> Bot
-    | Nb i -> Nb(I.sub pihalf_itv i)
+  let asin_itv i = lift_bot (I.sub pihalf_itv) (acos_itv i)
 
   (* tangent of an interval *)
   let tan_itv i = fst (I.div (sin_itv i) (cos_itv i))

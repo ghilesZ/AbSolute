@@ -99,8 +99,7 @@ module type ITV = sig
 
   (* given two interval arguments, return a subset of each argument
      by removing points that cannot satisfy the predicate;
-     may also return Bot if no point can satisfy the predicate
-   *)
+     may also return Bot if no point can satisfy the predicate *)
 
   val filter_leq: t -> t -> (t * t) bot
   val filter_geq: t -> t -> (t * t) bot
@@ -133,9 +132,6 @@ module type ITV = sig
      it returns a possibly bottom result
    *)
   val filter_fun: string -> t list -> t -> (t list) bot
-
-  (* bound tightening over Integers values *)
-  val filter_bounds: t -> t bot
 
   (* generate a random float within the given interval *)
   val spawn : t -> float

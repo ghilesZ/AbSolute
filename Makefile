@@ -48,6 +48,7 @@ MLFILES = \
 	src/lib/itv_sig.ml \
 	src/lib/itv_simple.ml \
 	src/lib/itv.ml \
+	src/lib/itv_int.ml \
 	src/lib/trigo.ml \
 	src/frontend/csp.ml \
 	src/frontend/rewrite.ml \
