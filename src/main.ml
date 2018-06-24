@@ -104,13 +104,10 @@ let go () =
     else SPolyCP.go prob
     end
   | "vpl" -> begin
-        Vpl_domain.VPL_CP_Profile.enable();
-        Vpl_domain.VPL_CP_Profile.reset();
-        Vpl_domain.VPL_CP_Profile.start "vpl";
-        Vpl_domain.setup_flags();
-        if !step_by_step then SBS_VPL.solving prob else SVplCP.go prob ;
-        Vpl_domain.VPL_CP_Profile.stop "vpl";
-        Vpl.Profile.report() |> print_endline
+        Vpl_domain.start_profile();
+        if !step_by_step then SBS_VPL.solving prob else SVplCP.go prob;
+        Vpl_domain.stop_profile();
+        Vpl_domain.report()
     end
   | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct, vpl" |> failwith
 
