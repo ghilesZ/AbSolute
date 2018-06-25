@@ -49,6 +49,7 @@ MLFILES = \
 	src/lib/itv_simple.ml \
 	src/lib/itv.ml \
 	src/lib/itv_int.ml \
+	src/lib/itv_mix.ml \
 	src/lib/trigo.ml \
 	src/frontend/csp.ml \
 	src/frontend/rewrite.ml \
@@ -140,4 +141,4 @@ MLSOURCES = $(MLFILES) $(ABS) $(CHECK) $(MLIFILES)
 
 .phony:	all clean
 
-include .depend
+-include .depend
