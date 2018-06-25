@@ -4,8 +4,6 @@ type bound = int
 
 type t = bound * bound
 
-type value = int
-
 (* not all pairs of integers are valid intervals *)
 let validate ((l,h):t) : t =
   if l > h then
