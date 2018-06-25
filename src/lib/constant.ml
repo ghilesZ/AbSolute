@@ -33,3 +33,5 @@ let set_domain d =
   match d with
   | "box" | "oct" | "poly" | "vpl" -> domain := d
   | _ -> "domain "^d^" undefined. should be one among : box, boxCP, poly, oct, vpl" |> failwith
+
+let toggle_rewrite () = rewrite := not (!rewrite)

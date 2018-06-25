@@ -54,7 +54,10 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
            | "sqrt" -> sqrt
            | "cos"  -> cos
            | "sin"  -> sin
+           | "acos" -> acos
+           | "asin" -> asin
            | "tan"  -> tan
+           | "atan" -> atan
            | "exp"  -> exp
            | "log"  -> log
            | x -> failwith (Format.sprintf "unrecognized function name %s" x)

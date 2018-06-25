@@ -69,7 +69,7 @@ let speclist =
   ("-pruning"      , Arg.Set pruning         , "Enables the \"pruning\" during the solving process");
   ("-trace"        , Arg.Set trace           , "Prints the solutions on standard output");
   ("-sure"         , Arg.Set sure            , "Keeps only the sure solutions");
-  ("-no-rewrite"   , Arg.Set rewrite         , "Disables the constraint rewriting");
+  ("-no-rewrite"   , Arg.Unit toggle_rewrite         , "Disables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
   ("-sbs"          , Arg.Set step_by_step    , "");
   ("-lin"          , Arg.String Vpl_domain.set_lin      , "Sets the linearization algorithm of the VPL");

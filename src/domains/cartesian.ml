@@ -1,4 +1,4 @@
-(* This module provides a wrapper for a cartesion representation *)
+(* This module provides a wrapper for a cartesian representation *)
 (* of the search space. It is parametrized by a domain (constraint-sense) *)
 (* representation: to each variable we associate a domain *)
 
@@ -89,8 +89,8 @@ module Box (I:ITV) = struct
   let split_along (a:t) (v:var) : t list =
     let i = VMap.find v a in
     let i_list =
-      if is_integer v then I.split_integer i (I.mean i)
-      else I.split i (I.mean i)
+      if is_integer v then failwith "integer"
+      else I.split i
     in
     List.fold_left (fun acc b ->
         match b with
@@ -123,7 +123,7 @@ module Box (I:ITV) = struct
     Hc4.test a e1 binop e2
 
   (* filtering function that also returns a candidate varibale fr splitting *)
-  let filter_maxvar (a:t) (e1,binop,e2) : t * (var*float)=
+  let filter_maxvar (a:t) (e1,binop,e2) : t * (var*float) =
     Hc4.test_maxvar a e1 binop e2
 
   let empty : t = VMap.empty
