@@ -30,7 +30,7 @@ module Make(Abs : Domain_signature.AbstractCP) (Dr:Drawer_sig.Drawer with type t
     let draw_n = draw_n v1 v2 in
     let select = select v1 v2 in
     let draw_wait = draw_wait v1 v2 in
-    let draw_bad = draw_bad v1 v2 in
+    (*let draw_bad = draw_bad v1 v2 in*)
     let switch abs =
       do_if_not_none draw_n !selected;
       selected := Some abs;

@@ -2,29 +2,14 @@
 include Makefile.config
 
 OPAMBIN   := $(shell opam config var bin)
-OCAMLOPT  := $(OPAMBIN)/ocamlopt.opt
+OCAMLOPTOPTIONS := -w "+a-4-32-27" -warn-error "+a-4-32-27"
+OCAMLOPT  := $(OPAMBIN)/ocamlopt.opt $(OCAMLOPTOPTIONS)
 OCAMLDEP  := $(OPAMBIN)/ocamldep
 OCAMLLEX  := $(OPAMBIN)/ocamllex
 OCAMLYACC := $(OPAMBIN)/ocamlyacc
 CC        := gcc
 
-# libraries
-#OPAMDIR    := $(shell opam config var lib)
-#APRONDIR   := $(OPAMDIR)/apron
-#GMPDIR     := $(OPAMDIR)/gmp
-#ZARITHDIR  := $(OPAMDIR)/zarith
-#OCAMLDIR   := $(OPAMDIR)/ocaml
-#VPLDIR     := $(OPAMDIR)/vpl
-
-#ocaml libraries
-#LIBS         := bigarray gmp zarith apron polkaMPQ octD boxMPQ \
-                str unix graphics vpl
 OCAMLOPTLIBS := $(LIBS:%=%.cmxa)
-
-# directories to include : sources + lib
-#OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) -I $(ZARITHDIR) -I $(VPLDIR) \
-             -I src -I src/lib -I src/domains -I src/frontend -I src/print \
-						 -I src/solver
 
 AUTOGEN =\
   src/frontend/parser.ml \

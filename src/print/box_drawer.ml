@@ -1,4 +1,3 @@
-open Itv_sig
 open Cartesian.BoxF
 
 type t = Cartesian.BoxF.t
