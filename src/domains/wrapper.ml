@@ -7,14 +7,13 @@ module Make(D:Domain_signature.AbstractCP) = struct
     }
 
   let init (prob:Csp.prog) =
-    let open Csp in
-    let search_space = List.fold_left D.add_var D.empty prob.init in
+    let search_space = List.fold_left D.add_var D.empty prob.Csp.init in
     (* we compute the negation of the constraints only once,
        at initialization *)
-    let constraints = List.rev_map (fun c -> c,(neg_bexpr c)) prob.constraints in
+    let constraints = List.rev_map (fun c -> c,(Csp.neg_bexpr c)) prob.Csp.constraints in
     {search_space; constraints}
 
-  let is_small {search_space} = D.is_small search_space
+  let is_small {search_space ; _} = D.is_small search_space
 
   let best_var ((v1,r1) as var1) ((v2,r2) as var2) =
     if r1 > r2 then var1 else var2
@@ -94,7 +93,7 @@ module Make(D:Domain_signature.AbstractCP) = struct
     | Bot.Nb (elm,(((cstrs,nogoods),v) as frontier)) ->
        Maybe (frontier,{search_space=elm; constraints= cstrs})
 
-  let exploration ({search_space} as dom) ((_,v):frontier) =
+  let exploration ({search_space ; _} as dom) ((_,v):frontier) =
     let splited = D.split_along search_space v in
     List.rev_map (fun sp -> {dom with search_space=sp}) splited
 
@@ -121,7 +120,7 @@ module Make(D:Domain_signature.AbstractCP) = struct
     in aux domain.search_space frontier true [] []
 
   (* volume of the search_space *)
-  let volume {search_space} = D.volume search_space
+  let volume {search_space ; _} = D.volume search_space
 
   (* test *)
   let spawn {search_space; constraints} = D.spawn search_space

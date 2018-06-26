@@ -266,7 +266,6 @@ module Make (I:Itv_sig.ITV) = struct
   (* general function for both arcsin and arcos *)
   let arc return_range fun_itv =
     let other = I.add return_range pi_itv in
-    let open Bot in
     fun itv result ->
     (* handling of the symetry *)
     match (I.intersect itv return_range),(I.intersect itv other) with

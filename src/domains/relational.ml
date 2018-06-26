@@ -1,5 +1,4 @@
 open Apron
-open Format
 open Apron_utils
 
 (**

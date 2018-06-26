@@ -1,8 +1,6 @@
 open Apron
 open Apron_domain
 open Apron_utils
-open Domain_signature
-open Relational
 
 module Make(AP:ADomain) = struct
 
@@ -22,8 +20,7 @@ module Make(AP:ADomain) = struct
 
   let bound abs v :(float * float) =
     let i = A.bound_variable man abs (Apron.Var.of_string v) in
-    let open Interval in
-    Apron_utils.(scalar_to_float i.inf,scalar_to_float i.sup)
+    Apron_utils.scalar_to_float i.Interval.inf,scalar_to_float i.Interval.sup
 
   let draw draw_f draw_dashed_f fillpol abs (v1,v2) col =
     let get_indexes env (x,y) = Environment.(
