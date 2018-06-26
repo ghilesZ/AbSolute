@@ -54,7 +54,6 @@ let meet (l1,h1:t) (l2,h2:t) : t bot = check_bot ((max l1 l2), (min h1 h2))
 
 (* predicates *)
 (* ---------- *)
-let subseteq ((a,b):t) ((c,d):t) = a <= c && d <= b
 
 let contains_float ((a,b):t) f = assert false
 
@@ -74,10 +73,10 @@ let mean ((a,b):t) = a + (b-a)/2
 
 (* splits in two, around the middle *)
 let split ((a,b) as i :t) =
-  if a+1 = b then [Some (a,a); Some(b,b)]
+  if a+1 = b then [Nb (a,a); Nb(b,b)]
   else
     let mid = mean i in
-    [Some (a,mid); Some(mid,b)]
+    [Nb (a,mid); Nb(mid,b)]
 
 let prune (x1:t) (x2:t) : t list * t =
   (*TODO: replace "assert false" with your own code *)

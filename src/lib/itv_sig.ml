@@ -51,7 +51,6 @@ module type ITV = sig
 
   (* predicates *)
   (* ---------- *)
-  val subseteq: t -> t -> bool
   val contains_float: t -> float -> bool
   val intersect: t -> t -> bool
   val is_singleton: t -> bool

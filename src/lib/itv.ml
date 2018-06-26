@@ -139,7 +139,8 @@ module Itv(B:BOUND) = struct
     in aux [] l (mean i)
 
   let prune (((l,h) as a):t) (((l',h') as b):t) : t list * t  =
-    if subseteq a b then [],a else
+    if subseteq a b then [],a
+    else
       let epsilon = B.of_float_up 0.00001 in
       let h'_eps = B.add_up h' epsilon and l'_eps = B.add_down l' (B.neg epsilon) in
       (* It may not be worth to use the pruning to win a very small step *)
