@@ -148,11 +148,9 @@ let set_lin s =
 let enable_debug : unit -> unit
     = fun () ->
     Debug.enable();
-    Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
+    Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
+    HOtypes.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
     Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
-    (*IOtypes2.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
-    IOtypes2.Debug.print_enable();*)
-    (*Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);*)
     Debug.print_enable();
     Debug.set_colors();
     PSplx.Debug.disable()
