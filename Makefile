@@ -1,26 +1,15 @@
+# this configuration file is generated from configure.make
+include Makefile.config
+
 OPAMBIN   := $(shell opam config var bin)
-OCAMLOPT  := $(OPAMBIN)/ocamlopt.opt
+OCAMLOPTOPTIONS := -w "+a-4-32-27" -warn-error "+a-4-32-27"
+OCAMLOPT  := $(OPAMBIN)/ocamlopt.opt $(OCAMLOPTOPTIONS)
 OCAMLDEP  := $(OPAMBIN)/ocamldep
 OCAMLLEX  := $(OPAMBIN)/ocamllex
 OCAMLYACC := $(OPAMBIN)/ocamlyacc
 CC        := gcc
 
-# libraries
-OPAMDIR    := $(shell opam config var lib)
-APRONDIR   := $(OPAMDIR)/apron
-GMPDIR     := $(OPAMDIR)/gmp
-ZARITHDIR  := $(OPAMDIR)/zarith
-OCAMLDIR   := $(OPAMDIR)/ocaml
-
-#ocaml libraries
-LIBS         := bigarray gmp zarith apron polkaMPQ octD boxMPQ \
-                str unix graphics
 OCAMLOPTLIBS := $(LIBS:%=%.cmxa)
-
-# directories to include : sources + lib
-OCAMLINC  := -I $(APRONDIR) -I $(GMPDIR) -I $(ZARITHDIR) \
-             -I src -I src/lib -I src/domains -I src/frontend -I src/print \
-						 -I src/solver
 
 AUTOGEN =\
   src/frontend/parser.ml \
@@ -57,6 +46,7 @@ MLFILES = \
 	src/frontend/lexer.ml \
 	src/frontend/builder.ml \
   src/domains/apron_domain.ml \
+  src/domains/vpl_domain.ml \
 	src/domains/hc4.ml \
 	src/domains/cartesian.ml \
   src/domains/domain_signature.ml \
@@ -74,7 +64,10 @@ MLFILES = \
 	src/print/box_drawer.ml \
 	src/print/wrapper_drawer.ml \
 	src/print/apron_drawer.ml \
-  src/print/out.ml
+	src/print/vpl_drawer.ml \
+  src/print/out.ml \
+	src/solver/step_by_step.ml
+
 
 
 # targets
@@ -125,6 +118,12 @@ checker.opt: $(OFILES) $(CMXFILES) $(CHECK)
 %.ml %.mli: %.mly
 	$(OCAMLYACC) $*.mly
 
+configure: Makefile.config
+
+# proxy rule for rebuilding configuration files directly from the main Makefile
+Makefile.config:
+	$(MAKE) -f .configure.make all
+
 clean:
 	rm -f .depend $(TARGETS) $(AUTOGEN)
 	rm -f `find . -name "*.a"`
@@ -133,12 +132,13 @@ clean:
 	rm -f `find . -name "*.o"`
 	rm -f out/*
 	rm -f -R out
+	rm -f Makefile.config
 
 MLSOURCES = $(MLFILES) $(ABS) $(CHECK) $(MLIFILES)
 
 .depend: $(MLSOURCES) Makefile
 	@-$(OCAMLDEP) $(OCAMLINC) -native $(MLSOURCES) > .depend
 
-.phony:	all clean
+.phony:	all clean configure
 
 -include .depend

@@ -44,9 +44,17 @@ module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
 module SOctCP    = GoS (Relational.OctBoxCP)(Apron_drawer.OctDrawer)
 module SPolyCP   = GoS (Relational.PolyCP)(Apron_drawer.PolyDrawer)
 
+(* VPL domain based instance *)
+module SVplCP = GoS (Vpl_domain.VplCP)(Vpl_drawer)
+
+module SBS_POLY = Step_by_step.Make(Relational.PolyCP)(Apron_drawer.PolyDrawer)
+module SBS_VPL = Step_by_step.Make(Vpl_domain.VplCP)(Vpl_drawer)
+
 (********************)
 (* OPTIONS HANDLING *)
 (********************)
+
+let step_by_step = ref false
 
 let speclist =
   let open Constant in
@@ -63,6 +71,8 @@ let speclist =
   ("-sure"         , Arg.Set sure            , "Keeps only the sure solutions");
   ("-no-rewrite"   , Arg.Unit toggle_rewrite         , "Disables the constraint rewriting");
   ("-debug"        , Arg.Set debug           , "Prints the execution for debug purpose");
+  ("-sbs"          , Arg.Set step_by_step    , "");
+  ("-lin"          , Arg.String Vpl_domain.set_lin      , "Sets the linearization algorithm of the VPL");
   (*********************************************** ALIASES ************************************************)
   ("-t"            , Arg.Set trace           , "Alias for -trace");
   ("-s"            , Arg.Set sure            , "Alias for -sure");
@@ -84,10 +94,21 @@ let go () =
   parse_args ();
   let prob = Builder.parse !problem in
   if !trace then Format.printf "%a" Csp.print prob;
+  if !debug then Vpl_domain.enable_debug();
   match !domain with
   | "box"   -> SBox.go prob
   | "oct"   -> SOctCP.go prob
-  | "poly"  -> SPolyCP.go prob
-  | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct" |> failwith
+  | "poly"  -> begin
+    if !step_by_step
+    then SBS_POLY.solving prob
+    else SPolyCP.go prob
+    end
+  | "vpl" -> begin
+        Vpl_domain.start_profile();
+        if !step_by_step then SBS_VPL.solving prob else SVplCP.go prob;
+        Vpl_domain.stop_profile();
+        Vpl_domain.report()
+    end
+  | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct, vpl" |> failwith
 
 let _ = go()

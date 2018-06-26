@@ -75,7 +75,6 @@ module Make (D:Drawer) = struct
   let out prob res =
     Format.printf "\ntime : %fs\n" (Sys.time ());
     let open Result in
-    let open Csp in
     let open Constant in
     let unsure = if !sure then [] else res.unsure in
     if !visualization then draw2d res.sure unsure (vars2D prob);
@@ -91,7 +90,6 @@ module Make (D:Drawer) = struct
   let out_min prob res =
     Format.printf "\ntime : %fs\n" (Sys.time ());
     let open Result in
-    let open Csp in
     let open Constant in
     let unsure = if !sure then [] else res.unsure in
     if !visualization then draw2d res.sure unsure (vars2D prob);
