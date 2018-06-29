@@ -66,8 +66,10 @@ let join (x1:t) (x2:t) : t =
   failwith "function 'join' in file 'itv_mix.ml' not implemented"
 
 let meet (x1:t) (x2:t) : t bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'meet' in file 'itv_mix.ml' not implemented"
+  match x1,x2 with
+  | Int x1, Int x2 -> lift_bot (fun x -> Int x) (I.meet x1 x2)
+  | Real x1, Real x2 -> lift_bot (fun x -> Real x) (F.meet x1 x2)
+  | Int x1, Real x2 | Real x2, Int x1 -> lift_bot (fun x -> Int x) (I.meet x1 (to_int x2))
 
 (* predicates *)
 (* ---------- *)
@@ -87,9 +89,10 @@ let is_singleton (x:t) : bool = dispatch I.is_singleton F.is_singleton x
 
 (* mesure *)
 (* ------ *)
-let range (x1:t) : float =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'range' in file 'itv_mix.ml' not implemented"
+let range (x:t) : float =
+  match x with
+  | Int x -> float (I.range x)
+  | Real x -> F.range x
 
 (* split *)
 (* ----- *)
@@ -125,17 +128,20 @@ let sub (x1:t) (x2:t) : t =
   | Int x1, Real x2 | Real x2, Int x1 -> Real (F.sub x2 (to_float x1))
 
 let mul (x1:t) (x2:t) : t =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'mul' in file 'itv_mix.ml' not implemented"
+  match x1,x2 with
+  | Int x1 , Int x2 ->  Int(I.mul x1 x2)
+  | Real x1, Real x2 -> Real (F.mul x1 x2)
+  | Int x1, Real x2 | Real x2, Int x1 -> Real (F.mul x2 (to_float x1))
 
 (* return valid values (possibly Bot) + possible division by zero *)
 let div (x1:t) (x2:t) : t bot * bool =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'div' in file 'itv_mix.ml' not implemented"
+  match x1,x2 with
+  | Int x1 , Int x2 ->  (* Int(I.div x1 x2) *) assert false
+  | Real x1, Real x2 -> (* Real (F.div x1 x2) *) assert false
+  | Int x1, Real x2 | Real x2, Int x1 -> (* Real (F.mul x2 (to_float x1)) *) assert false
 
 (* returns valid value when the exponant is a singleton positive integer.
-     fails otherwise
- *)
+     fails otherwise *)
 let pow (x1:t) (x2:t) : t =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'pow' in file 'itv_mix.ml' not implemented"
@@ -208,28 +214,31 @@ let filter_eq (x1:t) (x2:t) : (t * t) bot =
      let x2 = to_int x2 in
      lift_bot (fun (x1,x2) -> Int x1, Int x2) (I.filter_eq x1 x2)
 
-let filter_neq (x1:t) (x2:t) : (t * t) bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_neq' in file 'itv_mix.ml' not implemented"
+let filter_neq (i1:t) (i2:t) : (t * t) bot =
+  match i1,i2 with
+  | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_neq x1 x2)
+  | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (F.filter_neq x1 x2)
+  | Int x1, Real x2 | Real x2, Int x1 ->
+     failwith "function 'filter_neq' in file 'itv_mix.ml', case INTxREAL not implented"
 
 (* given the interval argument(s) and the expected interval result of
-     a numeric operation, returns a refined interval argument(s) where
-     points that cannot contribute to a value in the result are
-     removed;
-     may also return Bot if no point in an argument can lead to a
-     point in the result *)
+   a numeric operation, returns a refined interval argument(s) where
+   points that cannot contribute to a value in the result are
+   removed;
+   may also return Bot if no point in an argument can lead to a
+   point in the result *)
 
 let filter_neg (x1:t) (x2:t) : t bot =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'filter_neg' in file 'itv_mix.ml' not implemented"
 
+(* r = i1+i2 => i1 = r-i2 /\ i2 = r-i1 *)
 let filter_abs (x1:t) (x2:t) : t bot =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'filter_abs' in file 'itv_mix.ml' not implemented"
 
-let filter_add (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_add' in file 'itv_mix.ml' not implemented"
+let filter_add (i1:t) (i2:t) (r:t) : (t*t) bot =
+  merge_bot2 (meet i1 (sub r i2)) (meet i2 (sub r i1))
 
 let filter_sub (x1:t) (x2:t) (x3:t) : (t*t) bot =
   (* TODO: replace the "failwith" with your own code *)
@@ -256,6 +265,7 @@ let filter_fun (x1:string) (x2:t list) (x3:t) : (t list) bot =
   failwith "function 'filter_fun' in file 'itv_mix.ml' not implemented"
 
 (* generate a random float within the given interval *)
-let spawn (x1:t) : float =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'spawn' in file 'itv_mix.ml' not implemented"
+let spawn (x:t) : float =
+  match x with
+  | Int x  -> float (I.spawn x)
+  | Real x -> F.spawn x

@@ -357,3 +357,4 @@ module Make (I:Itv_sig.ITV) = struct
 end
 
 module ItvF = Make(Itv.ItvF)
+module ItvMix = Make(Itv_mix)

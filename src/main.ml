@@ -37,6 +37,7 @@ end
 
 (* interval domain instance. Only large constraints *)
 module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
+module SBoxMix   = GoS (Cartesian.BoxMix)(Boxmix_drawer)
 
 (* module SBox      = GoS2 (Wrapper.WCBoxF)(Wrapper_drawer) *)
 

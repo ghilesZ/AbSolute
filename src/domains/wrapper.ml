@@ -93,8 +93,8 @@ module Make(D:Domain_signature.AbstractCP) = struct
     | Bot.Nb (elm,(((cstrs,nogoods),v) as frontier)) ->
        Maybe (frontier,{search_space=elm; constraints= cstrs})
 
-  let exploration ({search_space ; _} as dom) ((_,v):frontier) =
-    let splited = D.split_along search_space v in
+  let exploration ({search_space ; _} as dom) =
+    let splited = D.split search_space in
     List.rev_map (fun sp -> {dom with search_space=sp}) splited
 
   (* using elimination technique *)

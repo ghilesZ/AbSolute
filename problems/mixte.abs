@@ -4,5 +4,5 @@ init{
 }
 
 constraints{
-  nb * 0.45 = a;
+  nb + 0.45 = a;
 }
