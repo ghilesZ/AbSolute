@@ -138,19 +138,10 @@ let eval_fun (x1:string) (x2:t list) : t bot =
 let filter_leq (l1,h1:t) (l2,h2:t) : (t * t) bot =
   merge_bot2 (check_bot (l1, min h1 h2)) (check_bot (max l1 l2, h2))
 
-let filter_geq (l1,h1:t) (l2,h2:t) : (t * t) bot =
-  (*TODO: replace "assert false" with your own code *)
-  merge_bot2 (check_bot (min l1 l2, h1)) (check_bot (l2, min h1 h2))
-
 let filter_lt ((l1,h1) as i1:t) ((l2,h2) as i2:t) : (t * t) bot =
   if l1 = h1 && l2 = h2 && l1 = l2 then Bot
   else if h2 <= l1 then Bot
   else filter_leq i1 i2
-
-let filter_gt ((l1,h1) as i1:t) ((l2,h2) as i2:t) : (t * t) bot =
-  if l1 = h1 && l2 = h2 && l1 = l2 then Bot
-  else if h1 <= l2 then Bot
-  else filter_geq i1 i2
 
 let filter_eq (i1:t) (i2:t) : (t * t) bot =
   lift_bot (fun x -> x,x) (meet i1 i2)
@@ -158,7 +149,6 @@ let filter_eq (i1:t) (i2:t) : (t * t) bot =
 let filter_neq ((l1,h1) as i1:t) ((l2,h2) as i2:t) : (t * t) bot =
   if l1=h1 && l2=h2 && l1 = l2 then Bot
   else Nb (i1,i2)
-
 
 (* arithmetic *)
 (* --------- *)

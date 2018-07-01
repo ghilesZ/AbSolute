@@ -111,9 +111,9 @@ module Make (I:ITV) = struct
     let j = match o with
     | EQ  -> I.filter_eq i1 i2
     | LEQ -> I.filter_leq i1 i2
-    | GEQ -> I.filter_geq i1 i2
+    | GEQ -> I.filter_leq i2 i1
     | NEQ -> I.filter_neq i1 i2
-    | GT  -> I.filter_gt i1 i2
+    | GT  -> I.filter_lt i2 i1
     | LT  -> I.filter_lt i1 i2
     in
     (fun a ->
@@ -171,9 +171,9 @@ module Make (I:ITV) = struct
     let j = match o with
     | EQ  -> I.filter_eq i1 i2
     | LEQ -> I.filter_leq i1 i2
-    | GEQ -> I.filter_geq i1 i2
+    | GEQ -> I.filter_leq i2 i1
     | NEQ -> I.filter_neq i1 i2
-    | GT  -> I.filter_gt i1 i2
+    | GT  -> I.filter_lt i2 i1
     | LT  -> I.filter_lt i1 i2
     in
     (fun a ->

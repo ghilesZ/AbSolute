@@ -173,17 +173,6 @@ let filter_leq (x1:t) (x2:t) : (t * t) bot =
      let x2 = to_float x2 in
      lift_bot (fun (x1,x2) -> Real x1, Int (to_int x2)) (F.filter_leq x1 x2)
 
-let filter_geq (x1:t) (x2:t) : (t * t) bot =
-  match x1,x2 with
-  | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_geq x1 x2)
-  | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (F.filter_geq x1 x2)
-  | Int x1, Real x2 ->
-     let x1 = to_float x1 in
-     lift_bot (fun (x1,x2) -> Int (to_int x1), Real x2) (F.filter_geq x1 x2)
-  | Real x1, Int x2 ->
-     let x2 = to_float x2 in
-     lift_bot (fun (x1,x2) -> Real x1, Int (to_int x2)) (F.filter_geq x1 x2)
-
 let filter_lt (x1:t) (x2:t) : (t * t) bot =
   match x1,x2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_lt x1 x2)
@@ -194,17 +183,6 @@ let filter_lt (x1:t) (x2:t) : (t * t) bot =
   | Real x1, Int x2 ->
      let x2 = to_float x2 in
      lift_bot (fun (x1,x2) -> Real x1, Int (to_int x2)) (F.filter_lt x1 x2)
-
-let filter_gt (x1:t) (x2:t) : (t * t) bot =
-  match x1,x2 with
-  | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_gt x1 x2)
-  | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (F.filter_gt x1 x2)
-  | Int x1, Real x2 ->
-     let x1 = to_float x1 in
-     lift_bot (fun (x1,x2) -> Int (to_int x1), Real x2) (F.filter_gt x1 x2)
-  | Real x1, Int x2 ->
-     let x2 = to_float x2 in
-     lift_bot (fun (x1,x2) -> Real x1, Int (to_int x2)) (F.filter_gt x1 x2)
 
 let filter_eq (x1:t) (x2:t) : (t * t) bot =
   match x1,x2 with

@@ -100,10 +100,13 @@ module type ITV = sig
      by removing points that cannot satisfy the predicate;
      may also return Bot if no point can satisfy the predicate *)
 
+
+  (* simplifying the interface since a > b <=> b < a *)
+  (* val filter_geq: t -> t -> (t * t) bot *)
+  (* val filter_gt: t -> t -> (t * t) bot *)
+
   val filter_leq: t -> t -> (t * t) bot
-  val filter_geq: t -> t -> (t * t) bot
   val filter_lt: t -> t -> (t * t) bot
-  val filter_gt: t -> t -> (t * t) bot
   val filter_eq: t -> t -> (t * t) bot
   val filter_neq: t -> t -> (t * t) bot
 
