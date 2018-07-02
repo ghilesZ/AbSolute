@@ -59,7 +59,7 @@ module Make (I:ITV) = struct
          | POW -> I.pow i1 i2
          | ADD -> I.add i1 i2
          | SUB -> I.sub i1 i2
-         | DIV -> debot (fst (I.div i1 i2))
+         | DIV -> debot (I.div i1 i2)
          | MUL ->
             let r = I.mul i1 i2 in
             if e1=e2 then

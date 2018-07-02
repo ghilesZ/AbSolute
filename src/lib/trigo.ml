@@ -219,7 +219,7 @@ module Make (I:Itv_sig.ITV) = struct
   let asin_itv i = lift_bot (I.sub pihalf_itv) (acos_itv i)
 
   (* tangent of an interval *)
-  let tan_itv i = fst (I.div (sin_itv i) (cos_itv i))
+  let tan_itv i = (I.div (sin_itv i) (cos_itv i))
 
   (* atan of an interval *)
   let atan_itv i =

@@ -79,7 +79,7 @@ module type ITV = sig
   val mul: t -> t -> t
 
   (* return valid values (possibly Bot) + possible division by zero *)
-  val div: t -> t -> t bot * bool
+  val div: t -> t -> t bot
 
   (* returns valid value when the exponant is a singleton positive integer.
      fails otherwise

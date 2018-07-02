@@ -134,11 +134,18 @@ let mul (x1:t) (x2:t) : t =
   | Int x1, Real x2 | Real x2, Int x1 -> Real (F.mul x2 (to_float x1))
 
 (* return valid values (possibly Bot) + possible division by zero *)
-let div (x1:t) (x2:t) : t bot * bool =
+let div (x1:t) (x2:t) : t bot =
   match x1,x2 with
-  | Int x1 , Int x2 ->  (* Int(I.div x1 x2) *) assert false
-  | Real x1, Real x2 -> (* Real (F.div x1 x2) *) assert false
-  | Int x1, Real x2 | Real x2, Int x1 -> (* Real (F.mul x2 (to_float x1)) *) assert false
+  | Int x1 , Int x2 ->
+     let res = I.div x1 x2 in
+     lift_bot (fun x -> Int x) res
+  | Real x1, Real x2 ->
+     let res = F.div x1 x2 in
+     lift_bot (fun x -> Real x) res
+  | Int x1, Real x2 | Real x2, Int x1 ->
+     let x1 = to_float x1 in
+     let res = F.div x1 x2 in
+     lift_bot (fun x -> Real x) res
 
 (* returns valid value when the exponant is a singleton positive integer.
      fails otherwise *)
@@ -148,8 +155,8 @@ let pow (x1:t) (x2:t) : t =
 
 (* function calls (sqrt, exp, ln ...) are handled here :
      given a function name and and a list of argument,
-     it returns a possibly bottom result
- *)
+     it returns a possibly bottom result *)
+
 let eval_fun (x1:string) (x2:t list) : t bot =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'eval_fun' in file 'itv_mix.ml' not implemented"
@@ -206,9 +213,8 @@ let filter_neq (i1:t) (i2:t) : (t * t) bot =
    may also return Bot if no point in an argument can lead to a
    point in the result *)
 
-let filter_neg (x1:t) (x2:t) : t bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_neg' in file 'itv_mix.ml' not implemented"
+let filter_neg (i:t) (r:t) : t bot =
+  meet i (neg r)
 
 (* r = i1+i2 => i1 = r-i2 /\ i2 = r-i1 *)
 let filter_abs (x1:t) (x2:t) : t bot =
@@ -218,9 +224,9 @@ let filter_abs (x1:t) (x2:t) : t bot =
 let filter_add (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2 (meet i1 (sub r i2)) (meet i2 (sub r i1))
 
-let filter_sub (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_sub' in file 'itv_mix.ml' not implemented"
+(* r = i1-i2 => i1 = i2+r /\ i2 = i1-r *)
+  let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
+    merge_bot2 (meet i1 (add i2 r)) (meet i2 (sub i1 r))
 
 let filter_mul (x1:t) (x2:t) (x3:t) : (t*t) bot =
   (* TODO: replace the "failwith" with your own code *)

@@ -110,14 +110,14 @@ let mul (l1,h1:t) (l2,h2:t) : t =
   mix4 ( * ) l1 h1 l2 h2
 
 (* return valid values (possibly Bot) + possible division by zero *)
-let div (l1,h1:t) (l2,h2:t) : t bot * bool =
-  if l2=h2 && l2=0 then (Bot,true)
+let div (l1,h1:t) (l2,h2:t) : t bot =
+  if l2=h2 && l2=0 then Bot
   else
     if l2 <= 0 && 0 <= h2 then
-      if l2 = 0 then Nb (mix4 ( / ) l1 h1 1 h2),true
-      else if h2 = 0 then Nb (mix4 ( / ) l1 h1 l2 (-1)),true
-      else Nb (join (mix4 ( / ) l1 h1 l2 0) (mix4 ( / ) l1 h1 0 h2)),true
-    else Nb (mix4 ( / ) l1 h1 l2 h2), false
+      if l2 = 0 then Nb (mix4 ( / ) l1 h1 1 h2)
+      else if h2 = 0 then Nb (mix4 ( / ) l1 h1 l2 (-1))
+      else Nb (join (mix4 ( / ) l1 h1 l2 0) (mix4 ( / ) l1 h1 0 h2))
+    else Nb (mix4 ( / ) l1 h1 l2 h2)
 
 (* returns valid value when the exponant is a singleton positive integer.
    fails otherwise *)
@@ -168,9 +168,20 @@ let filter_add (i1:t) (i2:t) (r:t) : (t*t) bot =
 let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2 (meet i1 (add i2 r)) (meet i2 (sub i1 r))
 
-let filter_mul (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (*TODO: replace "assert false" with your own code *)
-  assert false
+let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
+  merge_bot2
+    (if contains_float r 0. && contains_float i2 0. then Nb i1
+     else
+       match div r i2
+       with
+       | Bot -> Bot
+       | Nb x -> meet i1 x)
+    (if contains_float r 0. && contains_float i1 0. then Nb i2
+     else
+       match div r i1
+       with
+       | Bot -> Bot
+       | Nb x -> meet i2 x)
 
 let filter_div (x1:t) (x2:t) (x3:t) : (t*t) bot =
   (*TODO: replace "assert false" with your own code *)

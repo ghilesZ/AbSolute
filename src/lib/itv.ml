@@ -188,13 +188,12 @@ module Itv(B:BOUND) = struct
     mix4 bound_div_up bound_div_down
 
   (* return valid values (possibly Bot) + possible division by zero *)
-  let div (i1:t) (i2:t) : t bot * bool =
+  let div (i1:t) (i2:t) : t bot =
     (* split into positive and negative dividends *)
     let pos = (lift_bot (div_sign i1)) (meet i2 positive)
     and neg = (lift_bot (div_sign i1)) (meet i2 negative) in
     (* joins the result *)
-    join_bot2 join pos neg,
-    contains_float i2 0.
+    join_bot2 join pos neg
 
   (* interval square root *)
   let sqrt ((l,h):t) : t bot =
@@ -219,7 +218,7 @@ module Itv(B:BOUND) = struct
     let itv' = ln itv in
     match itv' with
     | Bot -> Bot
-    | Nb (l', h') -> fst (div (l',h') (of_bound ln10))
+    | Nb (l', h') -> (div (l',h') (of_bound ln10))
 
   (* powers *)
   let pow ((il,ih):t) ((l,h):t) =
@@ -350,16 +349,16 @@ module Itv(B:BOUND) = struct
   let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
     merge_bot2
       (if contains_float r 0. && contains_float i2 0. then Nb i1
-      else match fst (div r i2) with Bot -> Bot | Nb x -> meet i1 x)
+      else match (div r i2) with Bot -> Bot | Nb x -> meet i1 x)
       (if contains_float r 0. && contains_float i1 0. then Nb i2
-      else match fst (div r i1) with Bot -> Bot | Nb x -> meet i2 x)
+      else match (div r i1) with Bot -> Bot | Nb x -> meet i2 x)
 
   (* r = i1/i2 => i1 = i2*r /\ (i2 = i1/r \/ i1=r=0) *)
   let filter_div (i1:t) (i2:t) (r:t) : (t*t) bot =
     merge_bot2
       (meet i1 (mul i2 r))
       (if contains_float r 0. && contains_float i1 0. then Nb i2
-      else match fst (div i1 r) with Bot -> Bot | Nb x -> meet i2 x)
+      else match (div i1 r) with Bot -> Bot | Nb x -> meet i2 x)
 
   (* r = sqrt i => i = r*r or i < 0 *)
   let filter_sqrt ((il,ih) as i:t) ((rl,rh):t) : t bot =
