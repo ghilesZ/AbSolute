@@ -109,12 +109,13 @@ module Make (I:ITV) = struct
   let test (a:t) (e1:expr) (o:cmpop) (e2:expr) : t  =
     let (b1,i1), (b2,i2) = eval a e1, eval a e2 in
     let j = match o with
-    | EQ  -> I.filter_eq i1 i2
-    | LEQ -> I.filter_leq i1 i2
-    | GEQ -> I.filter_leq i2 i1
-    | NEQ -> I.filter_neq i1 i2
-    | GT  -> I.filter_lt i2 i1
-    | LT  -> I.filter_lt i1 i2
+      | LT  -> I.filter_lt i1 i2
+      | LEQ -> I.filter_leq i1 i2
+      (* a > b <=> b < a*)
+      | GEQ -> I.filter_leq i2 i1
+      | GT  -> I.filter_lt i2 i1
+      | NEQ -> I.filter_neq i1 i2
+      | EQ  -> I.filter_eq i1 i2
     in
     (fun a ->
       let j1,j2 = debot j in
@@ -171,9 +172,10 @@ module Make (I:ITV) = struct
     let j = match o with
     | EQ  -> I.filter_eq i1 i2
     | LEQ -> I.filter_leq i1 i2
+    (* a > b <=> b < a*)
     | GEQ -> I.filter_leq i2 i1
-    | NEQ -> I.filter_neq i1 i2
     | GT  -> I.filter_lt i2 i1
+    | NEQ -> I.filter_neq i1 i2
     | LT  -> I.filter_lt i1 i2
     in
     (fun a ->
