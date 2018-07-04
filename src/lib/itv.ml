@@ -20,29 +20,25 @@ module Itv(B:BOUND) = struct
 
   (* an interval is a pair of bounds (lower,upper);
      intervals are always non-empty: lower <= upper;
-     functions that can return an empty interval return it as Bot
-   *)
+     functions that can return an empty interval return it as Bot *)
   type t = bound * bound
 
   (* not all pairs of rationals are valid intervals *)
   let validate ((l,h):t) : t =
     if B.gt l h then
       invalid_arg
-        ("int.validate: "
-         ^ string_of_float (B.to_float_down l)
-         ^" "
-         ^string_of_float (B.to_float_up h))
+        (Format.asprintf "int.validate: %f %f"
+           (B.to_float_down l)
+           (B.to_float_up h))
     else l,h
 
   (* maps empty intervals to explicit bottom *)
   let check_bot ((l,h):t) : t bot =
     if B.leq l h then Nb (l,h) else Bot
 
-
   (************************************************************************)
-  (* CONSTRUCTORS AND CONSTANTS *)
+  (* CONSTRUCTORS AND CONSTANTS                                           *)
   (************************************************************************)
-
 
   let of_bound (x:B.t) : t = validate (x,x)
 

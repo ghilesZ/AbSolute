@@ -154,8 +154,8 @@ let pow (x1:t) (x2:t) : t =
   failwith "function 'pow' in file 'itv_mix.ml' not implemented"
 
 (* function calls (sqrt, exp, ln ...) are handled here :
-     given a function name and and a list of argument,
-     it returns a possibly bottom result *)
+   given a function name and and a list of argument,
+   it returns a possibly bottom result *)
 
 let eval_fun (x1:string) (x2:t list) : t bot =
   (* TODO: replace the "failwith" with your own code *)
@@ -225,8 +225,8 @@ let filter_add (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2 (meet i1 (sub r i2)) (meet i2 (sub r i1))
 
 (* r = i1-i2 => i1 = i2+r /\ i2 = i1-r *)
-  let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
-    merge_bot2 (meet i1 (add i2 r)) (meet i2 (sub i1 r))
+let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
+  merge_bot2 (meet i1 (add i2 r)) (meet i2 (sub i1 r))
 
 let filter_mul (x1:t) (x2:t) (x3:t) : (t*t) bot =
   (* TODO: replace the "failwith" with your own code *)
@@ -241,9 +241,9 @@ let filter_pow (x1:t) (x2:t) (x3:t) : (t*t) bot =
   failwith "function 'filter_pow' in file 'itv_mix.ml' not implemented"
 
 (* filtering function calls like (sqrt, exp, ln ...) is done here :
-     given a function name, a list of argument, and a result,
-     it remove points that cannot satisfy the relation : f(arg1,..,argn) = r;
-     it returns a possibly bottom result *)
+   given a function name, a list of argument, and a result,
+   it remove points that cannot satisfy the relation : f(arg1,..,argn) = r;
+   it returns a possibly bottom result *)
 let filter_fun (x1:string) (x2:t list) (x3:t) : (t list) bot =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'filter_fun' in file 'itv_mix.ml' not implemented"
