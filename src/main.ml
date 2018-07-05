@@ -98,6 +98,7 @@ let go () =
   if !debug then Vpl_domain.enable_debug();
   match !domain with
   | "box"   -> SBox.go prob
+  | "boxmix"-> SBoxMix.go prob
   | "oct"   -> SOctCP.go prob
   | "poly"  -> begin
     if !step_by_step
@@ -110,6 +111,6 @@ let go () =
         Vpl_domain.stop_profile();
         Vpl_domain.report()
     end
-  | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct, vpl" |> failwith
+  | _ -> "domain undefined "^(!domain)^". should be one among : box, boxmix, poly, oct, vpl" |> failwith
 
 let _ = go()

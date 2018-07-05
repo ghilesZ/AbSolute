@@ -77,15 +77,14 @@ let subseteq (x1:t) (x2:t) : bool =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'subseteq' in file 'itv_mix.ml' not implemented"
 
-let contains_float (x1:t) (x2:float) : bool =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'contains_float' in file 'itv_mix.ml' not implemented"
+let contains_float (x:t) (f:float) : bool =
+  match x with
+  | Int x ->  I.contains_float x f
+  | Real x -> F.contains_float x f
 
 let intersect (x1:t) (x2:t) : bool =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'intersect' in file 'itv_mix.ml' not implemented"
-
-let is_singleton (x:t) : bool = dispatch I.is_singleton F.is_singleton x
 
 (* mesure *)
 (* ------ *)
@@ -228,9 +227,13 @@ let filter_add (i1:t) (i2:t) (r:t) : (t*t) bot =
 let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2 (meet i1 (add i2 r)) (meet i2 (sub i1 r))
 
-let filter_mul (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_mul' in file 'itv_mix.ml' not implemented"
+(* r = i1*i2 => (i1 = r/i2 \/ i2=r=0) /\ (i2 = r/i1 \/ i1=r=0) *)
+let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
+  merge_bot2
+    (if contains_float r 0. && contains_float i2 0. then Nb i1
+     else match (div r i2) with Bot -> Bot | Nb x -> meet i1 x)
+    (if contains_float r 0. && contains_float i1 0. then Nb i2
+     else match (div r i1) with Bot -> Bot | Nb x -> meet i2 x)
 
 let filter_div (x1:t) (x2:t) (x3:t) : (t*t) bot =
   (* TODO: replace the "failwith" with your own code *)

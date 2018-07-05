@@ -53,7 +53,6 @@ module type ITV = sig
   (* ---------- *)
   val contains_float: t -> float -> bool
   val intersect: t -> t -> bool
-  val is_singleton: t -> bool
 
   (* mesure *)
   (* ------ *)
@@ -82,8 +81,7 @@ module type ITV = sig
   val div: t -> t -> t bot
 
   (* returns valid value when the exponant is a singleton positive integer.
-     fails otherwise
-  *)
+     fails otherwise *)
   val pow: t -> t -> t
 
   (* function calls (sqrt, exp, ln ...) are handled here :

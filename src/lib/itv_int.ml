@@ -54,12 +54,13 @@ let meet (l1,h1:t) (l2,h2:t) : t bot = check_bot ((max l1 l2), (min h1 h2))
 
 (* predicates *)
 (* ---------- *)
-
-let contains_float ((a,b):t) f = assert false
+let contains_float ((a,b):t) f =
+  let rounded = ceil f in
+  rounded = f &&
+    let roundedi = int_of_float rounded in
+    a <= roundedi && roundedi <= b
 
 let intersect ((l1,h1):t) ((l2,h2):t) = l1 <= h2 &&  l2 <= h1
-
-let is_singleton ((a,b):t) = a = b
 
 (* mesure *)
 (* ------ *)
@@ -68,15 +69,13 @@ let range ((a,b):t) = b - a
 (* split *)
 (* ----- *)
 
-(* finds the mean of the interval *)
-let mean ((a,b):t) = a + (b-a)/2
-
 (* splits in two, around the middle *)
-let split ((a,b) as i :t) =
-  if a+1 = b then [Nb (a,a); Nb(b,b)]
+let split ((a,b) :t) =
+  assert (a<>b);
+  if a+1=b then [Nb (a,a); Nb(b,b)]
   else
-    let mid = mean i in
-    [Nb (a,mid); Nb(mid,b)]
+    let mid = a + (b-a)/2 in
+    [Nb (a,mid); Nb(mid+1,b)]
 
 let prune (x1:t) (x2:t) : t list * t =
   (*TODO: replace "assert false" with your own code *)
@@ -121,9 +120,25 @@ let div (l1,h1:t) (l2,h2:t) : t bot =
 
 (* returns valid value when the exponant is a singleton positive integer.
    fails otherwise *)
-let pow (x1:t) (x2:t) : t =
-  (*TODO: replace "assert false" with your own code *)
-  assert false
+let pow =
+  let pow_aux i exp =
+    int_of_float ((float i) ** (float exp))
+  in
+  fun (l1,u1:t) (l2,u2:t) ->
+  if l2=u2 then
+    match l2 with
+    | 0 -> (1,1)
+    | 1 -> (l1, u1)
+    | x when x > 1 && l2 mod 2 = 1 -> (pow_aux l1 l2, pow_aux u1 l2)
+    | x when x > 1 ->
+       if l1 < 0 && u1 >= 0 then
+	       (0, max (pow_aux l1 l2) (pow_aux u1 l2))
+       else if l1 >= 0 then
+	       (pow_aux l1 l2, pow_aux u1 l2)
+       else (pow_aux u1 l2, pow_aux l1 l2)
+    | _ -> failwith "cant handle negatives powers"
+  else failwith  "itv_int.ml cant handle non_singleton powers"
+
 
 (* function calls (sqrt, exp, ln ...) are handled here :
    given a function name and and a list of argument,
