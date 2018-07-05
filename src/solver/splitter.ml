@@ -97,7 +97,7 @@ module Make (Abs : AbstractCP) = struct
     type t = {
         (* over-approx of the solution space *)
         sols:Abs.t;
-        (*Foreach constraint we associate the over-approx of its complementary*)
+        (* Foreach constraint we associate the over-approx of its complementary *)
         complementary: (Csp.bexpr list) * (Abs.t list)
       }
 

@@ -77,9 +77,12 @@ let split ((a,b) :t) =
     let mid = a + (b-a)/2 in
     [Nb (a,mid); Nb(mid+1,b)]
 
-let prune (x1:t) (x2:t) : t list * t =
-  (*TODO: replace "assert false" with your own code *)
-  assert false
+let prune (l1,u1:t) (l2,u2:t) : t list * t =
+  match (l1 < l2),(u2 < u1) with
+  | true , true  -> [(l1,(l2-1));((u2+1),u1)],(l2,u2)
+  | true , false -> [(l1,(l2-1))],(l2,u1)
+  | false, true  -> [((u2+1),u1)],(l1,u2)
+  | false, false -> [],(l2,u2)
 
 (************************************************************************)
 (* INTERVAL ARITHMETICS (FORWARD EVALUATION) *)
