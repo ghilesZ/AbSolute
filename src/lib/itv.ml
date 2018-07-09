@@ -1,9 +1,6 @@
-(*
-   Generic intervals.
+(* Generic intervals.
    Working with bounds that may induce rounding errors.
-   Can be instantiated with any bound type.
-*)
-
+   Can be instantiated with any bound type. *)
 
 open Bot
 open Bound_sig
@@ -11,7 +8,7 @@ open Bound_sig
 module Itv(B:BOUND) = struct
 
   (************************************************************************)
-  (* TYPES *)
+  (*                                TYPES                                 *)
   (************************************************************************)
 
 
@@ -37,7 +34,7 @@ module Itv(B:BOUND) = struct
     if B.leq l h then Nb (l,h) else Bot
 
   (************************************************************************)
-  (* CONSTRUCTORS AND CONSTANTS                                           *)
+  (*                     CONSTRUCTORS AND CONSTANTS                       *)
   (************************************************************************)
 
   let of_bound (x:B.t) : t = validate (x,x)
@@ -65,7 +62,7 @@ module Itv(B:BOUND) = struct
   let float_hull (x:float) (y:float) = min x y, max x y
 
   (************************************************************************)
-  (* PRINTING *)
+  (*                            PRINTING                                  *)
   (************************************************************************)
 
   (* printing *)
@@ -73,7 +70,7 @@ module Itv(B:BOUND) = struct
     Format.fprintf fmt "[%a;%a]" B.print l B.print h
 
   (************************************************************************)
-  (* SET-THEORETIC *)
+  (*                          SET-THEORETIC                               *)
   (************************************************************************)
 
   (* operations *)
@@ -294,7 +291,6 @@ module Itv(B:BOUND) = struct
     | "exp"   -> arity_1 exp
     | "ln"    -> arity_1_bot ln
     | "log"   -> arity_1_bot log
-    (* min max *)
     | "max"   -> arity_2 max
     | "min"   -> arity_2 min
     | s -> failwith (Format.sprintf "unknown eval function : %s" s)

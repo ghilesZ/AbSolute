@@ -104,12 +104,12 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
     check_type typ value && check_dom dom value
 
   (* checks if an instance satisfies a csp *)
-  let check_instance print instance csp =
+  let check_instance fn print instance csp =
     List.for_all (belong_to instance) csp.init
     && List.for_all (check_cstr print instance) csp.constraints
 
   (* checks that the sure value DO satisfy the constraints *)
-  let check_sure csp result =
+  let check_sure fn csp result =
     let total_sure = ref 0 in
     iter_sure (fun e ->
         let cpt = ref 0 in
@@ -118,13 +118,13 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
           incr cpt;
           (* we try to spawn at least 10 points *)
           let i = Abs.spawn e in
-          ignore (check_instance true i csp)
+          ignore (check_instance fn true i csp)
         done
       ) result;
     !total_sure
 
   (* compute the ratio of unsure value that DO satisfy the constraints *)
-  let check_unsure csp result =
+  let check_unsure fn csp result =
     let total = ref 0 and unsure = ref 0 in
     (* we try to spawn at least 10 points *)
     iter_unsure (fun e ->
@@ -133,41 +133,49 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
           incr total;
           incr cpt;
           let i = Abs.spawn e in
-          if check_instance false i csp then incr unsure
+          if check_instance fn false i csp then incr unsure
         done
       ) result;
     (float !unsure) /. (float !total)
 
+  let covered_by i abs_list =
+    List.exists (fun e -> Abs.is_abstraction e i) abs_list
+
   (* checks that the problem's known solutions belong to an astract element *)
-  (* and that sme inconsistent instance does not belong to sure solutions *)
-  let check_known_solutions csp result =
+  let check_known_solutions fn result goods=
     let open Result in
-    let covered_by i abs_list =
-      List.exists (fun e -> Abs.is_abstraction e i) abs_list
-    in
     try
-      List.iter (fun (instance,good) ->
+      List.iter (fun instance ->
           let covered_sure = covered_by instance result.sure in
-          let covered_unsure = covered_by instance result.unsure in
-          if good then
-            if not (covered_sure || covered_unsure)
-            then
+          if not covered_sure then
+            let covered_unsure = covered_by instance result.unsure in
+            if not covered_unsure then
               begin
-                Format.eprintf "the instance %a is not covered by any abstract element\n%!"
-                               print_instance instance;
+                (*the instance sould be covered by an element *)
+                Format.eprintf "%s the instance %a should be covered by an abstract element\n%!"
+                  fn
+                  print_instance instance;
                 raise Exit
               end
-            else ()
-          else begin
-              (*the instance sould not be covered by a sure element *)
-              if covered_sure then
-              begin
-                Format.eprintf "the instance %a shouldn't be covered by an abstract element\n%!"
-                               print_instance instance;
-                raise Exit
-              end
+        ) goods;
+      true
+    with Exit -> false
+
+  (* check that some inconsistent instance does not belong to a sure solutions *)
+  let check_known_bad fn result nogoods =
+    let open Result in
+    try
+      List.iter (fun instance ->
+          let covered_sure = covered_by instance result.sure in
+          if covered_sure then
+            (* the instance sould NOT be covered by a sure element *)
+            begin
+              Format.eprintf "%s the instance %a is covered by an abstract element but it shouldnt be\n%!"
+                fn
+                print_instance instance;
+              raise Exit
             end
-        ) csp.solutions;
+        ) nogoods;
       true
     with Exit -> false
 
