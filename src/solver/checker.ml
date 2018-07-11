@@ -33,7 +33,8 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
   let eval instance expr =
     let rec aux = function
       | Var v -> VMap.find v instance
-      | Cst c -> c
+      | Int i -> float i
+      | Float c -> c
       | Binary(op,e1,e2) ->
          let e1' = aux e1 and e2' = aux e2 in
          (match op with
@@ -72,7 +73,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
          let e1' = eval instance e1 and e2' = eval instance e2 in
          let res =
            (match op with
-            | EQ  -> e1' == e2'
+            | EQ  -> e1' = e2'
             | NEQ -> e1' <> e2'
             | GT  -> e1' >  e2'
             | GEQ -> e1' >= e2'
@@ -106,7 +107,8 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
   (* checks if an instance satisfies a csp *)
   let check_instance fn print instance csp =
     List.for_all (belong_to instance) csp.init
-    && List.for_all (check_cstr print instance) csp.constraints
+    &&
+    List.for_all (check_cstr print instance) csp.constraints
 
   (* checks that the sure value DO satisfy the constraints *)
   let check_sure fn csp result =
