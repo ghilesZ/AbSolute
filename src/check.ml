@@ -2,7 +2,7 @@
 (* this modules checks that the solver implementation works fine *)
 (*****************************************************************)
 
-module CheckBox = Checker.Make(Cartesian.BoxF)
+module CheckBox = Checker.Make(Cartesian.BoxMix)
 
 let print_sep () =
   Format.printf "-----------------------------------------------------------------\n"
@@ -38,7 +38,6 @@ let _ =
   let frontier_ratio = ref 0. in
   let files = Sys.readdir dir in
   Array.iter (fun fn ->
-      Format.printf "%s\t: " fn;
       let prob = Builder.parse (Some (dir^fn)) in
       let igoods,ibads = split prob.Csp.solutions in
       let res = CheckBox.result prob in

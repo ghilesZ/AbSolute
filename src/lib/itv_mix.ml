@@ -115,6 +115,7 @@ let neg (x:t) : t = map I.neg F.neg x
 let abs (x:t) : t = map I.abs F.abs x
 
 let add (x1:t) (x2:t) : t =
+  (* Format.printf "eval: %a + %a\n%!" print x1 print x2; *)
   match x1,x2 with
   | Int x1 , Int x2 ->  Int(I.add x1 x2)
   | Real x1, Real x2 -> Real (F.add x1 x2)
@@ -127,6 +128,7 @@ let sub (x1:t) (x2:t) : t =
   | Int x1, Real x2 | Real x2, Int x1 -> Real (F.sub x2 (to_float x1))
 
 let mul (x1:t) (x2:t) : t =
+  (* Format.printf "eval: %a * %a\n%!" print x1 print x2; *)
   match x1,x2 with
   | Int x1 , Int x2 ->  Int(I.mul x1 x2)
   | Real x1, Real x2 -> Real (F.mul x1 x2)
@@ -199,6 +201,7 @@ let filter_eq (x1:t) (x2:t) : (t * t) bot =
      lift_bot (fun (x1,x2) -> Int x1, Int x2) (I.filter_eq x1 x2)
 
 let filter_neq (i1:t) (i2:t) : (t * t) bot =
+  (* Format.printf "filter: %a <> %a\n%!" print i1 print i2; *)
   match i1,i2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_neq x1 x2)
   | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (F.filter_neq x1 x2)

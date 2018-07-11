@@ -34,6 +34,9 @@ let of_int = of_bound
 (*No integer interval can exactly abstract a single float *)
 let of_float = Bot
 
+let positive : t = (1,max_int)
+let negative : t = (min_int,-1)
+
 (************************************************************************)
 (* PRINTING and CONVERSIONS *)
 (************************************************************************)
@@ -111,15 +114,15 @@ let mix4 f l1 h1 l2 h2 =
 let mul (l1,h1:t) (l2,h2:t) : t =
   mix4 ( * ) l1 h1 l2 h2
 
-(* return valid values (possibly Bot) + possible division by zero *)
-let div (l1,h1:t) (l2,h2:t) : t bot =
-  if l2=h2 && l2=0 then Bot
-  else
-    if l2 <= 0 && 0 <= h2 then
-      if l2 = 0 then Nb (mix4 ( / ) l1 h1 1 h2)
-      else if h2 = 0 then Nb (mix4 ( / ) l1 h1 l2 (-1))
-      else Nb (join (mix4 ( / ) l1 h1 l2 0) (mix4 ( / ) l1 h1 0 h2))
-    else Nb (mix4 ( / ) l1 h1 l2 h2)
+let div_sign (l1,h1) (l2,h2)  = mix4 ( / ) l1 h1 l2 h2
+
+(* return valid values (possibly Bot) *)
+let div (i1:t) (i2:t) : t bot =
+  (* split into positive and negative dividends *)
+  let pos = (lift_bot (div_sign i1)) (meet i2 positive)
+  and neg = (lift_bot (div_sign i1)) (meet i2 negative) in
+  (* joins the result *)
+  join_bot2 join pos neg
 
 (* returns valid value when the exponant is a singleton positive integer.
    fails otherwise *)
@@ -219,5 +222,5 @@ let filter_fun (x1:string) (x2:t list) (x3:t) : (t list) bot =
 
 (* generate a random float within the given interval *)
 let spawn (l,h:t) : int =
-  let r = Random.int (h-l) in
+  let r = Random.int ((h-l)+1) in
   l + r

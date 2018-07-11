@@ -27,7 +27,8 @@ let parse_const = float_of_string
 let space = [' ' '\t' '\r']+
 let newline = "\n" | "\r" | "\r\n"
 let digit = ['0'-'9']
-let const = ( digit+ | "." digit+ | digit+ "." digit* )
+let float = ( digit+ | "." digit+ | digit+ "." digit* )
+let int = digit+
 
 rule token = parse
 
@@ -63,7 +64,8 @@ rule token = parse
 | "!"    { TOK_NOT }
 | ":"    { TOK_COLON }
 (* literals *)
-| const as c { TOK_const (float_of_string c) }
+| int   as i { TOK_int (int_of_string i) }
+| float as f { TOK_float (float_of_string f) }
 
 (* spaces, comments *)
 | "/*" { comment lexbuf; token lexbuf }

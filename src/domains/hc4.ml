@@ -42,9 +42,12 @@ module Make (I:ITV) = struct
           with Not_found -> failwith ("variable not found: "^v)
         in
         AVar (n, r),r
-    | Cst c ->
+    | Float c ->
         let r = I.of_float c in
-        ACst (c, r),r
+        AFloat (c, r),r
+    | Int c ->
+        let r = I.of_int c in
+        AInt (c, r),r
     | Unary (o,e1) ->
        let _,i1 as b1 = eval a e1 in
        let r = match o with
@@ -87,7 +90,8 @@ module Make (I:ITV) = struct
     | AVar (v,_) ->
        (try VMap.add v (debot (I.meet x (VMap.find v a))) a
         with Not_found -> failwith ("variable not found: "^v))
-    | ACst (c,i) -> ignore (debot (I.meet x i)); a
+    | AFloat (c,i) -> ignore (debot (I.meet x i)); a
+    | AInt (c,i) -> ignore (debot (I.meet x i)); a
     | AUnary (o,(e1,i1)) ->
         let j = match o with
           | NEG -> I.filter_neg i1 x
@@ -148,7 +152,8 @@ module Make (I:ITV) = struct
               update v new_itv;
               VMap.add v new_itv a
             with Not_found -> failwith ("variable not found: "^v))
-        | ACst (c,i) -> ignore (debot (I.meet x i)); a
+        | AFloat (c,i) -> ignore (debot (I.meet x i)); a
+        | AInt (c,i) -> ignore (debot (I.meet x i)); a
         | AUnary (o,(e1,i1)) ->
            let j = match o with
              | NEG -> I.filter_neg i1 x

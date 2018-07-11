@@ -39,8 +39,8 @@
 %token TOK_INF           /* oo */
 
 %token <string> TOK_id
-%token <float> TOK_const
-
+%token <float> TOK_float
+%token <int> TOK_int
 %token TOK_EOF
 
 /* priorities */
@@ -119,8 +119,9 @@ set:
   | {[]}
 
 const:
-  | TOK_const {$1}
-  | TOK_MINUS TOK_const {(-.$2)}
+  | TOK_int   {float $1}
+  | TOK_float {$1}
+  | TOK_MINUS const {(-.$2)}
 
 bexpr:
   | expr cmp expr                       {Cmp ($2, $1, $3)}
@@ -143,7 +144,8 @@ args:
 
 
 leaf:
-  | TOK_const                           { Cst $1 }
+  | TOK_int                             { Int $1 }
+  | TOK_float                           { Float $1 }
   | TOK_id                              { Var $1 }
 
 binop_expr:

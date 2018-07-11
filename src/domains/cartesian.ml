@@ -24,7 +24,7 @@ module Box (I:ITV) = struct
 
   let find v a =
     try (VMap.find v a, v) with
-      Not_found -> (VMap.find (v^"%") a, v^"%")
+      Not_found -> failwith ("variable not found : "^v)
 
   (************************************************************************)
   (* PRINTING *)
@@ -120,7 +120,7 @@ module Box (I:ITV) = struct
       | _,Set (h::tl) -> List.fold_left (fun acc e -> I.join acc (I.of_float e)) (I.of_float h) tl
       | _ -> failwith "can only handle finite non-empty domains"
     in
-    VMap.add (if typ = INT then (var^"%") else var) itv abs
+    VMap.add var itv abs
 
   (*********************************)
   (* Sanity and checking functions *)
@@ -128,7 +128,7 @@ module Box (I:ITV) = struct
 
   (* returns an randomly (uniformly?) chosen instanciation of the variables *)
   let spawn a : instance =
-    VMap.fold (fun k v acc -> VMap.add k (I.spawn v) acc) a VMap.empty
+    VMap.fold (fun k itv acc -> VMap.add k (I.spawn itv) acc) a VMap.empty
 
   (* given an abstraction and instance, verifies if the abstraction is implied
      by the instance *)

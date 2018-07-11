@@ -3,9 +3,6 @@ open Tools
 (* variables are identified by a string *)
 type var = string
 
-(* constants are floats (the domain of the variable *)
-type i = float
-
 (* unary arithmetic operators *)
 type unop = NEG | ABS
 
@@ -22,7 +19,8 @@ type expr =
   | Unary   of unop * expr
   | Binary  of binop * expr * expr
   | Var     of var
-  | Cst     of i
+  | Int     of int
+  | Float   of float
 
 (* boolean expressions *)
 type bexpr =
@@ -34,11 +32,11 @@ type bexpr =
 (* variable type *)
 type typ = INT | REAL
 
-type dom = Finite of i*i    (* [a  ; b] *)
-         | Minf of i        (* [-oo; b] *)
-         | Inf of i         (* [a  ; +oo] *)
-         | Top              (* [-oo; +oo] *)
-         | Set of i list    (* {a; b; c; ...} *)
+type dom = Finite of float*float  (* [a  ; b] *)
+         | Minf of float          (* [-oo; b] *)
+         | Inf of float           (* [a  ; +oo] *)
+         | Top                    (* [-oo; +oo] *)
+         | Set of float list      (* {a; b; c; ...} *)
 
 (* assign *)
 type assign = (typ * var * dom)
@@ -81,8 +79,8 @@ let add_constr csp c =
 let domain_to_constraints (_,v,d)  =
   match d with
   | Finite (l,h) ->
-     let c1 = (Var v, GEQ, Cst l)
-     and c2 = (Var v, LEQ, Cst h)
+     let c1 = (Var v, GEQ, Float l)
+     and c2 = (Var v, LEQ, Float h)
      in c1,c2
   | _ -> failwith "cant handle non-finite domains"
 
@@ -145,7 +143,7 @@ let rec has_variable = function
   | Unary (u, e)  -> has_variable e
   | Binary(b, e1, e2) -> has_variable e1 || has_variable e2
   | Var _ -> true
-  | Cst _ -> false
+  | Int _ | Float _ -> false
 
 (* checks if an expression is linear *)
 let rec is_linear = function
@@ -155,7 +153,7 @@ let rec is_linear = function
   | Binary(POW, e1, e2)
     -> not (has_variable e1 || has_variable e2)
   | Binary(_, e1, e2) -> is_linear e1 && is_linear e2
-  | Var _ | Cst _ -> true
+  | Var _ | Int _ | Float _ -> true
   | _ -> false
 
 (* checks if a constraints is linear *)
@@ -224,10 +222,8 @@ let rec print_expr fmt = function
   | Binary (b, e1 , e2) ->
     Format.fprintf fmt "%a %a %a" print_expr e1 print_binop b print_expr e2
   | Var name -> Format.fprintf fmt "%s" name
-  | Cst c ->
-     let c_int = int_of_float c in
-     if float_of_int c_int = c then Format.fprintf fmt "%i" c_int
-     else Format.fprintf fmt "%.2f" c
+  | Int i -> Format.fprintf fmt "%i" i
+  | Float f -> Format.fprintf fmt "%a" Format.pp_print_float f
 
 let rec print_bexpr fmt = function
   | Cmp (c,e1,e2) ->
@@ -258,4 +254,5 @@ and 'a ex =
   | AUnary   of unop  * 'a annot_expr
   | ABinary  of binop * 'a annot_expr * 'a annot_expr
   | AVar     of var   * 'a
-  | ACst     of i     * 'a
+  | AInt     of int   * 'a
+  | AFloat   of float * 'a

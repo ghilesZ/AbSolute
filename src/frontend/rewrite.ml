@@ -37,7 +37,8 @@ let rec simplify env expr : (P.t * string CoEnv.t) =
   let p,env =
   match expr with
   | Var v -> (P.of_var v),env
-  | Cst c -> (P.of_float c),env
+  | Float c -> (P.of_float c),env
+  | Int c -> (P.of_int c),env
   | Binary (op,e1,e2) ->
      let p1,env' = simplify env e1 in
      let p2,env'' = simplify env' e2 in
@@ -94,12 +95,12 @@ and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
       | n -> iter (Binary(MUL,acc,(of_id id))) (n-1)
     in
     match (int_of_float exp) with
-    | 0 -> Cst 1.
+    | 0 -> Int 1
     | 1 -> of_id id
     | n -> iter (of_id id) (n-1)
   in
   let cell_to_expr ((c,v) as m) =
-    if P.is_monom_constant m then Cst c
+    if P.is_monom_constant m then Float c
     else if c = 1. then
       match v with
       | h::tl -> List.fold_left (fun acc e ->
@@ -109,10 +110,10 @@ and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
     else
       List.fold_left (fun acc e ->
           Binary(MUL,acc,(var_to_expr e))
-        ) (Cst c) v
+        ) (Float c) v
   in
   match p with
-  | [] -> Cst 0.
+  | [] -> Int 0
   | h::tl -> List.fold_left (fun acc c -> Binary(ADD,acc,(cell_to_expr c)))
                             (cell_to_expr h)
                             tl
@@ -124,5 +125,5 @@ let rewrite (cmp,e1,e2) : (cmpop * expr * expr) =
   let p2,env2 = simplify env1 e2 in
   let polynom = P.clean (P.sub p1 p2) in
   let simplified_left = polynom_to_expr polynom env2 in
-  let e2 = Cst 0. in
+  let e2 = Int 0 in
   (cmp,simplified_left,e2)
