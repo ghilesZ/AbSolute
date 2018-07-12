@@ -133,7 +133,13 @@ module Box (I:ITV) = struct
   (* given an abstraction and instance, verifies if the abstraction is implied
      by the instance *)
   let is_abstraction a (i:instance) =
-    VMap.for_all (fun k v -> I.contains_float (VMap.find k a) v) i
+    VMap.for_all (fun k value ->
+        let itv = VMap.find k a in
+        let res = I.contains_float itv value in
+        let answer = if res then "yes" else "no" in
+        Format.printf "checking if %a contains %f for variable %s. %s\n%!" I.print itv value k answer;
+        res
+        ) i
 end
 
 (*************)

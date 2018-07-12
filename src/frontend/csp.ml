@@ -243,6 +243,11 @@ let print fmt prog =
   Format.fprintf fmt "\n";
   aux print_bexpr prog.constraints
 
+let print_instance fmt i =
+  Format.fprintf fmt "{";
+  VMap.iter (fun k f -> Format.fprintf fmt "%s : %a " k Format.pp_print_float f) i;
+  Format.fprintf fmt "}"
+
 (****************** EXPRESSION ANNOTATIONS ********************)
 (*         A unique type for the anotated expr tree           *)
 (* useful to unify the treatment of tree expression traversal *)

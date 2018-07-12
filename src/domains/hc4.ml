@@ -35,25 +35,30 @@ module Make (I:ITV) = struct
        let bargs = List.map (eval a) args in
        let iargs = List.map snd bargs in
        let r = debot (I.eval_fun name iargs) in
+       (* Format.printf "%a\n%!" I.print r; *)
        AFunCall(name, bargs),r
     | Var v ->
-        let (r, n) =
-          try find v a
-          with Not_found -> failwith ("variable not found: "^v)
-        in
-        AVar (n, r),r
+       let (r, n) =
+         try find v a
+         with Not_found -> failwith ("variable not found: "^v)
+       in
+       (* Format.printf "%a\n%!" I.print r; *)
+       AVar (n, r),r
     | Float c ->
-        let r = I.of_float c in
-        AFloat (c, r),r
+       let r = I.of_float c in
+       (* Format.printf "%a\n%!" I.print r; *)
+       AFloat (c, r),r
     | Int c ->
-        let r = I.of_int c in
-        AInt (c, r),r
+       let r = I.of_int c in
+       (* Format.printf "%a\n%!" I.print r; *)
+       AInt (c, r),r
     | Unary (o,e1) ->
        let _,i1 as b1 = eval a e1 in
        let r = match o with
          | NEG -> I.neg i1
 	       | ABS -> I.abs i1
        in
+       (* Format.printf "%a\n%!" I.print r; *)
        AUnary (o,b1), r
     | Binary (o,e1,e2) ->
        let _,i1 as b1 = eval a e1
@@ -70,6 +75,7 @@ module Make (I:ITV) = struct
               I.abs r
             else r
        in
+       (* Format.printf "%a\n%!" I.print r; *)
        ABinary (o,b1,b2), r
 
   (* returns a box included in its argument, by removing points such that

@@ -55,8 +55,16 @@ module Make (D:Drawer) = struct
 	     D.draw3d fmt values vars
 
   let traceout sure unsure =
-    List.iter (Format.printf "sure:%a\n%!" D.print) sure;
-    List.iter (Format.printf "unsure:%a\n%!" D.print) unsure
+    Format.printf "-------------------------------------------------\n%!";
+    Format.printf "sure solutions\n%!";
+    Format.printf "-------------------------------------------------\n%!";
+    List.iter (Format.printf "%a\n%!" D.print) sure;
+    if not !Constant.sure then begin
+        Format.printf "-------------------------------------------------\n%!";
+        Format.printf "unsure solutions\n%!";
+        Format.printf "-------------------------------------------------\n%!";
+        List.iter (Format.printf "%a\n%!" D.print) unsure
+      end
 
   let draw_vars prob =
     let open Csp in

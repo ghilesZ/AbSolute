@@ -24,7 +24,7 @@ module Itv(B:BOUND) = struct
   let validate ((l,h):t) : t =
     if B.gt l h then
       invalid_arg
-        (Format.asprintf "int.validate: %f %f"
+        (Format.asprintf "itv.validate: %f %f"
            (B.to_float_down l)
            (B.to_float_up h))
     else l,h

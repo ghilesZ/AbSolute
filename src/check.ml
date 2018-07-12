@@ -2,7 +2,7 @@
 (* this modules checks that the solver implementation works fine *)
 (*****************************************************************)
 
-module CheckBox = Checker.Make(Cartesian.BoxMix)
+module CheckBox = Checker.Make(Cartesian.BoxF)
 
 let print_sep () =
   Format.printf "-----------------------------------------------------------------\n"
@@ -30,6 +30,7 @@ let _ =
   Random.self_init();
   let dir = "tests/" in
   Format.printf "regression test of the solver\n";
+  Format.printf "using the %s domain\n" !Constant.domain;
   print_sep();
   Constant.set_max_iter 5;
   let goods          = ref 0 in
@@ -38,6 +39,7 @@ let _ =
   let frontier_ratio = ref 0. in
   let files = Sys.readdir dir in
   Array.iter (fun fn ->
+      Format.printf "%s : " fn;
       let prob = Builder.parse (Some (dir^fn)) in
       let igoods,ibads = split prob.Csp.solutions in
       let res = CheckBox.result prob in

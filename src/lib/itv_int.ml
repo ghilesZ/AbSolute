@@ -8,7 +8,7 @@ type t = bound * bound
 let validate ((l,h):t) : t =
   if l > h then
     invalid_arg
-      ("int.validate: "
+      ("itv_int.validate: "
        ^ string_of_int l
        ^" "
        ^string_of_int h)
@@ -58,10 +58,9 @@ let meet (l1,h1:t) (l2,h2:t) : t bot = check_bot ((max l1 l2), (min h1 h2))
 (* predicates *)
 (* ---------- *)
 let contains_float ((a,b):t) f =
-  let rounded = ceil f in
-  rounded = f &&
-    let roundedi = int_of_float rounded in
-    a <= roundedi && roundedi <= b
+  let rounded = int_of_float f in
+  (float rounded) = f &&
+    a <= rounded && rounded <= b
 
 let intersect ((l1,h1):t) ((l2,h2):t) = l1 <= h2 &&  l2 <= h1
 

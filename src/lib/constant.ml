@@ -10,7 +10,7 @@ let trace           = ref false
 let debug           = ref false
 let pruning         = ref false
 let sure            = ref false
-let rewrite         = ref true
+let rewrite         = ref false
 let check           = ref false
 
 let set_prec f =
