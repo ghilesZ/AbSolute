@@ -2,13 +2,13 @@
 (* this modules checks that the solver implementation works fine *)
 (*****************************************************************)
 
-module CheckBox = Checker.Make(Cartesian.BoxF)
+module CheckBox = Checker.Make(Cartesian.BoxMix)
 
 let print_sep () =
   Format.printf "-----------------------------------------------------------------\n"
 
 let print_results not_bads goods nb_files =
-  Format.printf "%s success : %i/%i with %i confirmed\n"
+  Format.printf "%ssuccess : %i/%i with %i confirmed\n"
                 (if not_bads = nb_files then "\027[32m" else "\027[31m")
                 not_bads
                 nb_files
@@ -32,7 +32,7 @@ let _ =
   Format.printf "regression test of the solver\n";
   Format.printf "using the %s domain\n" !Constant.domain;
   print_sep();
-  Constant.set_max_iter 5;
+  Constant.set_max_iter 15;
   let goods          = ref 0 in
   let not_bads       = ref 0 in
   let problem        = ref 0 in

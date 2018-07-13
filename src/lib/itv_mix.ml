@@ -154,16 +154,26 @@ let div (x1:t) (x2:t) : t bot =
 (* returns valid value when the exponant is a singleton positive integer.
      fails otherwise *)
 let pow (x1:t) (x2:t) : t =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'pow' in file 'itv_mix.ml' not implemented"
+  match x1,x2 with
+  | Int x1, Int x2 -> Int (I.pow x1 x2)
+  | Real x1, Real x2 -> Real (R.pow x1 x2)
+  | Int x1, Real x2 -> Real (R.pow (to_float x1) x2)
+  | Real x1, Int x2 -> Real (R.pow x1 (to_float x2))
+
+(* nth-root *)
+let n_root (i1:t) (i2:t) =
+  match i1,i2 with
+  | Int i1, Int i2 -> lift_bot (fun x -> Real x) (R.n_root (to_float i1) (to_float i2))
+  | Int i1, Real i2 -> lift_bot (fun x -> Real x) (R.n_root (to_float i1) i2)
+  | Real i1, Int i2 -> lift_bot (fun x -> Real x) (R.n_root i1 (to_float i2))
+  | Real i1, Real i2 -> lift_bot (fun x -> Real x) (R.n_root i1 i2)
 
 (* function calls (sqrt, exp, ln ...) are handled here :
    given a function name and and a list of argument,
    it returns a possibly bottom result *)
-
-let eval_fun (x1:string) (x2:t list) : t bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'eval_fun' in file 'itv_mix.ml' not implemented"
+let eval_fun (name:string) (args:t list) : t bot =
+  let args = List.map (function Real x -> x | Int x -> (to_float x)) args in
+  lift_bot (fun x -> Real x) (R.eval_fun name args)
 
 (************************************************************************)
 (* RILTERING (TEST TRANSRER RUNCTIONS) *)
@@ -204,11 +214,13 @@ let filter_eq (x1:t) (x2:t) : (t * t) bot =
      lift_bot (fun (x1,x2) -> Int x1, Int x2) (I.filter_eq x1 x2)
 
 let filter_neq (i1:t) (i2:t) : (t * t) bot =
-  (* Rormat.printf "filter: %a <> %a\n%!" print i1 print i2; *)
+  (* Format.printf "filter: %a <> %a\n%!" print i1 print i2; *)
   match i1,i2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_neq x1 x2)
   | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_neq x1 x2)
-  | Int x1, Real x2 | Real x2, Int x1 ->
+  | Int x1, Real x2 ->
+     failwith "function 'filter_neq' in file 'itv_mix.ml', case INTxREAL not implented"
+  | Real x1, Int x2 ->
      failwith "function 'filter_neq' in file 'itv_mix.ml', case INTxREAL not implented"
 
 (* given the interval argument(s) and the expected interval result of
@@ -245,17 +257,17 @@ let filter_div (x1:t) (x2:t) (x3:t) : (t*t) bot =
   (* TODO: replace the "failwith" with your own code *)
   failwith "function 'filter_div' in file 'itv_mix.ml' not implemented"
 
-let filter_pow (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_pow' in file 'itv_mix.ml' not implemented"
+let filter_pow (i:t) (n:t) (r:t) : (t*t) bot =
+  merge_bot2 (meet_bot meet i (n_root r n)) (Nb n)
 
 (* filtering function calls like (sqrt, exp, ln ...) is done here :
    given a function name, a list of argument, and a result,
    it remove points that cannot satisfy the relation : f(arg1,..,argn) = r;
    it returns a possibly bottom result *)
-let filter_fun (x1:string) (x2:t list) (x3:t) : (t list) bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_fun' in file 'itv_mix.ml' not implemented"
+let filter_fun (name:string) (args:t list) (res:t) : (t list) bot =
+  let args = List.map (function Real x -> x | Int x -> (to_float x)) args in
+  let float_res = match res with Real x -> x | Int x -> to_float x in
+  lift_bot (List.map (fun x -> Real x)) (R.filter_fun name args float_res)
 
 (* generate a random float within the given interval *)
 let spawn (x:t) : float =

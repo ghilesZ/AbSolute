@@ -142,17 +142,10 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
 
   (* checks if an instance is covered by at least one abstract element of a list *)
   let covered_by (i:Csp.instance) abs_list =
-    Format.printf "checking instance %a\n%!" Csp.print_instance i;
-    match List.find_opt (fun e -> Abs.is_abstraction e i) abs_list with
-    | None ->
-       false
-    | Some x ->
-       Format.printf "the instance %a is coverd by the elt %a\n%!"
-         print_instance i Abs.print x;
-       true
+    List.exists (fun e -> Abs.is_abstraction e i) abs_list
 
   (* checks that the problem's known solutions belong to an astract element *)
-  let check_known_solutions fn result goods=
+  let check_known_solutions fn result goods =
     let open Result in
     try
       List.iter (fun instance ->

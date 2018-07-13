@@ -118,19 +118,16 @@ module Make (I:ITV) = struct
   (* test transfer function *)
   let test (a:t) (e1:expr) (o:cmpop) (e2:expr) : t  =
     let (b1,i1), (b2,i2) = eval a e1, eval a e2 in
-    let j = match o with
-      | LT  -> I.filter_lt i1 i2
-      | LEQ -> I.filter_leq i1 i2
+    let j1,j2 = match o with
+      | LT  -> debot (I.filter_lt i1 i2)
+      | LEQ -> debot (I.filter_leq i1 i2)
       (* a > b <=> b < a*)
-      | GEQ -> I.filter_leq i2 i1
-      | GT  -> I.filter_lt i2 i1
-      | NEQ -> I.filter_neq i1 i2
-      | EQ  -> I.filter_eq i1 i2
+      | GEQ -> let j2,j1 = debot (I.filter_leq i2 i1) in (j1,j2)
+      | GT  -> let j2,j1 = debot (I.filter_lt i2 i1) in (j1,j2)
+      | NEQ -> debot (I.filter_neq i1 i2)
+      | EQ  -> debot (I.filter_eq i1 i2)
     in
-    (fun a ->
-      let j1,j2 = debot j in
-      refine (refine a (b1,j1)) (b2,j2)
-    ) a
+    refine (refine a (b1,j1)) (b2,j2)
 
   (* test transfer function *)
   let test_maxvar (a:t) (e1:expr) (o:cmpop) (e2:expr) : (t* (var * float))  =
@@ -180,21 +177,18 @@ module Make (I:ITV) = struct
       refine a evalexpr
     in
     let (b1,i1), (b2,i2) = eval a e1, eval a e2 in
-    let j = match o with
-    | EQ  -> I.filter_eq i1 i2
-    | LEQ -> I.filter_leq i1 i2
-    (* a > b <=> b < a*)
-    | GEQ -> I.filter_leq i2 i1
-    | GT  -> I.filter_lt i2 i1
-    | NEQ -> I.filter_neq i1 i2
-    | LT  -> I.filter_lt i1 i2
+    let j1,j2 = match o with
+      | LT  -> debot (I.filter_lt i1 i2)
+      | LEQ -> debot (I.filter_leq i1 i2)
+      (* a > b <=> b < a*)
+      | GEQ -> let j2,j1 = debot (I.filter_leq i2 i1) in (j1,j2)
+      | GT  -> let j2,j1 = debot (I.filter_lt i2 i1) in (j1,j2)
+      | NEQ -> debot (I.filter_neq i1 i2)
+      | EQ  -> debot (I.filter_eq i1 i2)
     in
-    (fun a ->
-      let j1,j2 = debot j in
-      let a = refine_maxvar (refine_maxvar a (b1,j1)) (b2,j2) in
-      match !biggest_var with
-      | None -> failwith "no var in constraint"
-      | Some ((v,range) as var) -> a,var
-    ) a
+    let a = refine_maxvar (refine_maxvar a (b1,j1)) (b2,j2) in
+    match !biggest_var with
+    | None -> failwith "no var in constraint"
+    | Some ((v,range) as var) -> a,var
 
 end

@@ -135,11 +135,8 @@ module Box (I:ITV) = struct
   let is_abstraction a (i:instance) =
     VMap.for_all (fun k value ->
         let itv = VMap.find k a in
-        let res = I.contains_float itv value in
-        let answer = if res then "yes" else "no" in
-        Format.printf "checking if %a contains %f for variable %s. %s\n%!" I.print itv value k answer;
-        res
-        ) i
+        I.contains_float itv value
+      ) i
 end
 
 (*************)
