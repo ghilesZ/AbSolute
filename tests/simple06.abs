@@ -3,9 +3,9 @@ init {
 }
 
 constraints {
-  x^2 + 2*x = 0;
+  x*x = 1;
 }
 
 solutions {
-  {x=0};
+  {x=1};
 }

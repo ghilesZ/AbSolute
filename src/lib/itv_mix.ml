@@ -74,9 +74,18 @@ let meet (x1:t) (x2:t) : t bot =
 
 (* predicates *)
 (* ---------- *)
-let subseteq (x1:t) (x2:t) : bool =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'subseteq' in file 'itv_mix.ml' not implemented"
+
+(* retruns true if the interval is positive (large sense), false otherwise *)
+let is_positive (itv:t) : bool =
+  match itv with
+  | Int (a,b) -> a >= 0
+  | Real r -> R.subseteq r R.positive
+
+(* retruns true if the interval is negative (large sense), false otherwise *)
+let is_negative (itv:t) : bool =
+  match itv with
+  | Int (a,b) -> b <= 0
+  | Real r -> R.subseteq r R.negative
 
 let contains_float (x:t) (f:float) : bool =
   match x with
@@ -118,7 +127,7 @@ let neg (x:t) : t = map I.neg R.neg x
 let abs (x:t) : t = map I.abs R.abs x
 
 let add (x1:t) (x2:t) : t =
-  (* Rormat.printf "eval: %a + %a\n%!" print x1 print x2; *)
+  (* Format.printf "eval: %a + %a\n%!" print x1 print x2; *)
   match x1,x2 with
   | Int x1 , Int x2 ->  Int(I.add x1 x2)
   | Real x1, Real x2 -> Real (R.add x1 x2)
@@ -126,14 +135,15 @@ let add (x1:t) (x2:t) : t =
 
 let sub (x1:t) (x2:t) : t =
   match x1,x2 with
-  | Int x1 , Int x2 ->  Int(I.sub x1 x2)
+  | Int x1 , Int x2  -> Int  (I.sub x1 x2)
   | Real x1, Real x2 -> Real (R.sub x1 x2)
-  | Int x1, Real x2 | Real x2, Int x1 -> Real (R.sub x2 (to_float x1))
+  | Int x1 , Real x2 -> Real (R.sub (to_float x1) x2)
+  | Real x1, Int x2  -> Real (R.sub x1 (to_float x2))
 
 let mul (x1:t) (x2:t) : t =
-  (* Rormat.printf "eval: %a * %a\n%!" print x1 print x2; *)
+  (* Format.printf "eval: %a * %a\n%!" print x1 print x2; *)
   match x1,x2 with
-  | Int x1 , Int x2 ->  Int(I.mul x1 x2)
+  | Int x1 , Int x2 ->  Int (I.mul x1 x2)
   | Real x1, Real x2 -> Real (R.mul x1 x2)
   | Int x1, Real x2 | Real x2, Int x1 -> Real (R.mul x2 (to_float x1))
 
@@ -146,8 +156,12 @@ let div (x1:t) (x2:t) : t bot =
   | Real x1, Real x2 ->
      let res = R.div x1 x2 in
      lift_bot (fun x -> Real x) res
-  | Int x1, Real x2 | Real x2, Int x1 ->
+  | Int x1, Real x2 ->
      let x1 = to_float x1 in
+     let res = R.div x1 x2 in
+     lift_bot (fun x -> Real x) res
+  | Real x1, Int x2 ->
+     let x2 = to_float x2 in
      let res = R.div x1 x2 in
      lift_bot (fun x -> Real x) res
 
@@ -176,7 +190,7 @@ let eval_fun (name:string) (args:t list) : t bot =
   lift_bot (fun x -> Real x) (R.eval_fun name args)
 
 (************************************************************************)
-(* RILTERING (TEST TRANSRER RUNCTIONS) *)
+(* FILTERING (TEST TRANSRER RUNCTIONS) *)
 (************************************************************************)
 
 (* given two interval arguments, return a subset of each argument
@@ -209,8 +223,11 @@ let filter_eq (x1:t) (x2:t) : (t * t) bot =
   match x1,x2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_eq x1 x2)
   | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_eq x1 x2)
-  | Int x1, Real x2 | Real x2, Int x1 ->
+  | Int x1, Real x2 ->
      let x2 = to_int x2 in
+     lift_bot (fun (x1,x2) -> Int x1, Int x2) (I.filter_eq x1 x2)
+  | Real x1, Int x2 ->
+     let x1 = to_int x1 in
      lift_bot (fun (x1,x2) -> Int x1, Int x2) (I.filter_eq x1 x2)
 
 let filter_neq (i1:t) (i2:t) : (t * t) bot =
@@ -218,10 +235,7 @@ let filter_neq (i1:t) (i2:t) : (t * t) bot =
   match i1,i2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_neq x1 x2)
   | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_neq x1 x2)
-  | Int x1, Real x2 ->
-     failwith "function 'filter_neq' in file 'itv_mix.ml', case INTxREAL not implented"
-  | Real x1, Int x2 ->
-     failwith "function 'filter_neq' in file 'itv_mix.ml', case INTxREAL not implented"
+  | _ -> (* TODO: improve precision *) Nb (i1,i2)
 
 (* given the interval argument(s) and the expected interval result of
    a numeric operation, returns a refined interval argument(s) where
@@ -233,10 +247,10 @@ let filter_neq (i1:t) (i2:t) : (t * t) bot =
 let filter_neg (i:t) (r:t) : t bot =
   meet i (neg r)
 
-(* r = i1+i2 => i1 = r-i2 /\ i2 = r-i1 *)
-let filter_abs (x1:t) (x2:t) : t bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_abs' in file 'itv_mix.ml' not implemented"
+let filter_abs (i:t) (r:t) : t bot =
+  if is_positive i then meet i r
+  else if is_negative i then meet i (neg r)
+  else meet i (join (neg r) r)
 
 let filter_add (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2 (meet i1 (sub r i2)) (meet i2 (sub r i1))
@@ -249,13 +263,15 @@ let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
 let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2
     (if contains_float r 0. && contains_float i2 0. then Nb i1
-     else match (div r i2) with Bot -> Bot | Nb x -> meet i1 x)
+     else match div r i2 with Bot -> Bot | Nb x -> meet i1 x)
     (if contains_float r 0. && contains_float i1 0. then Nb i2
-     else match (div r i1) with Bot -> Bot | Nb x -> meet i2 x)
+     else match div r i1 with Bot -> Bot | Nb x -> meet i2 x)
 
-let filter_div (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (* TODO: replace the "failwith" with your own code *)
-  failwith "function 'filter_div' in file 'itv_mix.ml' not implemented"
+let filter_div (i1:t) (i2:t) (r:t) : (t*t) bot =
+  merge_bot2
+    (meet i1 (mul i2 r))
+    (if contains_float r 0. && contains_float i1 0. then Nb i2
+     else match (div i1 r) with Bot -> Bot | Nb x -> meet i2 x)
 
 let filter_pow (i:t) (n:t) (r:t) : (t*t) bot =
   merge_bot2 (meet_bot meet i (n_root r n)) (Nb n)

@@ -73,7 +73,7 @@ let range ((a,b):t) = b - a
 
 (* splits in two, around the middle *)
 let split ((a,b) :t) =
-  assert (a<>b);
+  assert (a<b);
   if a+1=b then [Nb (a,a); Nb(b,b)]
   else
     let mid = a + (b-a)/2 in
@@ -126,24 +126,28 @@ let div (i1:t) (i2:t) : t bot =
 (* returns valid value when the exponant is a singleton positive integer.
    fails otherwise *)
 let pow =
-  let pow_aux i exp =
-    int_of_float ((float i) ** (float exp))
-  in
+  let pow_aux i exp = int_of_float ((float i) ** (float exp)) in
   fun (l1,u1:t) (l2,u2:t) ->
   if l2=u2 then
-    match l2 with
+    let exp = l2 in
+    match exp with
     | 0 -> (1,1)
     | 1 -> (l1, u1)
-    | x when x > 1 && l2 mod 2 = 1 -> (pow_aux l1 l2, pow_aux u1 l2)
-    | x when x > 1 ->
-       if l1 < 0 && u1 >= 0 then
-	       (0, max (pow_aux l1 l2) (pow_aux u1 l2))
-       else if l1 >= 0 then
-	       (pow_aux l1 l2, pow_aux u1 l2)
-       else (pow_aux u1 l2, pow_aux l1 l2)
+    | x when x > 1 && exp mod 2 = 1 ->
+       let low = pow_aux l1 exp and up = pow_aux u1 exp in
+       if low <= up then low,up else failwith "aha"
+    | x when x > 1 && exp mod 2 = 0 ->
+       if l1 >= 0 then
+	       let low = pow_aux exp l2 and up =  pow_aux u1 exp in
+         if low <= up then low,up else failwith "aha"
+       else if u1 <= 0 then
+         let low = pow_aux u1 exp and up = pow_aux l1 exp in
+         if low <= up then low,up else failwith "aha"
+       else
+        let low = 0 and up = max (pow_aux l1 exp) (pow_aux u1 exp) in
+        if low <= up then low,up else failwith "aha"
     | _ -> failwith "cant handle negatives powers"
   else failwith  "itv_int.ml cant handle non_singleton powers"
-
 
 (* function calls (sqrt, exp, ln ...) are handled here :
    given a function name and and a list of argument,
