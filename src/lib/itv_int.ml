@@ -27,7 +27,8 @@ let of_bound (x:bound) : t = validate (x,x)
 let of_bounds (l:bound) (h:bound) = validate (l,h)
 
 let of_ints = of_bounds
-let of_floats a b = of_ints (int_of_float (floor a)) (int_of_float (ceil b))
+let of_floats a b =
+  of_ints (int_of_float (floor a)) (int_of_float (ceil b))
 
 let of_int = of_bound
 
@@ -133,19 +134,14 @@ let pow =
     match exp with
     | 0 -> (1,1)
     | 1 -> (l1, u1)
-    | x when x > 1 && exp mod 2 = 1 ->
-       let low = pow_aux l1 exp and up = pow_aux u1 exp in
-       if low <= up then low,up else failwith "aha"
+    | x when x > 1 && exp mod 2 = 1 -> (pow_aux l1 exp),(pow_aux u1 exp)
     | x when x > 1 && exp mod 2 = 0 ->
        if l1 >= 0 then
-	       let low = pow_aux exp l2 and up =  pow_aux u1 exp in
-         if low <= up then low,up else failwith "aha"
+	       (pow_aux exp l2),(pow_aux u1 exp)
        else if u1 <= 0 then
-         let low = pow_aux u1 exp and up = pow_aux l1 exp in
-         if low <= up then low,up else failwith "aha"
+         (pow_aux u1 exp),(pow_aux l1 exp)
        else
-        let low = 0 and up = max (pow_aux l1 exp) (pow_aux u1 exp) in
-        if low <= up then low,up else failwith "aha"
+         0,max (pow_aux l1 exp) (pow_aux u1 exp)
     | _ -> failwith "cant handle negatives powers"
   else failwith  "itv_int.ml cant handle non_singleton powers"
 

@@ -5,13 +5,16 @@ module R = Itv.ItvF
 
 type t = Int of I.t | Real of R.t
 
+(* Conversion utilities *)
+
 let to_float (i:I.t) =
   let (a,b) = I.to_float_range i in
   R.of_floats a b
 
-let to_int (r:R.t) =
+(* real itv conversion to integer itv. may be bottom *)
+let to_int (r:R.t) : I.t bot =
   let (a,b) = R.to_float_range r in
-  I.of_floats (ceil a) (floor b)
+  I.check_bot (I.of_floats (ceil a) (floor b))
 
 let dispatch f_int f_real = function
   | Int x -> f_int x
@@ -70,7 +73,10 @@ let meet (x1:t) (x2:t) : t bot =
   match x1,x2 with
   | Int x1, Int x2 -> lift_bot (fun x -> Int x) (I.meet x1 x2)
   | Real x1, Real x2 -> lift_bot (fun x -> Real x) (R.meet x1 x2)
-  | Int x1, Real x2 | Real x2, Int x1 -> lift_bot (fun x -> Int x) (I.meet x1 (to_int x2))
+  | Int x1, Real x2 | Real x2, Int x1 ->
+     match to_int x2 with
+     | Bot -> Bot
+     | Nb x2 -> lift_bot (fun x -> Int x) (I.meet x1 x2)
 
 (* predicates *)
 (* ---------- *)
@@ -96,7 +102,10 @@ let intersect (x1:t) (x2:t) : bool =
   match x1,x2 with
   | Int x1, Int x2 -> I.intersect x1 x2
   | Real x1, Real x2 -> R.intersect x1 x2
-  | Int x1, Real x2 | Real x2, Int x1 -> R.intersect (to_float x1) x2
+  | Int x1, Real x2 | Real x2, Int x1 ->
+     match to_int x2 with
+     | Bot -> false
+     | Nb x2 -> I.intersect x1 x2
 
 (* mesure *)
 (* ------ *)
@@ -145,9 +154,9 @@ let mul (x1:t) (x2:t) : t =
   match x1,x2 with
   | Int x1 , Int x2 ->  Int (I.mul x1 x2)
   | Real x1, Real x2 -> Real (R.mul x1 x2)
-  | Int x1, Real x2 | Real x2, Int x1 -> Real (R.mul x2 (to_float x1))
+  | Int x1, Real x2 | Real x2, Int x1 -> Real (R.mul (to_float x1) x2)
 
-(* return valid values (possibly Bot) + possible division by zero *)
+(* return valid values (possibly Bot) *)
 let div (x1:t) (x2:t) : t bot =
   match x1,x2 with
   | Int x1 , Int x2 ->
@@ -196,39 +205,56 @@ let eval_fun (name:string) (args:t list) : t bot =
 (* given two interval arguments, return a subset of each argument
    by removing points that cannot satisfy the predicate;
    may also return Bot if no point can satisfy the predicate *)
-
 let filter_leq (x1:t) (x2:t) : (t * t) bot =
   match x1,x2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_leq x1 x2)
   | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_leq x1 x2)
   | Int x1, Real x2 ->
      let x1 = to_float x1 in
-     lift_bot (fun (x1,x2) -> Int (to_int x1), Real x2) (R.filter_leq x1 x2)
+     (match R.filter_leq x1 x2 with
+     | Bot -> Bot
+     | Nb (x1,x2) ->
+        lift_bot (fun x1 -> Int x1, Real x2) (to_int x1))
   | Real x1, Int x2 ->
      let x2 = to_float x2 in
-     lift_bot (fun (x1,x2) -> Real x1, Int (to_int x2)) (R.filter_leq x1 x2)
+     (match R.filter_leq x1 x2 with
+     | Bot -> Bot
+     | Nb (x1,x2) ->
+        lift_bot (fun x2 -> Real x1, Int x2) (to_int x2))
 
 let filter_lt (x1:t) (x2:t) : (t * t) bot =
   match x1,x2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_lt x1 x2)
   | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_lt x1 x2)
-  | Int x1, Real x2 ->
+ | Int x1, Real x2 ->
      let x1 = to_float x1 in
-     lift_bot (fun (x1,x2) -> Int (to_int x1), Real x2) (R.filter_lt x1 x2)
+     (match R.filter_lt x1 x2 with
+     | Bot -> Bot
+     | Nb (x1,x2) ->
+        lift_bot (fun x1 -> Int x1, Real x2) (to_int x1))
   | Real x1, Int x2 ->
      let x2 = to_float x2 in
-     lift_bot (fun (x1,x2) -> Real x1, Int (to_int x2)) (R.filter_lt x1 x2)
+     (match R.filter_lt x1 x2 with
+     | Bot -> Bot
+     | Nb (x1,x2) ->
+        lift_bot (fun x2 -> Real x1, Int x2) (to_int x2))
 
 let filter_eq (x1:t) (x2:t) : (t * t) bot =
   match x1,x2 with
   | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_eq x1 x2)
   | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_eq x1 x2)
   | Int x1, Real x2 ->
-     let x2 = to_int x2 in
-     lift_bot (fun (x1,x2) -> Int x1, Int x2) (I.filter_eq x1 x2)
+     let x1 = to_float x1 in
+     (match R.filter_eq x1 x2 with
+     | Bot -> Bot
+     | Nb (x1,x2) ->
+        lift_bot (fun x1 -> Int x1, Real x2) (to_int x1))
   | Real x1, Int x2 ->
-     let x1 = to_int x1 in
-     lift_bot (fun (x1,x2) -> Int x1, Int x2) (I.filter_eq x1 x2)
+     let x2 = to_float x2 in
+     (match R.filter_eq x1 x2 with
+     | Bot -> Bot
+     | Nb (x1,x2) ->
+        lift_bot (fun x2 -> Real x1, Int x2) (to_int x2))
 
 let filter_neq (i1:t) (i2:t) : (t * t) bot =
   (* Format.printf "filter: %a <> %a\n%!" print i1 print i2; *)
