@@ -101,9 +101,7 @@ let go () =
   | "boxmix"-> SBoxMix.go prob
   | "oct"   -> SOctCP.go prob
   | "poly"  -> begin
-    if !step_by_step
-    then SBS_POLY.solving prob
-    else SPolyCP.go prob
+      if !step_by_step then SBS_POLY.solving prob else SPolyCP.go prob
     end
   | "vpl" -> begin
         Vpl_domain.start_profile();

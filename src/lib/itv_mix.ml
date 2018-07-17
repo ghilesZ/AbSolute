@@ -14,7 +14,7 @@ let to_float (i:I.t) =
 (* real itv conversion to integer itv. may be bottom *)
 let to_int (r:R.t) : I.t bot =
   let (a,b) = R.to_float_range r in
-  I.check_bot (I.of_floats (ceil a) (floor b))
+  (I.of_floats (ceil a) (floor b))
 
 let dispatch f_int f_real = function
   | Int x -> f_int x
@@ -25,7 +25,7 @@ let map f_int f_real = function
   | Real x -> Real (f_real x)
 
 (************************************************************************)
-(* CONSTRUCTORS AND CONSTANTS *)
+(*                      CONSTRUCTORS AND CONSTANTS                      *)
 (************************************************************************)
 
 let of_ints (x1:int) (x2:int) : t =
@@ -47,7 +47,7 @@ let check_bot (x:t) : t bot =
   | Real x -> lift_bot (fun x -> Real x) (R.check_bot x)
 
 (************************************************************************)
-(* PRINTING and CONVERSIONS *)
+(*                       PRINTING and CONVERSIONS                       *)
 (************************************************************************)
 
 let to_float_range (x:t) : float * float =
@@ -74,9 +74,8 @@ let meet (x1:t) (x2:t) : t bot =
   | Int x1, Int x2 -> lift_bot (fun x -> Int x) (I.meet x1 x2)
   | Real x1, Real x2 -> lift_bot (fun x -> Real x) (R.meet x1 x2)
   | Int x1, Real x2 | Real x2, Int x1 ->
-     match to_int x2 with
-     | Bot -> Bot
-     | Nb x2 -> lift_bot (fun x -> Int x) (I.meet x1 x2)
+     let x1 = to_float x1 in
+     lift_bot (fun x -> Int x) (strict_bot to_int (R.meet x1 x2))
 
 (* predicates *)
 (* ---------- *)
@@ -131,48 +130,72 @@ let prune (x1:t) (x2:t) : t list * t =
 (* INTERVAL ARITHMETICS (RORWARD EVALUATION) *)
 (************************************************************************)
 
-let neg (x:t) : t = map I.neg R.neg x
+let neg (x:t) : t =
+  (* Format.printf "neg: -%a " print x; *)
+  (* let res = *)
+    map I.neg R.neg x
+  (* in Format.printf " = %a\n%!" print res; res *)
 
-let abs (x:t) : t = map I.abs R.abs x
+let abs (x:t) : t =
+  (* Format.printf "abs: |%a| " print x;
+   * let res = *)
+    map I.abs R.abs x
+  (* in Format.printf " = %a\n%!" print res; res *)
 
 let add (x1:t) (x2:t) : t =
-  (* Format.printf "eval: %a + %a\n%!" print x1 print x2; *)
-  match x1,x2 with
-  | Int x1 , Int x2 ->  Int(I.add x1 x2)
-  | Real x1, Real x2 -> Real (R.add x1 x2)
-  | Int x1, Real x2 | Real x2, Int x1 -> Real (R.add x2 (to_float x1))
+  (* Format.printf "sub: %a + %a" print x1 print x2;
+   * let res = *)
+    match x1,x2 with
+    | Int x1 , Int x2 ->  Int(I.add x1 x2)
+    | Real x1, Real x2 -> Real (R.add x1 x2)
+    | Int x1, Real x2 | Real x2, Int x1 -> Real (R.add x2 (to_float x1))
+  (* in Format.printf " = %a\n%!" print res; res *)
 
 let sub (x1:t) (x2:t) : t =
-  match x1,x2 with
-  | Int x1 , Int x2  -> Int  (I.sub x1 x2)
-  | Real x1, Real x2 -> Real (R.sub x1 x2)
-  | Int x1 , Real x2 -> Real (R.sub (to_float x1) x2)
-  | Real x1, Int x2  -> Real (R.sub x1 (to_float x2))
+  (* Format.printf "sub: %a - %a" print x1 print x2;
+   * let res = *)
+    match x1,x2 with
+    | Int x1 , Int x2  -> Int  (I.sub x1 x2)
+    | Real x1, Real x2 -> Real (R.sub x1 x2)
+    | Int x1 , Real x2 -> Real (R.sub (to_float x1) x2)
+    | Real x1, Int x2  -> Real (R.sub x1 (to_float x2))
+  (* in Format.printf " = %a\n%!" print res; res *)
 
 let mul (x1:t) (x2:t) : t =
-  (* Format.printf "eval: %a * %a\n%!" print x1 print x2; *)
-  match x1,x2 with
-  | Int x1 , Int x2 ->  Int (I.mul x1 x2)
-  | Real x1, Real x2 -> Real (R.mul x1 x2)
-  | Int x1, Real x2 | Real x2, Int x1 -> Real (R.mul (to_float x1) x2)
+  (* Format.printf "mul: %a * %a" print x1 print x2;
+   * let res = *)
+    match x1,x2 with
+    | Int x1 , Int x2 ->  Int (I.mul x1 x2)
+    | Real x1, Real x2 -> Real (R.mul x1 x2)
+    | Int x1, Real x2 | Real x2, Int x1 -> Real (R.mul (to_float x1) x2)
+  (* in Format.printf " = %a\n%!" print res; res *)
 
 (* return valid values (possibly Bot) *)
 let div (x1:t) (x2:t) : t bot =
+  (* Format.printf "div: %a / %a" print x1 print x2;
+   * let res = *)
   match x1,x2 with
   | Int x1 , Int x2 ->
-     let res = I.div x1 x2 in
-     lift_bot (fun x -> Int x) res
-  | Real x1, Real x2 ->
-     let res = R.div x1 x2 in
-     lift_bot (fun x -> Real x) res
+     if I.contains_float x2 0. then
+       let pos = I.meet I.positive x2 and neg = I.meet I.negative x2 in
+       let divpos = strict_bot (fun x -> R.div (to_float x1) (to_float x)) pos
+       and divneg = strict_bot (fun x -> R.div (to_float x1) (to_float x)) neg
+       in lift_bot (fun x -> Real x) (join_bot2 R.join divpos divneg)
+     else lift_bot (fun x -> Real x) (R.div (to_float x1) (to_float x2))
   | Int x1, Real x2 ->
-     let x1 = to_float x1 in
-     let res = R.div x1 x2 in
-     lift_bot (fun x -> Real x) res
+     lift_bot (fun x -> Real x) (R.div (to_float x1) x2)
   | Real x1, Int x2 ->
-     let x2 = to_float x2 in
-     let res = R.div x1 x2 in
-     lift_bot (fun x -> Real x) res
+     if I.contains_float x2 0. then
+       let pos = I.meet I.positive x2 and neg = I.meet I.negative x2 in
+       let divpos = strict_bot (fun x -> R.div x1 (to_float x)) pos
+       and divneg = strict_bot (fun x -> R.div x1 (to_float x)) neg
+       in lift_bot (fun x -> Real x) (join_bot2 R.join divpos divneg)
+     else lift_bot (fun x -> Real x) (R.div x1 (to_float x2))
+  | Real x1, Real x2 -> lift_bot (fun x -> Real x) (R.div x1 x2)
+  (* in
+   * match res with
+   * | Nb r -> Format.printf " = %a\n%!" print r; res
+   * | Bot -> res *)
 
 (* returns valid value when the exponant is a singleton positive integer.
      fails otherwise *)
@@ -185,6 +208,7 @@ let pow (x1:t) (x2:t) : t =
 
 (* nth-root *)
 let n_root (i1:t) (i2:t) =
+  (*TODO: maybe improve precision on perfect nth roots *)
   match i1,i2 with
   | Int i1, Int i2 -> lift_bot (fun x -> Real x) (R.n_root (to_float i1) (to_float i2))
   | Int i1, Real i2 -> lift_bot (fun x -> Real x) (R.n_root (to_float i1) i2)
@@ -279,7 +303,13 @@ let filter_abs (i:t) (r:t) : t bot =
   else meet i (join (neg r) r)
 
 let filter_add (i1:t) (i2:t) (r:t) : (t*t) bot =
-  merge_bot2 (meet i1 (sub r i2)) (meet i2 (sub r i1))
+  (* Format.printf "filter add: %a + %a = %a" print i1 print i2 print r;
+   * let res = *)
+    merge_bot2 (meet i1 (sub r i2)) (meet i2 (sub r i1))
+  (* in
+   * match res with
+   * | Bot -> Format.printf " -> bottom\n%!"; res
+   * | Nb (i1,i2) -> Format.printf " -> %a & %a\n%!" print i1 print i2; res *)
 
 (* r = i1-i2 => i1 = i2+r /\ i2 = i1-r *)
 let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
@@ -287,11 +317,22 @@ let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
 
 (* r = i1*i2 => (i1 = r/i2 \/ i2=r=0) /\ (i2 = r/i1 \/ i1=r=0) *)
 let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
-  merge_bot2
+  (* Format.printf "filter mul: %a * %a = %a" print i1 print i2 print r;
+   * let res = *)
+     merge_bot2
     (if contains_float r 0. && contains_float i2 0. then Nb i1
-     else match div r i2 with Bot -> Bot | Nb x -> meet i1 x)
+     else
+       match div r i2 with
+       | Bot -> Bot
+       | Nb x ->
+          (* Format.printf "%a meet %a\n%!" print i1 print x; *)
+          meet i1 x)
     (if contains_float r 0. && contains_float i1 0. then Nb i2
      else match div r i1 with Bot -> Bot | Nb x -> meet i2 x)
+  (* in
+   * match res with
+   * | Bot -> Format.printf " -> bottom\n%!"; res
+   * | Nb (i1,i2) -> Format.printf " -> %a & %a\n%!" print i1 print i2; res *)
 
 let filter_div (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2

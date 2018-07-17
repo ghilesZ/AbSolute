@@ -27,8 +27,9 @@ let of_bound (x:bound) : t = validate (x,x)
 let of_bounds (l:bound) (h:bound) = validate (l,h)
 
 let of_ints = of_bounds
-let of_floats a b =
-  of_ints (int_of_float (floor a)) (int_of_float (ceil b))
+
+let of_floats a b : t bot =
+  check_bot (of_ints (int_of_float (floor a)) (int_of_float (ceil b)))
 
 let of_int = of_bound
 
@@ -42,7 +43,7 @@ let negative : t = (min_int,-1)
 (* PRINTING and CONVERSIONS *)
 (************************************************************************)
 
-let to_float_range ((a,b):t) = (float a),(float b)
+let to_float_range ((a,b):t) = (float a), (float b)
 
 let print (fmt:Format.formatter) ((a,b):t) =
   Format.fprintf fmt "[%i,%i]" a b
@@ -58,9 +59,11 @@ let meet (l1,h1:t) (l2,h2:t) : t bot = check_bot ((max l1 l2), (min h1 h2))
 
 (* predicates *)
 (* ---------- *)
+(* returns true if f can be conferted exactly to an integer *)
 let contains_float ((a,b):t) f =
-  let rounded = int_of_float f in
-  (float rounded) = f &&
+  let rounded = ceil f in
+  rounded = f &&
+    let rounded = int_of_float rounded in
     a <= rounded && rounded <= b
 
 let intersect ((l1,h1):t) ((l2,h2):t) = l1 <= h2 &&  l2 <= h1
@@ -105,11 +108,8 @@ let sub (l1,h1:t) (l2,h2:t) : t =
 
 (* tries the different possibilities *)
 let mix4 f l1 h1 l2 h2 =
-  let ll = f l1 l2
-  and lh = f l1 h2
-  and hl = f h1 l2
-  and hh = f h1 h2
-  in (min (min lh ll) (min hl hh)), (max (max lh ll) (max hl hh))
+  (min (min (f l1 l2) (f l1 h2)) (min (f h1 l2) (f h1 h2))),
+  (max (max (f l1 l2) (f l1 h2)) (max (f h1 l2) (f h1 h2)))
 
 let mul (l1,h1:t) (l2,h2:t) : t =
   mix4 ( * ) l1 h1 l2 h2

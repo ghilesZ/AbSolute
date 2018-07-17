@@ -84,6 +84,10 @@ let rec simplify env expr : (P.t * string CoEnv.t) =
 
 (* polynom to expression conversion *)
 and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
+  let constant_handling c =
+    if ceil c = c then Int (int_of_float c)
+    else Float c
+  in
   let fake_vars = reverse_map fake_vars in
   let of_id id =
     try VMap.find id fake_vars
@@ -92,7 +96,7 @@ and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
   let var_to_expr ((id,exp):P.var) : expr =
     let rec iter acc = function
       | 0 -> acc
-      | n -> iter (Binary(MUL,acc,(of_id id))) (n-1)
+      | n -> iter (Binary(MUL, acc, of_id id)) (n-1)
     in
     match (int_of_float exp) with
     | 0 -> Int 1
@@ -100,7 +104,8 @@ and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
     | n -> iter (of_id id) (n-1)
   in
   let cell_to_expr ((c,v) as m) =
-    if P.is_monom_constant m then Float c
+    if P.is_monom_constant m then
+      constant_handling c
     else if c = 1. then
       match v with
       | h::tl -> List.fold_left (fun acc e ->
@@ -110,13 +115,14 @@ and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
     else
       List.fold_left (fun acc e ->
           Binary(MUL,acc,(var_to_expr e))
-        ) (Float c) v
+        ) (constant_handling c) v
   in
   match p with
   | [] -> Int 0
-  | h::tl -> List.fold_left (fun acc c -> Binary(ADD,acc,(cell_to_expr c)))
-                            (cell_to_expr h)
-                            tl
+  | h::tl -> List.fold_left
+               (fun acc c -> Binary(ADD, acc, cell_to_expr c))
+               (cell_to_expr h)
+               tl
 
 (* simplify the polynomial part of a constraint *)
 let rewrite (cmp,e1,e2) : (cmpop * expr * expr) =

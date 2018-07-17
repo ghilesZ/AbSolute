@@ -63,8 +63,9 @@ let normalize p =
 (*                        Drawing utilities                            *)
 (***********************************************************************)
 
-let fill_circle a b r =
-  let a,b = normalize (a,b) in
+let fill_circle p r color =
+  set_color color;
+  let a,b = normalize p in
   fill_circle a b r
 
 (* build the array corresponding to the list of points normalized and
@@ -77,9 +78,10 @@ let do_poly f l col =
   List.iteri (fun i (x,y) -> arr.(i) <- normalize (x,y)) l;
   f arr
 
-let fill_poly = do_poly fill_poly
+let fill_poly vertex color =
+  do_poly fill_poly vertex color
 
-let draw_poly = do_poly draw_poly
+let draw_poly vertex color = do_poly draw_poly vertex color
 
 let draw_seg p1 p2 col =
   set_color col;
@@ -113,7 +115,6 @@ let draw_string x y str col =
   set_color col;
   moveto (int_of_float x) (int_of_float y);
   draw_string str
-
 
 (***********************************************************************)
 (*                        Window Initialization                        *)
