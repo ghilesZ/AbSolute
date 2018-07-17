@@ -39,7 +39,7 @@ let split sols =
 
 let _ =
   Random.self_init();
-  let dir = "tests/" in
+  let dir = "problems/" in
   Format.printf "regression test of the solver\n";
   Format.printf "using the %s domain\n" !Constant.domain;
   print_sep();
