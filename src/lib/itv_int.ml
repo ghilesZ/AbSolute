@@ -128,20 +128,21 @@ let div (i1:t) (i2:t) : t bot =
    fails otherwise *)
 let pow =
   let pow_aux i exp = int_of_float ((float i) ** (float exp)) in
-  fun (l1,u1:t) (l2,u2:t) ->
+  fun (l1,u1 as itv:t) (l2,u2:t) ->
   if l2=u2 then
     let exp = l2 in
     match exp with
     | 0 -> (1,1)
-    | 1 -> (l1, u1)
-    | x when x > 1 && exp mod 2 = 1 -> (pow_aux l1 exp),(pow_aux u1 exp)
-    | x when x > 1 && exp mod 2 = 0 ->
-       if l1 >= 0 then
-	       (pow_aux exp l2),(pow_aux u1 exp)
-       else if u1 <= 0 then
-         (pow_aux u1 exp),(pow_aux l1 exp)
+    | 1 -> itv
+    | x when x > 1 ->
+       if exp mod 2 = 1 then (pow_aux l1 exp),(pow_aux u1 exp)
        else
-         0,max (pow_aux l1 exp) (pow_aux u1 exp)
+         if l1 >= 0 then
+	         (pow_aux l1 exp),(pow_aux u1 exp)
+         else if u1 <= 0 then
+           (pow_aux u1 exp),(pow_aux l1 exp)
+         else
+           0,max (pow_aux l1 exp) (pow_aux u1 exp)
     | _ -> failwith "cant handle negatives powers"
   else failwith  "itv_int.ml cant handle non_singleton powers"
 
@@ -158,10 +159,8 @@ let eval_fun (x1:string) (x2:t list) : t bot =
 let filter_leq (l1,h1:t) (l2,h2:t) : (t * t) bot =
   merge_bot2 (check_bot (l1, min h1 h2)) (check_bot (max l1 l2, h2))
 
-let filter_lt ((l1,h1) as i1:t) ((l2,h2) as i2:t) : (t * t) bot =
-  if l1 = h1 && l2 = h2 && l1 = l2 then Bot
-  else if h2 <= l1 then Bot
-  else filter_leq i1 i2
+let filter_lt ((l1,h1):t) ((l2,h2):t) : (t * t) bot =
+  merge_bot2 (check_bot (l1, min h1 (h2-1))) (check_bot (max (l1+1) l2, h2))
 
 let filter_eq (i1:t) (i2:t) : (t * t) bot =
   lift_bot (fun x -> x,x) (meet i1 i2)

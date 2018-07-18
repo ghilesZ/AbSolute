@@ -113,7 +113,12 @@ module Make (Abs : AbstractCP) = struct
     (* return Bot if the element doesnt satisfy at all the constraints *)
     let build abs constrs : t bot =
       try
-        let abs' = List.fold_left filter abs constrs in
+        let abs' =
+          List.fold_left (fun a c ->
+              try filter a c
+              with e -> failwith (Format.asprintf "problem while propagating the constraint %a" Csp.print_bexpr c)
+            ) abs constrs
+        in
         if Abs.is_bottom abs' then Bot
         else
           let complementary =

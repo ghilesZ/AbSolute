@@ -10,6 +10,12 @@ module VMap = struct
 
 end
 
+
+(******************)
+(* Printing stuff *)
+(******************)
+
+(* 2D table print indentation *)
 let matrix_print_indent fmt mat =
   let sizes = Array.make (Array.length mat.(0)) 0 in
   for i = 0 to  Array.length mat.(0) -1 do
