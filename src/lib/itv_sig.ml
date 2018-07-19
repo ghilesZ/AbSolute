@@ -60,7 +60,7 @@ module type ITV = sig
 
   (* split *)
   (* ----- *)
-  val split: t -> (t bot) list
+  val split: t -> t list
 
   (* pruning *)
   (* ------- *)

@@ -7,7 +7,6 @@ module CheckBox = Checker.Make(Cartesian.BoxMix)
 let print_sep () =
   Format.printf "-----------------------------------------------------------------\n"
 
-
 let print_frontier fmt f =
   if classify_float f <> FP_normal then
     Format.fprintf fmt "(no frontier)"
@@ -15,21 +14,21 @@ let print_frontier fmt f =
     Format.fprintf fmt "(frontier %.2f%%)" (f *. 100.)
 
 let print_good fmt () =
-  Format.fprintf fmt "%s\xE2\x9C\x94%s" "\027[32m" "\027[0m"
+  Tools.green_fprintf fmt "\xE2\x9C\x94"
 
 let print_not_bad fmt () =
-  Format.fprintf fmt "%s\xE2\x9C\x94%s" "\027[33m" "\027[0m"
+  Tools.yellow_fprintf fmt "\xE2\x9C\x94"
 
 let print_bad fmt () =
-  Format.fprintf fmt "%s\xE2\x9D\x8C%s" "\027[31m" "\027[0m"
+  Tools.red_fprintf fmt "\xE2\x9D\x8C"
 
 let print_results not_bads goods nb_files =
-  Format.printf "%ssuccess : %i/%i with %i confirmed%s\n"
-                (if not_bads = nb_files then "\027[32m" else "\027[31m")
-                not_bads
-                nb_files
-                goods
-                "\027[0m"
+  (if not_bads = nb_files then Tools.green_fprintf else Tools.red_fprintf)
+    Format.std_formatter
+    "success : %i/%i with %i confirmed\n"
+    not_bads
+    nb_files
+    goods
 
 (* returns the couple (g,b) where g are the known solutions of the problem
    and b are the known nogoods of a problem *)

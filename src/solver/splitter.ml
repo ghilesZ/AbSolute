@@ -87,8 +87,9 @@ module Make (Abs : AbstractCP) = struct
       else Nb filtered
     with Bot_found -> Bot
 
-  let split abs cstrs = Abs.split abs
-  (* TODO: add other splits *)
+  let split abs cstrs =
+    (* Format.printf "split\n%!"; *)
+    Abs.split abs
 
   module Topology = struct
     (* This module defines the topology of a problem : *)
@@ -115,8 +116,7 @@ module Make (Abs : AbstractCP) = struct
       try
         let abs' =
           List.fold_left (fun a c ->
-              try filter a c
-              with e -> failwith (Format.asprintf "problem while propagating the constraint %a" Csp.print_bexpr c)
+              filter a c
             ) abs constrs
         in
         if Abs.is_bottom abs' then Bot
@@ -134,6 +134,7 @@ module Make (Abs : AbstractCP) = struct
 
   (* consistency computation *)
   let consistency abs constrs : consistency =
+    (* Format.printf "consistency\n%!"; *)
     let open Topology in
     match build abs constrs with
     | Nb {sols;complementary=[],[]} -> Full sols

@@ -120,7 +120,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
           incr cpt;
           (* we try to spawn at least 10 points *)
           let i = Abs.spawn e in
-          ignore (check_instance fn true i csp)
+          ignore (check_instance fn false i csp)
         done
       ) result;
     !total_sure

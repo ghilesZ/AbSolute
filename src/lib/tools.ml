@@ -15,6 +15,23 @@ end
 (* Printing stuff *)
 (******************)
 
+(* same as failwith but uses a format instead *)
+let fail_fmt fmt = Format.kasprintf (fun s -> failwith s) fmt
+
+(* terminal output with a color given in parameter *)
+(* restoring default color after use *)
+let color_printf fmt col x =
+  Format.kasprintf (fun s -> Format.fprintf fmt "%s%s%s" col s "\027[0m") x
+
+(* red terminal output *)
+let red_fprintf fmt x = color_printf fmt "\027[31m" x
+
+(* green terminal output *)
+let green_fprintf fmt x = color_printf fmt "\027[32m" x
+
+(* yellow terminal output *)
+let yellow_fprintf fmt x = color_printf fmt "\027[33m" x
+
 (* 2D table print indentation *)
 let matrix_print_indent fmt mat =
   let sizes = Array.make (Array.length mat.(0)) 0 in

@@ -6,12 +6,7 @@ type t = bound * bound
 
 (* not all pairs of integers are valid intervals *)
 let validate ((l,h):t) : t =
-  if l > h then
-    invalid_arg
-      ("itv_int.validate: "
-       ^ string_of_int l
-       ^" "
-       ^string_of_int h)
+  if l > h then invalid_arg  (Format.asprintf "itv_int.validate: %i %i" l h)
   else l,h
 
 (* maps empty intervals to explicit bottom *)
@@ -28,8 +23,11 @@ let of_bounds (l:bound) (h:bound) = validate (l,h)
 
 let of_ints = of_bounds
 
+(* of_floats (x,y) returns the biggest integer interval [n,m] s.t
+   n >= x and m <= y, and n <= m
+   maybe bottom if no such interval exists *)
 let of_floats a b : t bot =
-  check_bot (of_ints (int_of_float (floor a)) (int_of_float (ceil b)))
+  check_bot ((int_of_float (ceil a)), (int_of_float (floor b)))
 
 let of_int = of_bound
 
@@ -76,12 +74,12 @@ let range ((a,b):t) = b - a
 (* ----- *)
 
 (* splits in two, around the middle *)
-let split ((a,b) :t) =
-  assert (a<b);
-  if a+1=b then [Nb (a,a); Nb(b,b)]
-  else
-    let mid = a + (b-a)/2 in
-    [Nb (a,mid); Nb(mid+1,b)]
+let split ((a,b):t) =
+  match b-a with
+  | 1 -> [(a,a); (b,b)]
+  | r ->
+     let mid = a + r/2 in
+     [(a,mid); (mid+1,b)]
 
 let prune (l1,u1:t) (l2,u2:t) : t list * t =
   match (l1 < l2),(u2 < u1) with
@@ -118,6 +116,7 @@ let div_sign (l1,h1) (l2,h2)  = mix4 ( / ) l1 h1 l2 h2
 
 (* return valid values (possibly Bot) *)
 let div (i1:t) (i2:t) : t bot =
+  Format.printf "\n\n Integer division : %a / %a\n%!" print i1 print i2;
   (* split into positive and negative dividends *)
   let pos = (lift_bot (div_sign i1)) (meet i2 positive)
   and neg = (lift_bot (div_sign i1)) (meet i2 negative) in

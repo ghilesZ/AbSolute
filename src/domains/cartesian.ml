@@ -77,10 +77,8 @@ module Box (I:ITV) = struct
 
   let split_along (a:t) (v,i:var * I.t) : t list =
     let i_list = I.split i in
-    List.fold_left (fun acc b ->
-        match b with
-        | Nb e -> (VMap.add v e a)::acc
-        | Bot -> acc
+    List.fold_left (fun acc e ->
+        (VMap.add v e a)::acc
       ) [] i_list
 
   let split (a:t) : t list =

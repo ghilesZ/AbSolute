@@ -84,26 +84,26 @@ module Make (I:ITV) = struct
      iterating eval and refine can lead to better results (but is more costly);
      can raise Bot_found
 
-     this is the top-down part of hc4
- *)
+     this is the top-down part of hc4 *)
+
+  (* TODO: check if propagation was succesful before continuing filtering *)
   let rec refine (a:t) ((e,x):evalexpr) : t =
     match e with
     | AFunCall(name,args) ->
        let bexpr,itv = List.split args in
        let res = I.filter_fun name itv x in
-       List.fold_left2 (fun acc e1 e2 ->
-           refine acc (e2,e1)) a (debot res) bexpr
+       List.fold_left2 (fun acc e1 e2 -> refine acc (e2,e1)) a (debot res) bexpr
     | AVar (v,_) ->
        (try VMap.add v (debot (I.meet x (VMap.find v a))) a
         with Not_found -> failwith ("variable not found: "^v))
     | AFloat (c,i) -> ignore (debot (I.meet x i)); a
     | AInt (c,i) -> ignore (debot (I.meet x i)); a
     | AUnary (o,(e1,i1)) ->
-        let j = match o with
-          | NEG -> I.filter_neg i1 x
-          | ABS -> I.filter_abs i1 x
-        in
-        refine a (e1,(debot j))
+       let j = match o with
+         | NEG -> I.filter_neg i1 x
+         | ABS -> I.filter_abs i1 x
+       in
+       refine a (e1,(debot j))
     | ABinary (o,(e1,i1),(e2,i2)) ->
        let j = match o with
          | ADD -> I.filter_add i1 i2 x
@@ -127,7 +127,9 @@ module Make (I:ITV) = struct
       | NEQ -> debot (I.filter_neq i1 i2)
       | EQ  -> debot (I.filter_eq i1 i2)
     in
-    refine (refine a (b1,j1)) (b2,j2)
+    let refined1 = if j1 = i1 then a else refine a (b1,j1) in
+    if j2 = i2 then refined1 else refine refined1 (b2,j2)
+    (* refine (refine a (b1,j1)) (b2,j2) *)
 
   (* test transfer function *)
   let test_maxvar (a:t) (e1:expr) (o:cmpop) (e2:expr) : (t* (var * float))  =

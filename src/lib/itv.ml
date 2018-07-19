@@ -120,14 +120,14 @@ module Itv(B:BOUND) = struct
   let mean ((l,h):t) : B.t list = [B.div_up (B.add_up l h) B.two]
 
   (* splits in two, around the middle *)
-  let split ((l,h) as i :t) : (t bot) list =
+  let split ((l,h) as i :t) : t list =
     let rec aux acc cur bounds =
       match bounds with
       |  hd::tl ->
-	       let itv = check_bot (cur,hd) in
+	       let itv = validate (cur,hd) in
 	       aux (itv::acc) hd tl
       | [] ->
-	       let itv = check_bot (cur,h) in
+	       let itv = validate (cur,h) in
 	       itv::acc
     in aux [] l (mean i)
 
@@ -227,8 +227,8 @@ module Itv(B:BOUND) = struct
          else if B.geq il B.zero then
 	         (B.pow_down il p, B.pow_up ih p)
          else (B.pow_down ih p, B.pow_up il p)
-      | _ -> failwith "cant handle negatives powers"
-    else failwith  "cant handle non_singleton powers"
+      | x -> Tools.fail_fmt "cant handle negatives powers : %i" x
+    else Tools.fail_fmt "cant handle non_singleton powers : %a" print (l,h)
 
   (* nth-root *)
   let n_root ((il,ih):t) ((l,h):t) =
@@ -244,8 +244,8 @@ module Itv(B:BOUND) = struct
          else
            Nb (B.min (B.neg (B.root_down il p)) (B.neg (B.root_down ih p)),
                B.max (B.root_up il p) (B.root_up ih p))
-      | _ -> failwith "can only handle stricly positive roots"
-    else failwith  "cant handle non_singleton roots"
+      | x -> Tools.fail_fmt "can only handle stricly positive roots : %i" x
+    else Tools.fail_fmt "cant handle non_singleton roots: %a" print (l,h)
 
   (* min *)
   let min ((l1, u1):t) ((l2, u2):t) =
@@ -264,17 +264,17 @@ module Itv(B:BOUND) = struct
     let arity_1 (f: t -> t) : t bot =
        match args with
        | [i] -> Nb (f i)
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_1_bot (f: t -> t bot) : t bot =
       match args with
       | [i] -> f i
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_2 (f: t -> t -> t) : t bot  =
       match args with
       | [i1;i2] -> Nb (f i1 i2)
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+      | _ -> Tools.fail_fmt "%s expect two arguments" name
     in
     let arity_2_bot (f: t -> t -> t bot) : t bot  =
       match args with
@@ -282,7 +282,7 @@ module Itv(B:BOUND) = struct
          (match f i1 i2 with
           | Bot -> Bot
           | Nb(i) -> Nb i)
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+      | _ -> Tools.fail_fmt "%s expect two arguments" name
     in
     match name with
     | "pow"   -> arity_2 pow
@@ -293,7 +293,7 @@ module Itv(B:BOUND) = struct
     | "log"   -> arity_1_bot log
     | "max"   -> arity_2 max
     | "min"   -> arity_2 min
-    | s -> failwith (Format.sprintf "unknown eval function : %s" s)
+    | s -> Tools.fail_fmt "unknown eval function : %s" s
 
   (************************************************************************)
   (* FILTERING (TEST TRANSFER FUNCTIONS) *)
@@ -367,7 +367,7 @@ module Itv(B:BOUND) = struct
     meet i (exp r)
 
   (* r = log i => i = *)
-  let filter_log i r = failwith "todo filter_log"
+  let filter_log i r = Tools.fail_fmt "todo filter_log"
 
   (* r = i ** n => i = nroot r *)
   let filter_pow (i:t) n (r:t) =
@@ -397,7 +397,7 @@ module Itv(B:BOUND) = struct
          (match f i r with
          | Bot -> Bot
          | Nb i -> Nb [i])
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_2 (f: t -> t -> t -> (t*t) bot) : (t list) bot  =
       match args with
@@ -405,7 +405,7 @@ module Itv(B:BOUND) = struct
          (match f i1 i2 r with
           | Bot -> Bot
           | Nb(i1,i2) -> Nb[i1;i2])
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+      | _ -> Tools.fail_fmt "%s expect two arguments" name
     in
     match name with
     | "sqrt" -> arity_1 filter_sqrt
@@ -413,7 +413,7 @@ module Itv(B:BOUND) = struct
     | "ln"   -> arity_1 filter_ln
     | "max"  -> arity_2 filter_max
     | "min"  -> arity_2 filter_min
-    | s -> failwith (Format.sprintf "unknown filter function : %s" s)
+    | s -> Tools.fail_fmt "unknown filter function : %s" s
 
   let to_float_range (l,h) =
     (B.to_float_down l),(B.to_float_up h)
