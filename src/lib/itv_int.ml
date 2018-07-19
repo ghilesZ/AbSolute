@@ -77,6 +77,7 @@ let range ((a,b):t) = b - a
 let split ((a,b):t) =
   match b-a with
   | 1 -> [(a,a); (b,b)]
+  | 2 -> [(a,a); (a+1,a+1); (b,b)]
   | r ->
      let mid = a + r/2 in
      [(a,mid); (mid+1,b)]
@@ -89,11 +90,10 @@ let prune (l1,u1:t) (l2,u2:t) : t list * t =
   | false, false -> [],(l2,u2)
 
 (************************************************************************)
-(* INTERVAL ARITHMETICS (FORWARD EVALUATION) *)
+(*              INTERVAL ARITHMETICS (FORWARD EVALUATION)               *)
 (************************************************************************)
 
-let neg (l,h:t) : t =
-  -h, -l
+let neg (l,h:t) : t = -h, -l
 
 let abs ((l,h) as i:t) : t =
   if l < 0 then 0,(max h (-l)) else i

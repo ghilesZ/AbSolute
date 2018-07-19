@@ -129,8 +129,8 @@ let rec booleanmap f = function
   | Cmp (op,e1,e2) ->
      let op',e1',e2' = f (op,e1,e2) in
      Cmp(op',e1',e2')
-  | And (b1,b2) -> Or (booleanmap f b1, booleanmap f b2)
-  | Or (b1,b2) -> And (booleanmap f b1, booleanmap f b2)
+  | And (b1,b2) -> And (booleanmap f b1, booleanmap f b2)
+  | Or (b1,b2) -> Or (booleanmap f b1, booleanmap f b2)
   | Not b -> Not (booleanmap f b)
 
 (*************************************************************)

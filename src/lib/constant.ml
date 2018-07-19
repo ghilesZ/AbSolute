@@ -10,24 +10,24 @@ let trace           = ref false
 let debug           = ref false
 let pruning         = ref false
 let sure            = ref false
-let rewrite         = ref false
+let rewrite         = ref true
 let check           = ref false
 
 let set_prec f =
   if f > 0. then precision := f
-  else failwith "precision must be stricly positive"
+  else Tools.fail_fmt "precision must be stricly positive: %f" f
 
 let set_max_iter i =
   if i > 0 then max_iter := i
-  else failwith "number of iterations must be stricly positive"
+  else Tools.fail_fmt "number of iterations must be stricly positive: %i" i
 
 let set_max_sol s =
   if s > 0 then max_sol := s
-  else failwith "number of solutions must be stricly positive"
+  else Tools.fail_fmt "number of solutions must be stricly positive %i" s
 
 let set_prob s =
   if Sys.file_exists s then problem := Some s
-  else failwith (Format.sprintf "%s : file not found" s)
+  else Tools.fail_fmt "%s : file not found" s
 
 let set_domain d =
   match d with
