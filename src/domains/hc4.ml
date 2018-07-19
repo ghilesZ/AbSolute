@@ -40,7 +40,7 @@ module Make (I:ITV) = struct
     | Var v ->
        let (r, n) =
          try find v a
-         with Not_found -> failwith ("variable not found: "^v)
+         with Not_found -> Tools.fail_fmt "variable not found: %s" v
        in
        (* Format.printf "%a\n%!" I.print r; *)
        AVar (n, r),r
@@ -93,9 +93,7 @@ module Make (I:ITV) = struct
        let bexpr,itv = List.split args in
        let res = I.filter_fun name itv x in
        List.fold_left2 (fun acc e1 e2 -> refine acc (e2,e1)) a (debot res) bexpr
-    | AVar (v,_) ->
-       (try VMap.add v (debot (I.meet x (VMap.find v a))) a
-        with Not_found -> failwith ("variable not found: "^v))
+    | AVar (v,_) -> VMap.add v (debot (I.meet x (VMap.find_fail v a))) a
     | AFloat (c,i) -> ignore (debot (I.meet x i)); a
     | AInt (c,i) -> ignore (debot (I.meet x i)); a
     | AUnary (o,(e1,i1)) ->
@@ -152,11 +150,9 @@ module Make (I:ITV) = struct
            List.fold_left2 (fun acc e1 e2 ->
                refine acc (e2,e1)) a (debot res) bexpr
         | AVar (v,_) ->
-           (try
-              let new_itv = debot (I.meet x (VMap.find v a)) in
-              update v new_itv;
-              VMap.add v new_itv a
-            with Not_found -> failwith ("variable not found: "^v))
+           let new_itv = debot (I.meet x (VMap.find_fail v a)) in
+           update v new_itv;
+           VMap.add v new_itv a
         | AFloat (c,i) -> ignore (debot (I.meet x i)); a
         | AInt (c,i) -> ignore (debot (I.meet x i)); a
         | AUnary (o,(e1,i1)) ->
@@ -190,7 +186,7 @@ module Make (I:ITV) = struct
     in
     let a = refine_maxvar (refine_maxvar a (b1,j1)) (b2,j2) in
     match !biggest_var with
-    | None -> failwith "no var in constraint"
+    | None -> Tools.fail_fmt "no var in constraint"
     | Some ((v,range) as var) -> a,var
 
 end

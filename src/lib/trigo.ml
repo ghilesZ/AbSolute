@@ -231,12 +231,12 @@ module Make (I:Itv_sig.ITV) = struct
     let arity_1 (f: I.t -> I.t) : I.t bot =
       match args with
       | [i] -> Nb (f i)
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_1_bot (f: I.t -> I.t bot) : I.t bot =
       match args with
       | [i] -> f i
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     match name with
     | "cos"  -> arity_1 cos_itv
@@ -344,7 +344,7 @@ module Make (I:Itv_sig.ITV) = struct
          (match f i r with
          | Bot -> Bot
          | Nb i -> Nb [i])
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     match name with
     | "cos"  -> arity_1 filter_cos

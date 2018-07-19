@@ -16,7 +16,7 @@ let to_int (r:R.t) : I.t bot =
   let (a,b) = R.to_float_range r in
   match classify_float a, classify_float b with
   | (FP_normal | FP_zero), (FP_normal | FP_zero) -> I.of_floats a b
-  | _ -> failwith (Format.asprintf "problem with to_int conversion of : %a" R.print r)
+  | _ -> Tools.fail_fmt "problem with to_int conversion of : %a" R.print r
 
 let dispatch f_int f_real = function
   | Int x -> f_int x

@@ -4,13 +4,13 @@ type t = Cartesian.BoxF.t
 
 let print = Cartesian.BoxF.print
 
-let bound abs v = find v abs |> fst |> I.to_float_range
+let bound abs v = find v abs |> I.to_float_range
 
 let draw draw_f fillpol abs (v1,v2) col =
   let (xl,xu) = bound abs v1 and (yl,yu) = bound abs v2 in
   fillpol [(xl,yl);(xl,yu);(xu,yu);(xu,yl)] col;
-  let ((xl,xu) as i1) : I.t = find v1 abs |> fst
-  and ((yl,yu) as i2) : I.t = find v2 abs |> fst in
+  let ((xl,xu) as i1) : I.t = find v1 abs
+  and ((yl,yu) as i2) : I.t = find v2 abs in
   let draw_seg vert value (b,c) =
     if vert then draw_f (value,b) (value,c) Graphics.black
     else draw_f (b,value) (c,value) Graphics.black

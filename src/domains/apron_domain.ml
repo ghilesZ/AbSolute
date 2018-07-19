@@ -14,11 +14,11 @@ module SyntaxTranslator (D:ADomain) = struct
   let rec expr_to_apron a (e:expr) : Texpr1.expr =
     let env = Abstract1.env a in
     match e with
-    | FunCall(name,args) -> Format.sprintf "%s unsupported with apron" name |> failwith
+    | FunCall(name,args) -> Tools.fail_fmt "%s unsupported with apron" name
     | Var v ->
       let var = Var.of_string v in
       if not (Environment.mem_var env var)
-      then failwith ("variable not found: "^v);
+      then Tools.fail_fmt "variable not found: %s" v;
       Texpr1.Var var
     | Float c -> Texpr1.Cst (Coeff.s_of_float c)
     | Int c -> Texpr1.Cst (Coeff.s_of_int c)

@@ -51,7 +51,7 @@ let _ =
   let mat =
     Array.map (fun fn ->
         let arr = Array.make 4 "" in
-        arr.(0) <- Format.asprintf "%s :" fn;
+        arr.(0) <- Format.asprintf "%s" fn;
         try
           let prob = Builder.parse (Some (dir^fn)) in
           let igoods,ibads = split prob.Csp.solutions in

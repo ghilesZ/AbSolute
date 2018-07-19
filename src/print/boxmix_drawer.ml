@@ -4,14 +4,14 @@ type t = Cartesian.BoxMix.t
 
 let print = Cartesian.BoxMix.print
 
-let bound abs v = find v abs |> fst |> I.to_float_range
+let bound abs v = find v abs |> I.to_float_range
 
 let draw draw_f fillpol fillcircle abs (v1,v2) col =
   let (xl,xu) = bound abs v1 and (yl,yu) = bound abs v2 in
   if xl=xu && yl=yu then fillcircle (xl,yl) 5 col
   else fillpol [(xl,yl); (xl,yu); (xu,yu); (xu,yl)] col;
-  let itv1 = find v1 abs |> fst
-  and itv2 = find v2 abs |> fst in
+  let itv1 = find v1 abs
+  and itv2 = find v2 abs in
   let (xl,xu) = itv1 |> I.to_float_range
   and (yl,yu) = itv2 |> I.to_float_range in
   let draw_seg vert value (b,c) =

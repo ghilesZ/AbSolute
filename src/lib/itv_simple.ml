@@ -192,7 +192,7 @@ module Itv(B:BOUND) = struct
 
   (** runtime functions **)
   let eval_fun name args : t bot =
-    failwith (Format.sprintf "unknown eval function : %s" name)
+    Tools.fail_fmt "unknown eval function : %s" name
 
   (************************************************************************)
   (* FILTERING (TEST TRANSFER FUNCTIONS) *)
@@ -263,7 +263,7 @@ module Itv(B:BOUND) = struct
     merge_bot2 (check_bot ((B.min l1 lr), (B.min u1 ur))) (check_bot ((B.min l2 lr), (B.min u2 ur)))
 
   let filter_fun name args r : (t list) bot =
-    failwith (Format.sprintf "unknown filter function : %s" name)
+    Tools.fail_fmt "unknown filter function : %s" name
 
   let to_float_range (l,h) =
     (B.to_float l),(B.to_float h)

@@ -22,10 +22,7 @@ module Box (I:ITV) = struct
   (* maps each variable to a (non-empty) interval *)
   type t = I.t VMap.t
 
-  let find v a =
-    try (VMap.find v a, v) with
-      Not_found -> failwith ("variable not found : "^v)
-
+  let find v a = VMap.find_fail v a
   (************************************************************************)
   (* PRINTING *)
   (************************************************************************)

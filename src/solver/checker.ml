@@ -61,9 +61,9 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
            | "atan" -> atan
            | "exp"  -> exp
            | "log"  -> log
-           | x -> failwith (Format.sprintf "unrecognized function name %s" x)
+           | x -> Tools.fail_fmt "unrecognized function name %s" x
           in func e
-      | FunCall(name, args) -> failwith (Format.sprintf "cant evaluate function call %s" name)
+      | FunCall(name, args) -> Tools.fail_fmt "cant evaluate function call %s" name
     in aux expr
 
   (* check if an instance is valid wrt to a constraint *)
