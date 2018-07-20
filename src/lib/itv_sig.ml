@@ -60,7 +60,12 @@ module type ITV = sig
 
   (* split *)
   (* ----- *)
-  val split: t -> t list
+
+  (* returns a split priority. The higher the better *)
+  val score : t -> float
+
+  (* split operator *)
+  val split : t -> t list
 
   (* pruning *)
   (* ------- *)

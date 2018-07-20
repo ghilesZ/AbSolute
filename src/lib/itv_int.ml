@@ -57,7 +57,9 @@ let meet (l1,h1:t) (l2,h2:t) : t bot = check_bot ((max l1 l2), (min h1 h2))
 
 (* predicates *)
 (* ---------- *)
-(* returns true if f can be conferted exactly to an integer *)
+
+(* contains_float (a,b) f, returns true if f can be converted exactly to
+   an integer i and a <= i <= b *)
 let contains_float ((a,b):t) f =
   let rounded = ceil f in
   rounded = f &&
@@ -69,6 +71,8 @@ let intersect ((l1,h1):t) ((l2,h2):t) = l1 <= h2 &&  l2 <= h1
 (* mesure *)
 (* ------ *)
 let range ((a,b):t) = b - a
+
+let score (a,b) = if b = a then 0. else 1./.float (b - a)
 
 (* split *)
 (* ----- *)
@@ -189,25 +193,9 @@ let filter_sub (i1:t) (i2:t) (r:t) : (t*t) bot =
 let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
   merge_bot2
     (if contains_float r 0. && contains_float i2 0. then Nb i1
-     else
-       match div r i2
-       with
-       | Bot -> Bot
-       | Nb x -> meet i1 x)
+     else strict_bot (meet i1) (div r i2))
     (if contains_float r 0. && contains_float i1 0. then Nb i2
-     else
-       match div r i1
-       with
-       | Bot -> Bot
-       | Nb x -> meet i2 x)
-
-let filter_div (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (*TODO: replace "assert false" with your own code *)
-  assert false
-
-let filter_pow (x1:t) (x2:t) (x3:t) : (t*t) bot =
-  (*TODO: replace "assert false" with your own code *)
-  assert false
+     else strict_bot (meet i2) (div r i1))
 
 (* filtering function calls like (sqrt, exp, ln ...) is done here :
      given a function name, a list of argument, and a result,
@@ -217,7 +205,7 @@ let filter_fun (x1:string) (x2:t list) (x3:t) : (t list) bot =
   (*TODO: replace "assert false" with your own code *)
   assert false
 
-(* generate a random float within the given interval *)
+(* generate a random integer within the given interval *)
 let spawn (l,h:t) : int =
   let r = Random.int ((h-l)+1) in
   l + r

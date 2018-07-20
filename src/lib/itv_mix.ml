@@ -5,8 +5,14 @@ module R = Itv.ItvF
 
 type t = Int of I.t | Real of R.t
 
-(* Conversion utilities *)
+(* useful constructors *)
+let make_real x = Real x
+let make_int x  = Int x
 
+(* Conversion utilities *)
+(************************)
+
+(* integer itv conversion to real itv *)
 let to_float (i:I.t) =
   let (a,b) = I.to_float_range i in
   R.of_floats a b
@@ -17,6 +23,12 @@ let to_int (r:R.t) : I.t bot =
   match classify_float a, classify_float b with
   | (FP_normal | FP_zero), (FP_normal | FP_zero) -> I.of_floats a b
   | _ -> Tools.fail_fmt "problem with to_int conversion of : %a" R.print r
+
+(* force conversion to real itv *)
+let force_real (i:t) : R.t =
+  match i with
+  | Real r -> r
+  | Int i -> to_float i
 
 let dispatch f_int f_real = function
   | Int x -> f_int x
@@ -45,8 +57,8 @@ let of_float (x1:float) : t =
 (* maps empty intervals to explicit bottom *)
 let check_bot (x:t) : t bot =
   match x with
-  | Int x -> lift_bot (fun x -> Int x) (I.check_bot x)
-  | Real x -> lift_bot (fun x -> Real x) (R.check_bot x)
+  | Int x -> lift_bot make_int (I.check_bot x)
+  | Real x -> lift_bot make_real (R.check_bot x)
 
 (************************************************************************)
 (*                       PRINTING and CONVERSIONS                       *)
@@ -73,11 +85,11 @@ let join (x1:t) (x2:t) : t =
 
 let meet (x1:t) (x2:t) : t bot =
   match x1,x2 with
-  | Int x1, Int x2 -> lift_bot (fun x -> Int x) (I.meet x1 x2)
-  | Real x1, Real x2 -> lift_bot (fun x -> Real x) (R.meet x1 x2)
+  | Int x1, Int x2 -> lift_bot make_int (I.meet x1 x2)
+  | Real x1, Real x2 -> lift_bot make_real (R.meet x1 x2)
   | Int x1, Real x2 | Real x2, Int x1 ->
      let x1 = to_float x1 in
-     lift_bot (fun x -> Int x) (strict_bot to_int (R.meet x1 x2))
+     lift_bot make_int (strict_bot to_int (R.meet x1 x2))
 
 (* predicates *)
 (* ---------- *)
@@ -115,12 +127,14 @@ let range (x:t) : float =
   | Int x -> float (I.range x)
   | Real x -> R.range x
 
+let score = dispatch I.score R.score
+
 (* split *)
 (* ----- *)
 let split (x:t) : t list =
   match x with
-  | Real x -> R.split x |> List.map (fun x -> Real x)
-  | Int x -> I.split x  |> List.map (fun x -> Int x)
+  | Real x -> R.split x |> List.map make_real
+  | Int x -> I.split x  |> List.map make_int
 
 (* pruning *)
 (* ------- *)
@@ -181,24 +195,16 @@ let mul (x1:t) (x2:t) : t =
 let div (x1:t) (x2:t) : t bot =
   (* Format.printf "div : %a / %a = " print x1 print x2;
    * let res = *)
-  match x1,x2 with
-  | Int x1 , Int x2 ->
-     if I.contains_float x2 0. then
-       let pos = I.meet I.positive x2 and neg = I.meet I.negative x2 in
-       let divpos = strict_bot (fun x -> R.div (to_float x1) (to_float x)) pos
-       and divneg = strict_bot (fun x -> R.div (to_float x1) (to_float x)) neg
-       in lift_bot (fun x -> Real x) (join_bot2 R.join divpos divneg)
-     else lift_bot (fun x -> Real x) (R.div (to_float x1) (to_float x2))
-  | Int x1, Real x2 ->
-     lift_bot (fun x -> Real x) (R.div (to_float x1) x2)
-  | Real x1, Int x2 ->
+  let x1 = force_real x1 in
+  match x2 with
+  | Int x2 ->
      if I.contains_float x2 0. then
        let pos = I.meet I.positive x2 and neg = I.meet I.negative x2 in
        let divpos = strict_bot (fun x -> R.div x1 (to_float x)) pos
        and divneg = strict_bot (fun x -> R.div x1 (to_float x)) neg
-       in lift_bot (fun x -> Real x) (join_bot2 R.join divpos divneg)
-     else lift_bot (fun x -> Real x) (R.div x1 (to_float x2))
-  | Real x1, Real x2 -> lift_bot (fun x -> Real x) (R.div x1 x2)
+       in lift_bot make_real (join_bot2 R.join divpos divneg)
+     else lift_bot make_real (R.div x1 (to_float x2))
+  | Real x2 -> lift_bot make_real (R.div x1 x2)
   (* in
    * match res with
    * | Nb r -> Format.printf "%a\n%!" print r; res
@@ -217,18 +223,15 @@ let pow (x1:t) (x2:t) : t =
 (* nth-root *)
 let n_root (i1:t) (i2:t) =
   (*TODO: maybe improve precision on perfect nth roots *)
-  match i1,i2 with
-  | Int i1, Int i2 -> lift_bot (fun x -> Real x) (R.n_root (to_float i1) (to_float i2))
-  | Int i1, Real i2 -> lift_bot (fun x -> Real x) (R.n_root (to_float i1) i2)
-  | Real i1, Int i2 -> lift_bot (fun x -> Real x) (R.n_root i1 (to_float i2))
-  | Real i1, Real i2 -> lift_bot (fun x -> Real x) (R.n_root i1 i2)
+  let i1,i2 = (force_real i1),(force_real i2) in
+  lift_bot make_real (R.n_root i1 i2)
 
 (* function calls (sqrt, exp, ln ...) are handled here :
    given a function name and and a list of argument,
    it returns a possibly bottom result *)
 let eval_fun (name:string) (args:t list) : t bot =
   let args = List.map (function Real x -> x | Int x -> (to_float x)) args in
-  lift_bot (fun x -> Real x) (R.eval_fun name args)
+  lift_bot make_real (R.eval_fun name args)
 
 (************************************************************************)
 (* FILTERING (TEST TRANSRER RUNCTIONS) *)
@@ -362,7 +365,7 @@ let filter_pow (i:t) (n:t) (r:t) : (t*t) bot =
 let filter_fun (name:string) (args:t list) (res:t) : (t list) bot =
   let args = List.map (function Real x -> x | Int x -> (to_float x)) args in
   let float_res = match res with Real x -> x | Int x -> to_float x in
-  lift_bot (List.map (fun x -> Real x)) (R.filter_fun name args float_res)
+  lift_bot (List.map make_real) (R.filter_fun name args float_res)
 
 (* generate a random float within the given interval *)
 let spawn (x:t) : float =

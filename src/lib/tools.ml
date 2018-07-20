@@ -38,6 +38,10 @@ let matrix_print_indent fmt mat =
     Format.fprintf fmt "\n"
   done
 
+(*****************)
+(* Map instances *)
+(*****************)
+
 (* only one instanciation forall variable maps modules *)
 module VMap = struct
   include Mapext.Make(struct type t = string let compare = compare end)

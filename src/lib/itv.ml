@@ -116,6 +116,9 @@ module Itv(B:BOUND) = struct
   (* split *)
   (* ----- *)
 
+  (* split priority *)
+  let score itv = range itv |> B.to_float_up
+
   (* finds the mean of the interval *)
   let mean ((l,h):t) : B.t list = [B.div_up (B.add_up l h) B.two]
 

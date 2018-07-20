@@ -3,15 +3,15 @@
 (*****************************************************************)
 
 module CheckBox = Checker.Make(Cartesian.BoxMix)
+module CheckPoly = Checker.Make(Relational.PolyCP)
 
 let print_sep () =
-  Format.printf "-----------------------------------------------------------------\n"
+  Format.printf "----------------------------------------------------------\n"
 
 let print_frontier fmt f =
-  if classify_float f <> FP_normal then
-    Format.fprintf fmt "(no frontier)"
-  else
-    Format.fprintf fmt "(frontier %.2f%%)" (f *. 100.)
+  match f with
+  | None -> Format.fprintf fmt "no frontier"
+  | Some f -> Format.fprintf fmt "frontier: %.2f%%" (f *. 100.)
 
 let print_good fmt () =
   Tools.green_fprintf fmt "\xE2\x9C\x94"
@@ -46,7 +46,6 @@ let _ =
   let goods          = ref 0 in
   let not_bads       = ref 0 in
   let problem        = ref 0 in
-  let frontier_ratio = ref 0. in
   let files = Sys.readdir dir in
   let mat =
     Array.map (fun fn ->
@@ -60,7 +59,6 @@ let _ =
           let known_bad = CheckBox.check_known_bad fn res ibads in
           let frontier = CheckBox.check_unsure fn prob res in
           let inner = CheckBox.check_sure fn prob res in
-          frontier_ratio := !frontier_ratio +. frontier;
           arr.(1) <-
             (match inner, known_sol, known_bad with
              | _,false,_ ->
@@ -73,12 +71,12 @@ let _ =
              | 0,true,true  ->
                 arr.(3) <- Format.asprintf "%a" print_not_bad ();
                 incr not_bads;
-                Format.asprintf "didn't find any solution"
+                Format.asprintf "0 solution"
              | nb_sol,true,true ->
                 arr.(3) <- Format.asprintf "%a" print_good ();
                 incr goods;
                 incr not_bads;
-                Format.asprintf "%i generated solutions" nb_sol);
+                Format.asprintf "%i solutions" nb_sol);
           arr.(2) <- Format.asprintf "%a" print_frontier frontier;
           arr
         with e ->

@@ -11,14 +11,28 @@ module Make(Abs : Domain_signature.AbstractCP) (Dr:Drawer_sig.Drawer with type t
   let color_selected = Graphics.rgb 255 200 200
 
 
-  let draw_s v1 v2 abs = Dr.draw2d abs (v1,v2) color_sure; View.draw_end ()
-  let draw_u v1 v2 abs = Dr.draw2d abs (v1,v2) color_unsure; View.draw_end ()
-  let draw_bad v1 v2 abs = Dr.draw2d abs (v1,v2) Graphics.red; View.draw_end ()
-  let draw_n v1 v2 abs = Dr.draw2d abs (v1,v2) color_not_yet; View.draw_end ()
+  let draw_s v1 v2 abs =
+    Dr.draw2d abs (v1,v2) color_sure;
+    View.draw_end v1 v2
+
+  let draw_u v1 v2 abs =
+    Dr.draw2d abs (v1,v2) color_unsure; View.draw_end v1 v2
+  let draw_bad v1 v2 abs =
+    Dr.draw2d abs (v1,v2) Graphics.red;
+    View.draw_end v1 v2
+
+  let draw_n v1 v2 abs =
+    Dr.draw2d abs (v1,v2) color_not_yet;
+    View.draw_end v1 v2
+
   let select v1 v2 abs =
     Dr.draw2d abs (v1,v2) color_selected;
-    View.draw_end ()
-  let draw_wait v1 v2 abs = Dr.draw2d abs (v1,v2) Graphics.yellow; View.draw_end ()
+    View.draw_end v1 v2
+
+  let draw_wait v1 v2 abs =
+    Dr.draw2d abs (v1,v2) Graphics.yellow;
+    View.draw_end v1 v2
+
   let do_if_not_none f = function
     | Some a -> f a
     | None -> ()

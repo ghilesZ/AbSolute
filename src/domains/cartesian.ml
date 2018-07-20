@@ -59,6 +59,13 @@ module Box (I:ITV) = struct
         if (I.range i) > (I.range io) then v,i else vo,io
       ) a (VMap.min_binding a)
 
+  (* variable with maximal range if real or with minimal if integer *)
+  let mix_range (a:t) : var * I.t =
+    VMap.fold
+      (fun v i (vo,io) ->
+        if (I.score i) > (I.score io) then v,i else vo,io
+      ) a (VMap.min_binding a)
+
   let is_small (a:t) : bool =
     let (v,i) = max_range a in
     (I.range i) <= !Constant.precision
@@ -70,7 +77,7 @@ module Box (I:ITV) = struct
   (* splitting strategies *)
   (************************)
 
-  let choose a = max_range a
+  let choose a = mix_range a
 
   let split_along (a:t) (v,i:var * I.t) : t list =
     let i_list = I.split i in

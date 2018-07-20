@@ -138,7 +138,7 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
           if check_instance fn false i csp then incr unsure
         done
       ) result;
-    (float !unsure) /. (float !total)
+    if !total > 0 then Some ((float !unsure) /. (float !total)) else None
 
   (* checks if an instance is covered by at least one abstract element of a list *)
   let covered_by (i:Csp.instance) abs_list =
