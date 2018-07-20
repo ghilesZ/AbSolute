@@ -35,6 +35,7 @@
 %token TOK_INIT          /* init */
 %token TOK_CONSTR        /* constraints */
 %token TOK_SOL           /* solutions */
+%token TOK_NONE          /* none */
 %token TOK_MINF          /* -oo */
 %token TOK_INF           /* oo */
 
@@ -77,8 +78,9 @@ constraints:
  | TOK_CONSTR TOK_LBRACE bexprs TOK_RBRACE {$3}
 
 solutions:
- | TOK_SOL TOK_LBRACE instances TOK_RBRACE {$3}
- | {[]}
+ | TOK_SOL TOK_LBRACE instances TOK_RBRACE {Some $3}
+ | TOK_SOL TOK_LBRACE TOK_NONE TOK_RBRACE {None}
+ | {Some []}
 
 instances:
  | TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((VMap.of_list $2),true)::$5}

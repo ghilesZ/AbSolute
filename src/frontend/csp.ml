@@ -51,18 +51,26 @@ type constrs = bexpr list
 (* we associate a float value to each variable *)
 type instance = float VMap.t
 
+(* we can annotate a problem with information on the resolution,
+   to check the soundness of the solver *)
+(* A solution_info is either Some (l), where l is instance list,
+   of known solution and known no goods *)
+(* or None, when the problem is infeasible *)
+type solution_info =
+  (instance * bool) list option
+
 (* program *)
 type prog = {
-    init        : decls;               (* the declarations of the variables *)
-    constraints : constrs;             (* the constraints of the problem *)
-    solutions   : (instance*bool) list (* known instances to check the soundness *)
+    init        : decls;        (* the declarations of the variables *)
+    constraints : constrs;      (* the constraints of the problem *)
+    solutions   : solution_info (* extra information about the solutions of te problem *)
   }
 
 (*****************************************)
 (*        USEFUL FUNCTION ON AST         *)
 (*****************************************)
 
-let empty = {init = []; constraints = []; solutions = [];}
+(* let empty = {init = []; constraints = []; solutions = Some [];} *)
 
 let get_vars p =
   List.map (fun (_,v,_) -> v) p.init

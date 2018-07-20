@@ -182,6 +182,11 @@ module Make(Abs : Domain_signature.AbstractCP) = struct
       true
     with Exit -> false
 
+  (* check that the solving does not find any sure solution *)
+  let check_infeasible result =
+    let open Result in
+    result.sure = []
+
   let result csp = solving csp
 
 end

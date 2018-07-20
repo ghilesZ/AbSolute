@@ -239,6 +239,7 @@ module Itv(B:BOUND) = struct
       let p = B.to_float_down l |> int_of_float in
       match p with
       | 1 -> Nb (il, ih)
+      | 2 -> Nb (B.sqrt_down il, B.sqrt_up ih)
       | x when x > 1 && B.odd l ->
 	       Nb (B.root_down il p, B.root_up ih p)
       | x when x > 1 && B.even l ->

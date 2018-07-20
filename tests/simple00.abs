@@ -10,5 +10,5 @@ constraints {
 }
 
 solutions{
-  !{y=0; x=0}
+  none
 }

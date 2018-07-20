@@ -302,10 +302,31 @@ let filter_eq (x1:t) (x2:t) : (t * t) bot =
 let filter_neq (i1:t) (i2:t) : (t * t) bot =
   (* Format.printf "filter: %a <> %a\n%!" print i1 print i2; *)
   match i1,i2 with
-  | Int x1 , Int x2 ->  lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_neq x1 x2)
-  | Real x1, Real x2 -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_neq x1 x2)
-  | _ -> (* TODO: improve precision *) Nb (i1,i2)
-
+  | Int x1 , Int x2    -> lift_bot (fun (x,y) -> (Int x),(Int y)) (I.filter_neq x1 x2)
+  | Real x1, Real x2   -> lift_bot (fun (x,y) -> (Real x),(Real y)) (R.filter_neq x1 x2)
+  (* Special handling of singleton to add precision *)
+  | Real x1, Int (a,b) ->
+     let r1,r2 = R.to_float_range x1 in
+     if r1=r2 then
+       if float a = r1 then
+         let new_i2 = I.check_bot ((a+1),b) in
+         lift_bot (fun (x,y) -> (Real x),(Int y)) (lift_bot (fun x2->x1,x2) new_i2)
+       else if float b = r1 then
+         let new_i2 = I.check_bot (a,b-1) in
+         lift_bot (fun (x,y) -> (Real x),(Int y)) (lift_bot (fun x2->x1,x2) new_i2)
+       else Nb (i1,i2)
+     else Nb (i1,i2)
+  | Int (a,b),Real x1 ->
+     let r1,r2 = R.to_float_range x1 in
+     if r1=r2 then
+       if float a = r1 then
+         let new_i2 = I.check_bot ((a+1),b) in
+         lift_bot (fun (x,y) -> (Int x),(Real y)) (lift_bot (fun x2->x2,x1) new_i2)
+       else if float b = r1 then
+         let new_i2 = I.check_bot (a,b-1) in
+         lift_bot (fun (x,y) -> (Int x),(Real y)) (lift_bot (fun x2->x2,x1) new_i2)
+       else Nb (i1,i2)
+     else Nb (i1,i2)
 (* given the interval argument(s) and the expected interval result of
    a numeric operation, returns a refined interval argument(s) where
    points that cannot contribute to a value in the result are

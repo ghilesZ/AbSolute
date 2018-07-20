@@ -94,14 +94,14 @@ and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
     with Not_found -> Var id
   in
   let var_to_expr ((id,exp):P.var) : expr =
-    let rec iter acc = function
-      | 0 -> acc
-      | n -> iter (Binary(MUL, acc, of_id id)) (n-1)
-    in
+    (* let rec iter acc = function
+     *   | 0 -> acc
+     *   | n -> iter (Binary(MUL, acc, of_id id)) (n-1)
+     * in *)
     match (int_of_float exp) with
     | 0 -> Int 1
     | 1 -> of_id id
-    | n -> iter (of_id id) (n-1)
+    | n -> Binary(POW,(of_id id),Int n)
   in
   let cell_to_expr ((c,v) as m) =
     if P.is_monom_constant m then
