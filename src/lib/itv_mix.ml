@@ -17,7 +17,9 @@ let to_float (i:I.t) =
   let (a,b) = I.to_float_range i in
   R.of_floats a b
 
-(* real itv conversion to integer itv. may be bottom *)
+(* real itv conversion to integer itv.
+   the biggest inner element is returned.
+   may be bottom *)
 let to_int (r:R.t) : I.t bot =
   let (a,b) = R.to_float_range r in
   match classify_float a, classify_float b with

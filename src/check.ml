@@ -36,17 +36,12 @@ let split sols =
   List.fold_left (fun (g,ng) (i,b) -> if b then (i::g,ng) else g,(i::ng))
     ([],[]) sols
 
-let _ =
-  Random.self_init();
-  let dir = "problems/" in
-  Format.printf "regression test of the solver\n";
-  Format.printf "using the %s domain\n" !Constant.domain;
+let checkfiles dir files =
   print_sep();
   Constant.set_max_iter 10;
   let goods          = ref 0 in
   let not_bads       = ref 0 in
   let problem        = ref 0 in
-  let files = Sys.readdir dir in
   let output_infeasible arr prob res =
     if CheckBox.check_infeasible res then begin
         arr.(1) <- "infeasible";
@@ -108,3 +103,11 @@ let _ =
   Format.printf "%a" Tools.matrix_print_indent mat;
   print_sep();
   print_results (!not_bads) (!goods) (Array.length files)
+
+let _ =
+  Random.self_init();
+  let dir = "tests/" in
+  Format.printf "regression test of the solver\n";
+  Format.printf "using the %s domain\n" !Constant.domain;
+  let files = Sys.readdir dir in
+  checkfiles dir files

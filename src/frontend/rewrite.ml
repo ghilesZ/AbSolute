@@ -19,7 +19,7 @@ let fresh_name =
   let cpt = ref 0 in
   fun () ->
   incr cpt;
-  "%reserved_"^(string_of_int (!cpt))
+  "%_"^(string_of_int (!cpt))
 
 (* We convert a tree expression to a polynomial form.
    sub-expression does not correspond to a polynom are bound to fresh
@@ -28,7 +28,7 @@ let rec simplify env expr : (P.t * string CoEnv.t) =
   let check_var e env =
     try
       let var = CoEnv.find e env in
-      (P.of_var var),env
+      (P.of_var var), env
     with Not_found ->
       let new_var = fresh_name() in
       let newenv = CoEnv.add e new_var env in
@@ -101,6 +101,8 @@ and polynom_to_expr (p:P.t) (fake_vars: string CoEnv.t) : Csp.expr =
     match (int_of_float exp) with
     | 0 -> Int 1
     | 1 -> of_id id
+    | 2 -> let var = of_id id in
+           Binary(MUL,var,var)
     | n -> Binary(POW,(of_id id),Int n)
   in
   let cell_to_expr ((c,v) as m) =

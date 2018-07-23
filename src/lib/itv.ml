@@ -69,6 +69,12 @@ module Itv(B:BOUND) = struct
   let print fmt ((l,h):t) : unit =
     Format.fprintf fmt "[%a;%a]" B.print l B.print h
 
+  (* printing *)
+  let print_bot fmt (itv:t bot) : unit =
+    match itv with
+    | Bot -> Format.fprintf fmt "_|_"
+    | Nb (l,h) -> Format.fprintf fmt "[%a;%a]" B.print l B.print h
+
   (************************************************************************)
   (*                          SET-THEORETIC                               *)
   (************************************************************************)
@@ -81,7 +87,6 @@ module Itv(B:BOUND) = struct
 
   let meet ((l1,h1):t) ((l2,h2):t) : t bot =
     check_bot (B.max l1 l2, B.min h1 h2)
-
 
   (* predicates *)
   (* ---------- *)
@@ -169,7 +174,7 @@ module Itv(B:BOUND) = struct
   let bound_mul_up   = B.bound_mul B.mul_up
   let bound_mul_down = B.bound_mul B.mul_down
 
-  let mix4 up down ((l1,h1):t) ((l2,h2):t) =
+  let mix4 up down ((l1,h1):t) ((l2,h2) :t) =
     B.min (B.min (down l1 l2) (down l1 h2)) (B.min (down h1 l2) (down h1 h2)),
     B.max (B.max (up   l1 l2) (up   l1 h2)) (B.max (up   h1 l2) (up   h1 h2))
 
@@ -180,8 +185,10 @@ module Itv(B:BOUND) = struct
   let bound_div_down = B.bound_div B.div_down
 
   (* helper: assumes i2 has constant sign *)
-  let div_sign =
-    mix4 bound_div_up bound_div_down
+  let div_sign (l1,h1 as i1) ((l2,h2) as i2) =
+    if l2 = B.zero then (B.min (bound_div_down l1 h2) (bound_div_down l2 h2)),B.inf
+    else if h2 = B.zero then B.minus_inf,(B.max (bound_div_up l1 h2) (bound_div_up l2 h2))
+    else mix4 bound_div_up bound_div_down i1 i2
 
   (* return valid values (possibly Bot) + possible division by zero *)
   let div (i1:t) (i2:t) : t bot =
