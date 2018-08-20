@@ -119,6 +119,14 @@ checker.opt: $(OFILES) $(CMXFILES) $(CHECK)
 
 configure: Makefile.config
 
+setup_vpl:
+	cp -f ./src/domains/vpl_domain.ok.ml ./src/domains/vpl_domain.ml
+	cp -f ./src/print/vpl_drawer.ok.ml ./src/print/vpl_drawer.ml
+
+setup_no_vpl:
+	cp -f ./src/domains/vpl_domain.ko.ml ./src/domains/vpl_domain.ml
+	cp -f ./src/print/vpl_drawer.ko.ml ./src/print/vpl_drawer.ml
+
 # proxy rule for rebuilding configuration files directly from the main Makefile
 Makefile.config:
 	$(MAKE) -f .configure.make all
