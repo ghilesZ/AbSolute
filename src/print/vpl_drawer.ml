@@ -60,7 +60,12 @@ module Binding_VPL_Apron = struct
     				(E.Binop (E.Mul, e_res, e, typ, rnd), Set.union v vs))
     			(term' (List.hd l))
     			(List.tl l)
+            | I.Term.Div (t1,t2) ->
+                let (e1, v1) = term' t1
+                and (e2, v2) = term' t2 in
+                (E.Binop (E.Div, e1, e2, typ, rnd), Set.union v1 v2)
     		| I.Term.Annot (annot, t) -> term' t
+            | I.Term.Poly _ -> Pervasives.failwith "term': poly unimplemented"
 
     	let term : I.Term.t -> E.expr * (Apron.Var.t list)
     		= fun t ->

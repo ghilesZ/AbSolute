@@ -5,6 +5,8 @@ open UserInterface
 https://git.frama-c.com/frama-c/frama-c/blob/save/feature/eva/vpl/src/plugins/value/domains/vpl/vpl_binding.ok.ml
 *)
 
+module Debug = DebugTypes.Debug(struct let name = "AbSolute" end)
+
 module VPL_CP_Profile = Profile.Profile(struct let name = "VPL_CP" end)
 
 module Coeff = Scalar.Rat
@@ -32,6 +34,13 @@ module Expr = struct
         | Csp.Binary (Csp.ADD, e1, e2) -> Term.Add (to_term e1, to_term e2)
         | Csp.Binary (Csp.SUB, e1, e2) -> Term.Add (to_term e1, Term.Opp (to_term e2))
         | Csp.Binary (Csp.MUL, e1, e2) -> Term.Mul (to_term e1, to_term e2)
+        | Csp.Binary (Csp.DIV, e1, e2) -> Term.Div (to_term e1, to_term e2)
+        | Csp.Binary (Csp.POW, e1, Csp.Cst f) -> begin try
+                let i = int_of_float f in
+                let term = to_term e1 in
+                Term.Prod (List.map (fun _ -> term) (Misc.range 0 i))
+            with _ -> Pervasives.raise Out_of_Scope
+            end
         | _ -> Pervasives.raise Out_of_Scope
 end
 
@@ -110,7 +119,10 @@ module VplCP (* : Domain_signature.AbstractCP *)= struct
 
     let filter : t -> (Csp.expr * Csp.cmpop * Csp.expr) -> t
         = fun state (e1,cmp,e2) ->
-        User.assume (to_cond (Csp.Cmp (cmp, e1, e2))) state
+        Debug.log DebugTypes.Title (lazy "Filter");
+        let cond = to_cond (Csp.Cmp (cmp, e1, e2)) in
+        Debug.log DebugTypes.MInput (lazy (UserCond.to_string cond));
+        User.assume cond state
 
     (* TODO: Should return the variable with the maximal range as well. *)
     let filter_maxvar : t -> (Csp.expr * Csp.cmpop * Csp.expr) -> t * (Csp.var*float)
@@ -147,14 +159,15 @@ let set_lin s =
 
 let enable_debug : unit -> unit
     = fun () ->
-    Debug.enable();
-    Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
+    Vpl.Debug.enable();
+    Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
+    Handelman.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
+    HOtypes.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
     Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
-    (*IOtypes2.Debug.enable DebugTypes.([Title ; MInput ; MOutput ]);
-    IOtypes2.Debug.print_enable();*)
-    (*Pol.Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);*)
+    Vpl.Debug.print_enable();
     Debug.print_enable();
-    Debug.set_colors();
+    Debug.set_color(DebugTypes.Cyan);
+    Vpl.Debug.set_colors();
     PSplx.Debug.disable()
 
 let start_profile () =
