@@ -28,8 +28,8 @@ module Expr = struct
     (* TODO: handle Binary(POW, e1, e2)? *)
     let rec to_term : t -> Term.t
         = function
-        | Csp.Float f -> (print_endline (string_of_float f) ; Term.Cte (Coeff.of_float f))
-        | Csp.Int f -> (print_endline (string_of_int f) ; Term.Cte (Coeff.of_float (float f)))
+        | Csp.Float f -> Term.Cte (Coeff.of_float f)
+        | Csp.Int f -> Term.Cte (Coeff.of_float (float f))
         | Csp.Var var -> Term.Var (Ident.toVar var)
         | Csp.Unary (Csp.NEG, e) -> Term.Opp (to_term e)
         | Csp.Binary (Csp.ADD, e1, e2) -> Term.Add (to_term e1, to_term e2)
