@@ -3,7 +3,7 @@ init {
 }
 
 constraints {
-  x^2 + 2*x = 0;
+  x^2 = 0;
 }
 
 solutions {

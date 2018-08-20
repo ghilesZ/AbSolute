@@ -192,7 +192,7 @@ module Itv(B:BOUND) = struct
 
   (** runtime functions **)
   let eval_fun name args : t bot =
-    failwith (Format.sprintf "unknown eval function : %s" name)
+    Tools.fail_fmt "unknown eval function : %s" name
 
   (************************************************************************)
   (* FILTERING (TEST TRANSFER FUNCTIONS) *)
@@ -204,18 +204,10 @@ module Itv(B:BOUND) = struct
   let filter_leq ((l1,h1):t) ((l2,h2):t) : (t*t) bot =
     merge_bot2 (check_bot (l1, B.min h1 h2)) (check_bot (B.max l1 l2, h2))
 
-  let filter_geq ((l1,h1):t) ((l2,h2):t) : (t*t) bot =
-    merge_bot2 (check_bot (B.max l1 l2, h1)) (check_bot (l2, B.min h1 h2))
-
   let filter_lt ((l1,_) as i1:t) ((l2,h2) as i2:t) : (t*t) bot =
     if is_singleton i1 && is_singleton i2 && B.equal l1 l2 then Bot
     else if B.leq h2 l1 then Bot
     else filter_leq i1 i2
-
-  let filter_gt ((l1,h1) as i1:t) ((l2,_) as i2:t) : (t*t) bot =
-    if is_singleton i1 && is_singleton i2 && B.equal l1 l2 then Bot
-    else if B.leq h1 l2 then Bot
-    else filter_geq i1 i2
 
   let filter_eq (i1:t) (i2:t) : (t*t) bot =
     lift_bot (fun x -> x,x) (meet i1 i2)
@@ -271,7 +263,7 @@ module Itv(B:BOUND) = struct
     merge_bot2 (check_bot ((B.min l1 lr), (B.min u1 ur))) (check_bot ((B.min l2 lr), (B.min u2 ur)))
 
   let filter_fun name args r : (t list) bot =
-    failwith (Format.sprintf "unknown filter function : %s" name)
+    Tools.fail_fmt "unknown filter function : %s" name
 
   let to_float_range (l,h) =
     (B.to_float l),(B.to_float h)

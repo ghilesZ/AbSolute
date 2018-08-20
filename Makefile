@@ -1,5 +1,5 @@
 # this configuration file is generated from configure.make
-include Makefile.config
+-include Makefile.config
 
 OPAMBIN   := $(shell opam config var bin)
 OCAMLOPTOPTIONS := -w "+a-4-32-27" -warn-error "+a-4-32-27"
@@ -62,13 +62,12 @@ MLFILES = \
 	src/print/latex.ml \
   src/print/drawer_sig.ml \
 	src/print/box_drawer.ml \
+	src/print/boxmix_drawer.ml \
 	src/print/wrapper_drawer.ml \
 	src/print/apron_drawer.ml \
 	src/print/vpl_drawer.ml \
   src/print/out.ml \
 	src/solver/step_by_step.ml
-
-
 
 # targets
 TARGETS = solver.opt

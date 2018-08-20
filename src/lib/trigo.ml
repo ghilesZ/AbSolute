@@ -219,7 +219,7 @@ module Make (I:Itv_sig.ITV) = struct
   let asin_itv i = lift_bot (I.sub pihalf_itv) (acos_itv i)
 
   (* tangent of an interval *)
-  let tan_itv i = fst (I.div (sin_itv i) (cos_itv i))
+  let tan_itv i = (I.div (sin_itv i) (cos_itv i))
 
   (* atan of an interval *)
   let atan_itv i =
@@ -231,12 +231,12 @@ module Make (I:Itv_sig.ITV) = struct
     let arity_1 (f: I.t -> I.t) : I.t bot =
       match args with
       | [i] -> Nb (f i)
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_1_bot (f: I.t -> I.t bot) : I.t bot =
       match args with
       | [i] -> f i
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     match name with
     | "cos"  -> arity_1 cos_itv
@@ -344,7 +344,7 @@ module Make (I:Itv_sig.ITV) = struct
          (match f i r with
          | Bot -> Bot
          | Nb i -> Nb [i])
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     match name with
     | "cos"  -> arity_1 filter_cos
@@ -357,3 +357,4 @@ module Make (I:Itv_sig.ITV) = struct
 end
 
 module ItvF = Make(Itv.ItvF)
+module ItvMix = Make(Itv_mix)

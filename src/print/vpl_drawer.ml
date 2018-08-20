@@ -1,5 +1,6 @@
-open Vpl
+open Vpl_domain
 
+<<<<<<< HEAD
 module Binding_VPL_Apron = struct
 
     module Coeff = Scalar.Rat
@@ -253,30 +254,15 @@ module Binding_VPL_Apron = struct
 end
 
 type t = Vpl_domain.VplCP.t
+=======
+type t = unit
+>>>>>>> 489fbbc5f1a2c6529832ddfd187c156907abd01e
 
 let bound : t -> Csp.var -> float * float
-    = fun pol var ->
-    let term = Vpl_domain.Expr.to_term (Csp.Var var) in
-    let itv = Vpl_domain.VplCP.itvize pol term in
-    let low = match itv.Pol.low with
-        | Pol.Infty -> min_float
-    	| Pol.Open r | Pol.Closed r -> Scalar.Rat.to_float r
-    and up = match itv.Pol.up with
-        | Pol.Infty -> max_float
-    	| Pol.Open r | Pol.Closed r -> Scalar.Rat.to_float r
-    in
-    (low,up)
+    = fun _ _ -> fail ()
 
 let draw2d : t -> (Csp.var * Csp.var) -> Graphics.color -> unit
-    = fun pol (x,y) ->
-
-    let cond = Vpl_domain.VplCP.get_cond pol in
-    let x' = Vpl_domain.Expr.Ident.toVar x |> Pol.Var.to_string
-    and y' = Vpl_domain.Expr.Ident.toVar y |> Pol.Var.to_string
-    in
-    let pol_apron = Binding_VPL_Apron.Polka_Strict.assume cond Binding_VPL_Apron.Polka_Strict.top in
-    (*Binding_VPL_Apron.Polka_Strict.print pol_apron;*)
-    Apron_drawer.PolyDrawer.draw2d pol_apron (x',y')
+    = fun _ _ _ -> ()
 
 let print : Format.formatter -> t -> unit
     = fun _ _ -> ()

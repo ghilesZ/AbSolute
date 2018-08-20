@@ -35,12 +35,13 @@
 %token TOK_INIT          /* init */
 %token TOK_CONSTR        /* constraints */
 %token TOK_SOL           /* solutions */
+%token TOK_NONE          /* none */
 %token TOK_MINF          /* -oo */
 %token TOK_INF           /* oo */
 
 %token <string> TOK_id
-%token <float> TOK_const
-
+%token <float> TOK_float
+%token <int> TOK_int
 %token TOK_EOF
 
 /* priorities */
@@ -77,8 +78,9 @@ constraints:
  | TOK_CONSTR TOK_LBRACE bexprs TOK_RBRACE {$3}
 
 solutions:
- | TOK_SOL TOK_LBRACE instances TOK_RBRACE {$3}
- | {[]}
+ | TOK_SOL TOK_LBRACE instances TOK_RBRACE {Some $3}
+ | TOK_SOL TOK_LBRACE TOK_NONE TOK_RBRACE {None}
+ | {Some []}
 
 instances:
  | TOK_LBRACE sols TOK_RBRACE TOK_SEMICOLON instances {((VMap.of_list $2),true)::$5}
@@ -119,8 +121,9 @@ set:
   | {[]}
 
 const:
-  | TOK_const {$1}
-  | TOK_MINUS TOK_const {(-.$2)}
+  | TOK_int   {float $1}
+  | TOK_float {$1}
+  | TOK_MINUS const {(-.$2)}
 
 bexpr:
   | expr cmp expr                       {Cmp ($2, $1, $3)}
@@ -143,7 +146,8 @@ args:
 
 
 leaf:
-  | TOK_const                           { Cst $1 }
+  | TOK_int                             { Int $1 }
+  | TOK_float                           { Float $1 }
   | TOK_id                              { Var $1 }
 
 binop_expr:

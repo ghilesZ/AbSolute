@@ -135,6 +135,6 @@ let parse fn =
           List.iter (Format.printf "%a\n" print_bexpr) res;
         end;
       res
-    else p.constraints
+      else p.constraints
   in
   {p with constraints = new_constraints}

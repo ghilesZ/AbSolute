@@ -1,30 +1,33 @@
-open Cartesian.BoxF
+open Cartesian.BoxMix
 
-type t = Cartesian.BoxF.t
+type t = Cartesian.BoxMix.t
 
-let print = Cartesian.BoxF.print
+let print = Cartesian.BoxMix.print
 
 let bound abs v = find v abs |> I.to_float_range
 
-let draw draw_f fillpol abs (v1,v2) col =
+let draw draw_f fillpol fillcircle abs (v1,v2) col =
   let (xl,xu) = bound abs v1 and (yl,yu) = bound abs v2 in
-  fillpol [(xl,yl);(xl,yu);(xu,yu);(xu,yl)] col;
-  let ((xl,xu) as i1) : I.t = find v1 abs
-  and ((yl,yu) as i2) : I.t = find v2 abs in
+  if xl=xu && yl=yu then fillcircle (xl,yl) 5 col
+  else fillpol [(xl,yl); (xl,yu); (xu,yu); (xu,yl)] col;
+  let itv1 = find v1 abs
+  and itv2 = find v2 abs in
+  let (xl,xu) = itv1 |> I.to_float_range
+  and (yl,yu) = itv2 |> I.to_float_range in
   let draw_seg vert value (b,c) =
     if vert then draw_f (value,b) (value,c) Graphics.black
     else draw_f (b,value) (c,value) Graphics.black
   in
-  draw_seg true xl (I.to_float_range i2);
-  draw_seg true xu (I.to_float_range i2);
-  draw_seg false yl (I.to_float_range i1);
-  draw_seg false yu (I.to_float_range i1)
+  draw_seg true xl (yl,yu);
+  draw_seg true xu (yl,yu);
+  draw_seg false yl (xl,xu);
+  draw_seg false yu (xl,xu)
 
 let fill fillbox abs (v1,v2) col =
   let (xl,xu) = bound abs v1 and (yl,yu) = bound abs v2 in
   fillbox (xl,yl) (xu,yu) col
 
-let draw2d = View.(draw draw_seg fill_poly)
+let draw2d = View.(draw draw_seg fill_poly fill_circle)
 
 let print_latex fmt = Latex.(fill (filldrawbox fmt))
 

@@ -1,8 +1,8 @@
 /* greater than, less than */
 
 init {
-  real x = [0;100];
-  real y = [0;100];
+  real x = [0;15];
+  real y = [0;15];
 }
 
 constraints {

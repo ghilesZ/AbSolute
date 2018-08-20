@@ -53,7 +53,6 @@ module type ITV = sig
   (* ---------- *)
   val contains_float: t -> float -> bool
   val intersect: t -> t -> bool
-  val is_singleton: t -> bool
 
   (* mesure *)
   (* ------ *)
@@ -61,7 +60,12 @@ module type ITV = sig
 
   (* split *)
   (* ----- *)
-  val split: t -> (t bot) list
+
+  (* returns a split priority. The higher the better *)
+  val score : t -> float
+
+  (* split operator *)
+  val split : t -> t list
 
   (* pruning *)
   (* ------- *)
@@ -79,11 +83,10 @@ module type ITV = sig
   val mul: t -> t -> t
 
   (* return valid values (possibly Bot) + possible division by zero *)
-  val div: t -> t -> t bot * bool
+  val div: t -> t -> t bot
 
   (* returns valid value when the exponant is a singleton positive integer.
-     fails otherwise
-  *)
+     fails otherwise *)
   val pow: t -> t -> t
 
   (* function calls (sqrt, exp, ln ...) are handled here :
@@ -100,10 +103,13 @@ module type ITV = sig
      by removing points that cannot satisfy the predicate;
      may also return Bot if no point can satisfy the predicate *)
 
+
+  (* simplifying the interface since a > b <=> b < a *)
+  (* val filter_geq: t -> t -> (t * t) bot *)
+  (* val filter_gt: t -> t -> (t * t) bot *)
+
   val filter_leq: t -> t -> (t * t) bot
-  val filter_geq: t -> t -> (t * t) bot
   val filter_lt: t -> t -> (t * t) bot
-  val filter_gt: t -> t -> (t * t) bot
   val filter_eq: t -> t -> (t * t) bot
   val filter_neq: t -> t -> (t * t) bot
 

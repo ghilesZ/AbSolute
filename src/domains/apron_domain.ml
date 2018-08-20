@@ -14,13 +14,14 @@ module SyntaxTranslator (D:ADomain) = struct
   let rec expr_to_apron a (e:expr) : Texpr1.expr =
     let env = Abstract1.env a in
     match e with
-    | FunCall(name,args) -> Format.sprintf "%s unsupported with apron" name |> failwith
+    | FunCall(name,args) -> Tools.fail_fmt "%s unsupported with apron" name
     | Var v ->
       let var = Var.of_string v in
       if not (Environment.mem_var env var)
-      then failwith ("variable not found: "^v);
+      then Tools.fail_fmt "variable not found: %s" v;
       Texpr1.Var var
-    | Cst c -> Texpr1.Cst (Coeff.s_of_float c)
+    | Float c -> Texpr1.Cst (Coeff.s_of_float c)
+    | Int c -> Texpr1.Cst (Coeff.s_of_int c)
     | Unary (o,e1) ->
       let r = match o with
 	      | NEG  -> Texpr1.Neg
@@ -66,7 +67,7 @@ module SyntaxTranslator (D:ADomain) = struct
 
   let rec apron_to_expr texpr env =
     match texpr with
-    | Texpr1.Cst c -> Cst (coeff_to_float c)
+    | Texpr1.Cst c -> Float (coeff_to_float c)
     | Texpr1.Var v ->
       let e = match (Environment.typ_of_var env v) with
               | Environment.INT -> Var ((Var.to_string v)^"%")
@@ -105,7 +106,7 @@ module SyntaxTranslator (D:ADomain) = struct
     in
     let typ = apron_to_cmp (Tcons1.get_typ tcons) in
     let exp = apron_to_expr (Texpr1.to_expr (Tcons1.get_texpr1 tcons)) env in
-    (exp, typ, Cst (0.))
+    (exp, typ, Int 0)
 
   let apron_to_bexpr abs =
     let abscons = Abstract1.to_tcons_array man abs in

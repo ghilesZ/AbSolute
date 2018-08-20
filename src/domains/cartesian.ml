@@ -22,12 +22,7 @@ module Box (I:ITV) = struct
   (* maps each variable to a (non-empty) interval *)
   type t = I.t VMap.t
 
-  let find v a =
-    try (VMap.find v a, v) with
-      Not_found -> (VMap.find (v^"%") a, v^"%")
-
-  let is_integer var = var.[String.length var - 1] = '%'
-
+  let find v a = VMap.find_fail v a
   (************************************************************************)
   (* PRINTING *)
   (************************************************************************)
@@ -64,16 +59,12 @@ module Box (I:ITV) = struct
         if (I.range i) > (I.range io) then v,i else vo,io
       ) a (VMap.min_binding a)
 
-  (* variable with maximal range if real or with smallest range if integer *)
+  (* variable with maximal range if real or with minimal if integer *)
   let mix_range (a:t) : var * I.t =
     VMap.fold
       (fun v i (vo,io) ->
-        if is_integer v then
-          let r = I.range i in
-          if (0. <> r) && ((I.range io) > r) then v,i else vo,io
-        else
-          vo,io
-      ) a (max_range a)
+        if (I.score i) > (I.score io) then v,i else vo,io
+      ) a (VMap.min_binding a)
 
   let is_small (a:t) : bool =
     let (v,i) = max_range a in
@@ -86,23 +77,18 @@ module Box (I:ITV) = struct
   (* splitting strategies *)
   (************************)
 
-  let split_along (a:t) (v:var) : t list =
-    let i = VMap.find v a in
-    let i_list =
-      if is_integer v then failwith "integer"
-      else I.split i
-    in
-    List.fold_left (fun acc b ->
-        match b with
-        | Nb e -> (VMap.add v e a)::acc
-        | Bot -> acc
+  let choose a = mix_range a
+
+  let split_along (a:t) (v,i:var * I.t) : t list =
+    let i_list = I.split i in
+    List.fold_left (fun acc e ->
+        (VMap.add v e a)::acc
       ) [] i_list
 
   let split (a:t) : t list =
-    let (v,_) = mix_range a in
-    (if !Constant.debug then
-       Format.printf " ---- splits along %s ---- \n" v);
-    split_along a v
+    let ((v,i) as var) = choose a in
+    (if !Constant.debug then Format.printf " ---- splits along %s ---- \n" v);
+    split_along a var
 
   let prune (a:t) (b:t) : t list * t =
     let goods,nogood =
@@ -130,19 +116,29 @@ module Box (I:ITV) = struct
 
   let add_var abs (typ,var,dom) : t =
     let itv =
-      match dom with
-      | Finite (l,u) -> I.of_floats l u
-      | Set (h::tl) -> List.fold_left (fun acc e -> I.join acc (I.of_float e)) (I.of_float h) tl
+      match typ,dom with
+      | INT,Finite  (l,u) -> I.of_ints (int_of_float l) (int_of_float u)
+      | REAL,Finite (l,u) -> I.of_floats l u
+      | _,Set (h::tl) -> List.fold_left (fun acc e -> I.join acc (I.of_float e)) (I.of_float h) tl
       | _ -> failwith "can only handle finite non-empty domains"
     in
-    VMap.add (if typ = INT then (var^"%") else var) itv abs
+    VMap.add var itv abs
+
+  (*********************************)
+  (* Sanity and checking functions *)
+  (*********************************)
 
   (* returns an randomly (uniformly?) chosen instanciation of the variables *)
   let spawn a : instance =
-    VMap.fold (fun k v acc -> VMap.add k (I.spawn v) acc) a VMap.empty
+    VMap.fold (fun k itv acc -> VMap.add k (I.spawn itv) acc) a VMap.empty
 
+  (* given an abstraction and instance, verifies if the abstraction is implied
+     by the instance *)
   let is_abstraction a (i:instance) =
-    VMap.for_all (fun k v -> I.contains_float (VMap.find k a) v) i
+    VMap.for_all (fun k value ->
+        let itv = VMap.find k a in
+        I.contains_float itv value
+      ) i
 end
 
 (*************)
@@ -150,3 +146,4 @@ end
 (*************)
 
 module BoxF = Box(Trigo.ItvF)
+module BoxMix = Box(Trigo.ItvMix)

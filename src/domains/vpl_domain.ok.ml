@@ -28,7 +28,8 @@ module Expr = struct
     (* TODO: handle Binary(POW, e1, e2)? *)
     let rec to_term : t -> Term.t
         = function
-        | Csp.Cst f -> (print_endline (string_of_float f) ; Term.Cte (Coeff.of_float f))
+        | Csp.Float f -> (print_endline (string_of_float f) ; Term.Cte (Coeff.of_float f))
+        | Csp.Int f -> (print_endline (string_of_int f) ; Term.Cte (Coeff.of_float (float f)))
         | Csp.Var var -> Term.Var (Ident.toVar var)
         | Csp.Unary (Csp.NEG, e) -> Term.Opp (to_term e)
         | Csp.Binary (Csp.ADD, e1, e2) -> Term.Add (to_term e1, to_term e2)
@@ -71,10 +72,10 @@ module VplCP (* : Domain_signature.AbstractCP *)= struct
         else
             let cond = begin match dom with
             | Csp.Finite (bi,bs) -> Csp.And
-                (Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Cst bs),
-                Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Cst bi))
-            | Csp.Minf bs -> Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Cst bs)
-            | Csp.Inf bi -> Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Cst bi)
+                (Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Float bs),
+                Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Float bi))
+            | Csp.Minf bs -> Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Float bs)
+            | Csp.Inf bi -> Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Float bi)
             | _ -> Pervasives.invalid_arg "add_var"
             end
             |> to_cond

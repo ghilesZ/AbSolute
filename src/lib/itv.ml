@@ -1,9 +1,6 @@
-(*
-   Generic intervals.
+(* Generic intervals.
    Working with bounds that may induce rounding errors.
-   Can be instantiated with any bound type.
-*)
-
+   Can be instantiated with any bound type. *)
 
 open Bot
 open Bound_sig
@@ -11,7 +8,7 @@ open Bound_sig
 module Itv(B:BOUND) = struct
 
   (************************************************************************)
-  (* TYPES *)
+  (*                                TYPES                                 *)
   (************************************************************************)
 
 
@@ -20,29 +17,25 @@ module Itv(B:BOUND) = struct
 
   (* an interval is a pair of bounds (lower,upper);
      intervals are always non-empty: lower <= upper;
-     functions that can return an empty interval return it as Bot
-   *)
+     functions that can return an empty interval return it as Bot *)
   type t = bound * bound
 
   (* not all pairs of rationals are valid intervals *)
   let validate ((l,h):t) : t =
     if B.gt l h then
       invalid_arg
-        ("int.validate: "
-         ^ string_of_float (B.to_float_down l)
-         ^" "
-         ^string_of_float (B.to_float_up h))
+        (Format.asprintf "itv.validate: %f %f"
+           (B.to_float_down l)
+           (B.to_float_up h))
     else l,h
 
   (* maps empty intervals to explicit bottom *)
   let check_bot ((l,h):t) : t bot =
     if B.leq l h then Nb (l,h) else Bot
 
-
   (************************************************************************)
-  (* CONSTRUCTORS AND CONSTANTS *)
+  (*                     CONSTRUCTORS AND CONSTANTS                       *)
   (************************************************************************)
-
 
   let of_bound (x:B.t) : t = validate (x,x)
 
@@ -69,15 +62,21 @@ module Itv(B:BOUND) = struct
   let float_hull (x:float) (y:float) = min x y, max x y
 
   (************************************************************************)
-  (* PRINTING *)
+  (*                            PRINTING                                  *)
   (************************************************************************)
 
   (* printing *)
   let print fmt ((l,h):t) : unit =
     Format.fprintf fmt "[%a;%a]" B.print l B.print h
 
+  (* printing *)
+  let print_bot fmt (itv:t bot) : unit =
+    match itv with
+    | Bot -> Format.fprintf fmt "_|_"
+    | Nb (l,h) -> Format.fprintf fmt "[%a;%a]" B.print l B.print h
+
   (************************************************************************)
-  (* SET-THEORETIC *)
+  (*                          SET-THEORETIC                               *)
   (************************************************************************)
 
   (* operations *)
@@ -88,7 +87,6 @@ module Itv(B:BOUND) = struct
 
   let meet ((l1,h1):t) ((l2,h2):t) : t bot =
     check_bot (B.max l1 l2, B.min h1 h2)
-
 
   (* predicates *)
   (* ---------- *)
@@ -123,18 +121,21 @@ module Itv(B:BOUND) = struct
   (* split *)
   (* ----- *)
 
+  (* split priority *)
+  let score itv = range itv |> B.to_float_up
+
   (* finds the mean of the interval *)
   let mean ((l,h):t) : B.t list = [B.div_up (B.add_up l h) B.two]
 
   (* splits in two, around the middle *)
-  let split ((l,h) as i :t) : (t bot) list =
+  let split ((l,h) as i :t) : t list =
     let rec aux acc cur bounds =
       match bounds with
       |  hd::tl ->
-	       let itv = check_bot (cur,hd) in
+	       let itv = validate (cur,hd) in
 	       aux (itv::acc) hd tl
       | [] ->
-	       let itv = check_bot (cur,h) in
+	       let itv = validate (cur,h) in
 	       itv::acc
     in aux [] l (mean i)
 
@@ -173,7 +174,7 @@ module Itv(B:BOUND) = struct
   let bound_mul_up   = B.bound_mul B.mul_up
   let bound_mul_down = B.bound_mul B.mul_down
 
-  let mix4 up down ((l1,h1):t) ((l2,h2):t) =
+  let mix4 up down ((l1,h1):t) ((l2,h2) :t) =
     B.min (B.min (down l1 l2) (down l1 h2)) (B.min (down h1 l2) (down h1 h2)),
     B.max (B.max (up   l1 l2) (up   l1 h2)) (B.max (up   h1 l2) (up   h1 h2))
 
@@ -184,17 +185,18 @@ module Itv(B:BOUND) = struct
   let bound_div_down = B.bound_div B.div_down
 
   (* helper: assumes i2 has constant sign *)
-  let div_sign =
-    mix4 bound_div_up bound_div_down
+  let div_sign (l1,h1 as i1) ((l2,h2) as i2) =
+    if l2 = B.zero then (B.min (bound_div_down l1 h2) (bound_div_down l2 h2)),B.inf
+    else if h2 = B.zero then B.minus_inf,(B.max (bound_div_up l1 h2) (bound_div_up l2 h2))
+    else mix4 bound_div_up bound_div_down i1 i2
 
   (* return valid values (possibly Bot) + possible division by zero *)
-  let div (i1:t) (i2:t) : t bot * bool =
+  let div (i1:t) (i2:t) : t bot =
     (* split into positive and negative dividends *)
     let pos = (lift_bot (div_sign i1)) (meet i2 positive)
     and neg = (lift_bot (div_sign i1)) (meet i2 negative) in
     (* joins the result *)
-    join_bot2 join pos neg,
-    contains_float i2 0.
+    join_bot2 join pos neg
 
   (* interval square root *)
   let sqrt ((l,h):t) : t bot =
@@ -219,7 +221,7 @@ module Itv(B:BOUND) = struct
     let itv' = ln itv in
     match itv' with
     | Bot -> Bot
-    | Nb (l', h') -> fst (div (l',h') (of_bound ln10))
+    | Nb (l', h') -> (div (l',h') (of_bound ln10))
 
   (* powers *)
   let pow ((il,ih):t) ((l,h):t) =
@@ -235,8 +237,8 @@ module Itv(B:BOUND) = struct
          else if B.geq il B.zero then
 	         (B.pow_down il p, B.pow_up ih p)
          else (B.pow_down ih p, B.pow_up il p)
-      | _ -> failwith "cant handle negatives powers"
-    else failwith  "cant handle non_singleton powers"
+      | x -> Tools.fail_fmt "cant handle negatives powers : %i" x
+    else Tools.fail_fmt "cant handle non_singleton powers : %a" print (l,h)
 
   (* nth-root *)
   let n_root ((il,ih):t) ((l,h):t) =
@@ -244,6 +246,7 @@ module Itv(B:BOUND) = struct
       let p = B.to_float_down l |> int_of_float in
       match p with
       | 1 -> Nb (il, ih)
+      | 2 -> Nb (B.sqrt_down il, B.sqrt_up ih)
       | x when x > 1 && B.odd l ->
 	       Nb (B.root_down il p, B.root_up ih p)
       | x when x > 1 && B.even l ->
@@ -252,8 +255,8 @@ module Itv(B:BOUND) = struct
          else
            Nb (B.min (B.neg (B.root_down il p)) (B.neg (B.root_down ih p)),
                B.max (B.root_up il p) (B.root_up ih p))
-      | _ -> failwith "can only handle stricly positive roots"
-    else failwith  "cant handle non_singleton roots"
+      | x -> Tools.fail_fmt "can only handle stricly positive roots : %i" x
+    else Tools.fail_fmt "cant handle non_singleton roots: %a" print (l,h)
 
   (* min *)
   let min ((l1, u1):t) ((l2, u2):t) =
@@ -272,17 +275,17 @@ module Itv(B:BOUND) = struct
     let arity_1 (f: t -> t) : t bot =
        match args with
        | [i] -> Nb (f i)
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_1_bot (f: t -> t bot) : t bot =
       match args with
       | [i] -> f i
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_2 (f: t -> t -> t) : t bot  =
       match args with
       | [i1;i2] -> Nb (f i1 i2)
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+      | _ -> Tools.fail_fmt "%s expect two arguments" name
     in
     let arity_2_bot (f: t -> t -> t bot) : t bot  =
       match args with
@@ -290,7 +293,7 @@ module Itv(B:BOUND) = struct
          (match f i1 i2 with
           | Bot -> Bot
           | Nb(i) -> Nb i)
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+      | _ -> Tools.fail_fmt "%s expect two arguments" name
     in
     match name with
     | "pow"   -> arity_2 pow
@@ -299,10 +302,9 @@ module Itv(B:BOUND) = struct
     | "exp"   -> arity_1 exp
     | "ln"    -> arity_1_bot ln
     | "log"   -> arity_1_bot log
-    (* min max *)
     | "max"   -> arity_2 max
     | "min"   -> arity_2 min
-    | s -> failwith (Format.sprintf "unknown eval function : %s" s)
+    | s -> Tools.fail_fmt "unknown eval function : %s" s
 
   (************************************************************************)
   (* FILTERING (TEST TRANSFER FUNCTIONS) *)
@@ -314,18 +316,10 @@ module Itv(B:BOUND) = struct
   let filter_leq ((l1,h1):t) ((l2,h2):t) : (t*t) bot =
     merge_bot2 (check_bot (l1, B.min h1 h2)) (check_bot (B.max l1 l2, h2))
 
-  let filter_geq ((l1,h1):t) ((l2,h2):t) : (t*t) bot =
-    merge_bot2 (check_bot (B.max l1 l2, h1)) (check_bot (l2, B.min h1 h2))
-
   let filter_lt ((l1,_) as i1:t) ((l2,h2) as i2:t) : (t*t) bot =
     if is_singleton i1 && is_singleton i2 && B.equal l1 l2 then Bot
     else if B.leq h2 l1 then Bot
     else filter_leq i1 i2
-
-  let filter_gt ((l1,h1) as i1:t) ((l2,_) as i2:t) : (t*t) bot =
-    if is_singleton i1 && is_singleton i2 && B.equal l1 l2 then Bot
-    else if B.leq h1 l2 then Bot
-    else filter_geq i1 i2
 
   let filter_eq (i1:t) (i2:t) : (t*t) bot =
     lift_bot (fun x -> x,x) (meet i1 i2)
@@ -358,16 +352,16 @@ module Itv(B:BOUND) = struct
   let filter_mul (i1:t) (i2:t) (r:t) : (t*t) bot =
     merge_bot2
       (if contains_float r 0. && contains_float i2 0. then Nb i1
-      else match fst (div r i2) with Bot -> Bot | Nb x -> meet i1 x)
+      else match (div r i2) with Bot -> Bot | Nb x -> meet i1 x)
       (if contains_float r 0. && contains_float i1 0. then Nb i2
-      else match fst (div r i1) with Bot -> Bot | Nb x -> meet i2 x)
+      else match (div r i1) with Bot -> Bot | Nb x -> meet i2 x)
 
   (* r = i1/i2 => i1 = i2*r /\ (i2 = i1/r \/ i1=r=0) *)
   let filter_div (i1:t) (i2:t) (r:t) : (t*t) bot =
     merge_bot2
       (meet i1 (mul i2 r))
       (if contains_float r 0. && contains_float i1 0. then Nb i2
-      else match fst (div i1 r) with Bot -> Bot | Nb x -> meet i2 x)
+      else match (div i1 r) with Bot -> Bot | Nb x -> meet i2 x)
 
   (* r = sqrt i => i = r*r or i < 0 *)
   let filter_sqrt ((il,ih) as i:t) ((rl,rh):t) : t bot =
@@ -384,7 +378,7 @@ module Itv(B:BOUND) = struct
     meet i (exp r)
 
   (* r = log i => i = *)
-  let filter_log i r = failwith "todo filter_log"
+  let filter_log i r = Tools.fail_fmt "todo filter_log"
 
   (* r = i ** n => i = nroot r *)
   let filter_pow (i:t) n (r:t) =
@@ -414,7 +408,7 @@ module Itv(B:BOUND) = struct
          (match f i r with
          | Bot -> Bot
          | Nb i -> Nb [i])
-      | _ -> failwith (Format.sprintf "%s expect one argument" name)
+      | _ -> Tools.fail_fmt "%s expect one argument" name
     in
     let arity_2 (f: t -> t -> t -> (t*t) bot) : (t list) bot  =
       match args with
@@ -422,7 +416,7 @@ module Itv(B:BOUND) = struct
          (match f i1 i2 r with
           | Bot -> Bot
           | Nb(i1,i2) -> Nb[i1;i2])
-      | _ -> failwith (Format.sprintf "%s expect two arguments" name)
+      | _ -> Tools.fail_fmt "%s expect two arguments" name
     in
     match name with
     | "sqrt" -> arity_1 filter_sqrt
@@ -430,7 +424,7 @@ module Itv(B:BOUND) = struct
     | "ln"   -> arity_1 filter_ln
     | "max"  -> arity_2 filter_max
     | "min"  -> arity_2 filter_min
-    | s -> failwith (Format.sprintf "unknown filter function : %s" s)
+    | s -> Tools.fail_fmt "unknown filter function : %s" s
 
   let to_float_range (l,h) =
     (B.to_float_down l),(B.to_float_up h)

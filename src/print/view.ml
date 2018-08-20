@@ -1,7 +1,7 @@
 open Graphics
 
 (* window settings *)
-let padding = 15.
+let padding = 30.
 let x_min = ref 0.
 and x_max = ref 0.
 and y_min = ref 0.
@@ -63,8 +63,9 @@ let normalize p =
 (*                        Drawing utilities                            *)
 (***********************************************************************)
 
-let fill_circle a b r =
-  let a,b = normalize (a,b) in
+let fill_circle p r color =
+  set_color color;
+  let a,b = normalize p in
   fill_circle a b r
 
 (* build the array corresponding to the list of points normalized and
@@ -77,9 +78,10 @@ let do_poly f l col =
   List.iteri (fun i (x,y) -> arr.(i) <- normalize (x,y)) l;
   f arr
 
-let fill_poly = do_poly fill_poly
+let fill_poly vertex color =
+  do_poly fill_poly vertex color
 
-let draw_poly = do_poly draw_poly
+let draw_poly vertex color = do_poly draw_poly vertex color
 
 let draw_seg p1 p2 col =
   set_color col;
@@ -114,29 +116,40 @@ let draw_string x y str col =
   moveto (int_of_float x) (int_of_float y);
   draw_string str
 
-
 (***********************************************************************)
 (*                        Window Initialization                        *)
 (***********************************************************************)
 
+let set_font_size () : unit =
+  Graphics.set_font "*--0-0-*iso8859-*"
+
 let init (xl,xu) (yl,yu) =
+  set_font_size ();
   x_min := xl;
   x_max := xu;
   y_min := yl;
   y_max := yu
 
-let draw_end () =
+let draw_end v1 v2 =
   let lg = rgb 200 200 200
   and sx = size_x() |> float_of_int
   and sy = size_y() |> float_of_int in
+  let x_max = Format.asprintf "%.2f" !x_max in
+  let y_max = Format.asprintf "%.2f" !y_max in
+  let x_min = Format.asprintf "%.2f" !x_min in
+  let y_min = Format.asprintf "%.2f" !y_min in
+  (* drawing x axis *)
   draw_line_x padding lg;
-  draw_string padding (padding/.2. -. 5.) (string_of_float !x_min) black;
+  draw_string padding (padding/.2. -. 5.) x_min black;
   draw_line_x (sx-.padding) lg;
-  draw_string (sx-.padding) (padding/.2. -. 5.) (string_of_float !x_max) black;
+  draw_string (sx-. 2.*.padding) (padding/.2. -. 5.) x_max black;
+  draw_string (sx-. 2.*.padding) (padding/.2. +. 15.) v1 black;
+  (* drawing y axis *)
   draw_line_y padding lg;
-  draw_string (padding/.2.-.5.) (padding+.5.) (string_of_float !y_min) black;
+  draw_string (padding/.2.-.5.) (padding+.5.) y_min black;
   draw_line_y (sy -. padding) lg;
-  draw_string (padding/.2.-.5.) (sy-.padding+.5.) (string_of_float !y_max) black
+  draw_string (padding/.2.-.5.) (sy-.2.*.padding-.5.) y_max black;
+  draw_string (padding/.2.-.5.) (sy-.2.*.padding+.15.) v2 black
 
 let loop state =
   loop_at_exit [] (fun _ -> ())

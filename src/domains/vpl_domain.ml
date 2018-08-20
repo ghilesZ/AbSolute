@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 open Vpl
 open UserInterface
 
@@ -43,121 +44,78 @@ module Expr = struct
             end
         | _ -> Pervasives.raise Out_of_Scope
 end
-
-module VPL = struct
-
-	include Lift(Domain)(Expr)
-
-	let translate_cmp : Csp.cmpop -> Cstr.cmpT_extended
-		= function
-        | Csp.EQ -> Cstr.EQ
-        | Csp.LEQ -> Cstr.LE
-        | Csp.GEQ -> Cstr.GE
-        | Csp.NEQ -> Cstr.NEQ
-        | Csp.GT -> Cstr.GT
-        | Csp.LT -> Cstr.LT
-
-    let rec to_cond : Csp.bexpr -> UserCond.t
-        = function
-        | Csp.Cmp (cmp, e1, e2) -> UserCond.Atom (e1, translate_cmp cmp, e2)
-        | Csp.And (e1, e2) -> UserCond.BinL(to_cond e1, WrapperTraductors.AND, to_cond e2)
-        | Csp.Or (e1, e2) -> UserCond.BinL(to_cond e1, WrapperTraductors.OR, to_cond e2)
-        | Csp.Not e -> UserCond.Not (to_cond e)
-
-end
+=======
+let fail () = Pervasives.failwith "VPLDomain: uninstalled"
+>>>>>>> 489fbbc5f1a2c6529832ddfd187c156907abd01e
 
 module VplCP (* : Domain_signature.AbstractCP *)= struct
 
-    include VPL
+    type t = unit
 
-    let empty : t = top
+    let empty = ()
+
+    let meet _ _ = fail ()
+
+    let join _ _ = fail ()
+
+    let is_bottom _ = fail ()
 
     let add_var : t -> Csp.typ * Csp.var * Csp.dom -> t
-        = fun p (_,var,dom) ->
-        if dom = Csp.Top then p
-        else
-            let cond = begin match dom with
-            | Csp.Finite (bi,bs) -> Csp.And
-                (Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Cst bs),
-                Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Cst bi))
-            | Csp.Minf bs -> Csp.Cmp (Csp.LEQ, Csp.Var var, Csp.Cst bs)
-            | Csp.Inf bi -> Csp.Cmp (Csp.GEQ, Csp.Var var, Csp.Cst bi)
-            | _ -> Pervasives.invalid_arg "add_var"
-            end
-            |> to_cond
-            in
-            User.assume cond p
+        = fun _ _ -> fail ()
 
     let volume : t -> float
-        = fun p ->
-        match size p with
-        | None -> max_float
-        | Some value -> Scalar.Rat.to_float value
+        = fun _ -> fail ()
 
     let is_small : t -> bool
-        = fun p ->
-        volume p <= !Constant.precision
+        = fun _-> fail ()
 
     (* Note: the last t is the intersection between the two operands *)
     let prune : t -> t -> t list * t
-        = fun p1 p2 ->
-        (diff p1 p2, meet p1 p2)
+        = fun _ _ -> fail ()
 
     let split : t -> t list
-        = fun p ->
-        VPL_CP_Profile.start "split";
-        let res = split_in_half p in
-        VPL_CP_Profile.stop "split";
-        res
-        (*
-        get_regions p
-        *)
+        = fun _ -> fail ()
 
     (* TODO: can we use this variable? *)
     let split_along : t -> Csp.var -> t list
-        = fun _ _ -> Pervasives.failwith "split_along: unimplemented"
+        = fun _ _ -> fail ()
 
     let filter : t -> (Csp.expr * Csp.cmpop * Csp.expr) -> t
+<<<<<<< HEAD
         = fun state (e1,cmp,e2) ->
         Debug.log DebugTypes.Title (lazy "Filter");
         let cond = to_cond (Csp.Cmp (cmp, e1, e2)) in
         Debug.log DebugTypes.MInput (lazy (UserCond.to_string cond));
         User.assume cond state
+=======
+        = fun _ _ -> fail ()
+>>>>>>> 489fbbc5f1a2c6529832ddfd187c156907abd01e
 
     (* TODO: Should return the variable with the maximal range as well. *)
     let filter_maxvar : t -> (Csp.expr * Csp.cmpop * Csp.expr) -> t * (Csp.var*float)
-        = fun _ _ ->
-        Pervasives.failwith "filter_maxvar: unimplemented"
+        = fun _ _ -> fail ()
 
     (* TODO: use Format *)
     let print : Format.formatter -> t -> unit
-        = fun _ p ->
-        print_endline (to_string Expr.Ident.get_string p)
+        = fun _ _ -> fail ()
 
     (* TODO: to define *)
     let spawn : t -> Csp.instance
-        = fun _ ->
-        Pervasives.failwith "spawn: unimplemented"
+        = fun _ -> fail ()
 
     (* TODO: to define *)
     let is_abstraction : t -> Csp.instance -> bool
-        = fun _ ->
-        Pervasives.failwith "is_abstraction: unimplemented"
+        = fun _ -> fail ()
 
 end
 
 let setup_flags : unit -> unit
-    = fun () ->
-    Flags.handelman_timeout := None
+    = fun () -> ()
 
-let set_lin s =
-    match s with
-    | "handelman" -> Flags.lin := Flags.Handelman
-    | "itv" -> Flags.lin := Flags.Intervalization
-    | "both" -> Flags.lin := Flags.Both
-    | _ -> "Linearization " ^ s ^ "undefined. Should be among : handelman, itv, both" |> failwith
+let set_lin _ = ()
 
 let enable_debug : unit -> unit
+<<<<<<< HEAD
     = fun () ->
     Vpl.Debug.enable();
     Debug.enable DebugTypes.([Title ; MInput ; MOutput ; Normal ; Detail]);
@@ -181,3 +139,10 @@ let stop_profile () =
 
 let report () =
     Vpl.Profile.report() |> print_endline
+=======
+    = fun () -> ()
+
+let start_profile () = ()
+let stop_profile () = ()
+let report () = ()
+>>>>>>> 489fbbc5f1a2c6529832ddfd187c156907abd01e

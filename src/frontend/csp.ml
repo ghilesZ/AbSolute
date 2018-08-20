@@ -3,9 +3,6 @@ open Tools
 (* variables are identified by a string *)
 type var = string
 
-(* constants are floats (the domain of the variable *)
-type i = float
-
 (* unary arithmetic operators *)
 type unop = NEG | ABS
 
@@ -22,7 +19,8 @@ type expr =
   | Unary   of unop * expr
   | Binary  of binop * expr * expr
   | Var     of var
-  | Cst     of i
+  | Int     of int
+  | Float   of float
 
 (* boolean expressions *)
 type bexpr =
@@ -34,11 +32,11 @@ type bexpr =
 (* variable type *)
 type typ = INT | REAL
 
-type dom = Finite of i*i    (* [a  ; b] *)
-         | Minf of i        (* [-oo; b] *)
-         | Inf of i         (* [a  ; +oo] *)
-         | Top              (* [-oo; +oo] *)
-         | Set of i list    (* {a; b; c; ...} *)
+type dom = Finite of float*float  (* [a  ; b] *)
+         | Minf of float          (* [-oo; b] *)
+         | Inf of float           (* [a  ; +oo] *)
+         | Top                    (* [-oo; +oo] *)
+         | Set of float list      (* {a; b; c; ...} *)
 
 (* assign *)
 type assign = (typ * var * dom)
@@ -53,18 +51,26 @@ type constrs = bexpr list
 (* we associate a float value to each variable *)
 type instance = float VMap.t
 
+(* we can annotate a problem with information on the resolution,
+   to check the soundness of the solver *)
+(* A solution_info is either Some (l), where l is instance list,
+   of known solution and known no goods *)
+(* or None, when the problem is infeasible *)
+type solution_info =
+  (instance * bool) list option
+
 (* program *)
 type prog = {
-    init        : decls;               (* the declarations of the variables *)
-    constraints : constrs;             (* the constraints of the problem *)
-    solutions   : (instance*bool) list (* known instances to check the soundness *)
+    init        : decls;        (* the declarations of the variables *)
+    constraints : constrs;      (* the constraints of the problem *)
+    solutions   : solution_info (* extra information about the solutions of te problem *)
   }
 
 (*****************************************)
 (*        USEFUL FUNCTION ON AST         *)
 (*****************************************)
 
-let empty = {init = []; constraints = []; solutions = [];}
+(* let empty = {init = []; constraints = []; solutions = Some [];} *)
 
 let get_vars p =
   List.map (fun (_,v,_) -> v) p.init
@@ -81,8 +87,8 @@ let add_constr csp c =
 let domain_to_constraints (_,v,d)  =
   match d with
   | Finite (l,h) ->
-     let c1 = (Var v, GEQ, Cst l)
-     and c2 = (Var v, LEQ, Cst h)
+     let c1 = (Var v, GEQ, Float l)
+     and c2 = (Var v, LEQ, Float h)
      in c1,c2
   | _ -> failwith "cant handle non-finite domains"
 
@@ -131,8 +137,8 @@ let rec booleanmap f = function
   | Cmp (op,e1,e2) ->
      let op',e1',e2' = f (op,e1,e2) in
      Cmp(op',e1',e2')
-  | And (b1,b2) -> Or (booleanmap f b1, booleanmap f b2)
-  | Or (b1,b2) -> And (booleanmap f b1, booleanmap f b2)
+  | And (b1,b2) -> And (booleanmap f b1, booleanmap f b2)
+  | Or (b1,b2) -> Or (booleanmap f b1, booleanmap f b2)
   | Not b -> Not (booleanmap f b)
 
 (*************************************************************)
@@ -145,7 +151,7 @@ let rec has_variable = function
   | Unary (u, e)  -> has_variable e
   | Binary(b, e1, e2) -> has_variable e1 || has_variable e2
   | Var _ -> true
-  | Cst _ -> false
+  | Int _ | Float _ -> false
 
 (* checks if an expression is linear *)
 let rec is_linear = function
@@ -155,7 +161,7 @@ let rec is_linear = function
   | Binary(POW, e1, e2)
     -> not (has_variable e1 || has_variable e2)
   | Binary(_, e1, e2) -> is_linear e1 && is_linear e2
-  | Var _ | Cst _ -> true
+  | Var _ | Int _ | Float _ -> true
   | _ -> false
 
 (* checks if a constraints is linear *)
@@ -224,10 +230,8 @@ let rec print_expr fmt = function
   | Binary (b, e1 , e2) ->
     Format.fprintf fmt "%a %a %a" print_expr e1 print_binop b print_expr e2
   | Var name -> Format.fprintf fmt "%s" name
-  | Cst c ->
-     let c_int = int_of_float c in
-     if float_of_int c_int = c then Format.fprintf fmt "%i" c_int
-     else Format.fprintf fmt "%.2f" c
+  | Int i -> Format.fprintf fmt "%i" i
+  | Float f -> Format.fprintf fmt "%a" Format.pp_print_float f
 
 let rec print_bexpr fmt = function
   | Cmp (c,e1,e2) ->
@@ -247,6 +251,11 @@ let print fmt prog =
   Format.fprintf fmt "\n";
   aux print_bexpr prog.constraints
 
+let print_instance fmt i =
+  Format.fprintf fmt "{";
+  VMap.iter (fun k f -> Format.fprintf fmt "%s : %a " k Format.pp_print_float f) i;
+  Format.fprintf fmt "}"
+
 (****************** EXPRESSION ANNOTATIONS ********************)
 (*         A unique type for the anotated expr tree           *)
 (* useful to unify the treatment of tree expression traversal *)
@@ -258,4 +267,5 @@ and 'a ex =
   | AUnary   of unop  * 'a annot_expr
   | ABinary  of binop * 'a annot_expr * 'a annot_expr
   | AVar     of var   * 'a
-  | ACst     of i     * 'a
+  | AInt     of int   * 'a
+  | AFloat   of float * 'a

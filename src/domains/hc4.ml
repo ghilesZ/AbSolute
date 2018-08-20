@@ -35,22 +35,30 @@ module Make (I:ITV) = struct
        let bargs = List.map (eval a) args in
        let iargs = List.map snd bargs in
        let r = debot (I.eval_fun name iargs) in
+       (* Format.printf "%a\n%!" I.print r; *)
        AFunCall(name, bargs),r
     | Var v ->
-        let (r, n) =
-          try find v a
-          with Not_found -> failwith ("variable not found: "^v)
-        in
-        AVar (n, r),r
-    | Cst c ->
-        let r = I.of_float c in
-        ACst (c, r),r
+       let (r, n) =
+         try find v a
+         with Not_found -> Tools.fail_fmt "variable not found: %s" v
+       in
+       (* Format.printf "%a\n%!" I.print r; *)
+       AVar (n, r),r
+    | Float c ->
+       let r = I.of_float c in
+       (* Format.printf "%a\n%!" I.print r; *)
+       AFloat (c, r),r
+    | Int c ->
+       let r = I.of_int c in
+       (* Format.printf "%a\n%!" I.print r; *)
+       AInt (c, r),r
     | Unary (o,e1) ->
        let _,i1 as b1 = eval a e1 in
        let r = match o with
          | NEG -> I.neg i1
 	       | ABS -> I.abs i1
        in
+       (* Format.printf "%a\n%!" I.print r; *)
        AUnary (o,b1), r
     | Binary (o,e1,e2) ->
        let _,i1 as b1 = eval a e1
@@ -59,7 +67,7 @@ module Make (I:ITV) = struct
          | POW -> I.pow i1 i2
          | ADD -> I.add i1 i2
          | SUB -> I.sub i1 i2
-         | DIV -> debot (fst (I.div i1 i2))
+         | DIV -> debot (I.div i1 i2)
          | MUL ->
             let r = I.mul i1 i2 in
             if e1=e2 then
@@ -67,6 +75,7 @@ module Make (I:ITV) = struct
               I.abs r
             else r
        in
+       (* Format.printf "%a\n%!" I.print r; *)
        ABinary (o,b1,b2), r
 
   (* returns a box included in its argument, by removing points such that
@@ -75,25 +84,24 @@ module Make (I:ITV) = struct
      iterating eval and refine can lead to better results (but is more costly);
      can raise Bot_found
 
-     this is the top-down part of hc4
- *)
+     this is the top-down part of hc4 *)
+
+  (* TODO: check if propagation was succesful before continuing filtering *)
   let rec refine (a:t) ((e,x):evalexpr) : t =
     match e with
     | AFunCall(name,args) ->
        let bexpr,itv = List.split args in
        let res = I.filter_fun name itv x in
-       List.fold_left2 (fun acc e1 e2 ->
-           refine acc (e2,e1)) a (debot res) bexpr
-    | AVar (v,_) ->
-       (try VMap.add v (debot (I.meet x (VMap.find v a))) a
-        with Not_found -> failwith ("variable not found: "^v))
-    | ACst (c,i) -> ignore (debot (I.meet x i)); a
+       List.fold_left2 (fun acc e1 e2 -> refine acc (e2,e1)) a (debot res) bexpr
+    | AVar (v,_) -> VMap.add v (debot (I.meet x (VMap.find_fail v a))) a
+    | AFloat (c,i) -> ignore (debot (I.meet x i)); a
+    | AInt (c,i) -> ignore (debot (I.meet x i)); a
     | AUnary (o,(e1,i1)) ->
-        let j = match o with
-          | NEG -> I.filter_neg i1 x
-          | ABS -> I.filter_abs i1 x
-        in
-        refine a (e1,(debot j))
+       let j = match o with
+         | NEG -> I.filter_neg i1 x
+         | ABS -> I.filter_abs i1 x
+       in
+       refine a (e1,(debot j))
     | ABinary (o,(e1,i1),(e2,i2)) ->
        let j = match o with
          | ADD -> I.filter_add i1 i2 x
@@ -108,18 +116,18 @@ module Make (I:ITV) = struct
   (* test transfer function *)
   let test (a:t) (e1:expr) (o:cmpop) (e2:expr) : t  =
     let (b1,i1), (b2,i2) = eval a e1, eval a e2 in
-    let j = match o with
-    | EQ  -> I.filter_eq i1 i2
-    | LEQ -> I.filter_leq i1 i2
-    | GEQ -> I.filter_geq i1 i2
-    | NEQ -> I.filter_neq i1 i2
-    | GT  -> I.filter_gt i1 i2
-    | LT  -> I.filter_lt i1 i2
+    let j1,j2 = match o with
+      | LT  -> debot (I.filter_lt i1 i2)
+      | LEQ -> debot (I.filter_leq i1 i2)
+      (* a > b <=> b < a*)
+      | GEQ -> let j2,j1 = debot (I.filter_leq i2 i1) in (j1,j2)
+      | GT  -> let j2,j1 = debot (I.filter_lt i2 i1) in (j1,j2)
+      | NEQ -> debot (I.filter_neq i1 i2)
+      | EQ  -> debot (I.filter_eq i1 i2)
     in
-    (fun a ->
-      let j1,j2 = debot j in
-      refine (refine a (b1,j1)) (b2,j2)
-    ) a
+    let refined1 = if j1 = i1 then a else refine a (b1,j1) in
+    if j2 = i2 then refined1 else refine refined1 (b2,j2)
+    (* refine (refine a (b1,j1)) (b2,j2) *)
 
   (* test transfer function *)
   let test_maxvar (a:t) (e1:expr) (o:cmpop) (e2:expr) : (t* (var * float))  =
@@ -142,12 +150,11 @@ module Make (I:ITV) = struct
            List.fold_left2 (fun acc e1 e2 ->
                refine acc (e2,e1)) a (debot res) bexpr
         | AVar (v,_) ->
-           (try
-              let new_itv = debot (I.meet x (VMap.find v a)) in
-              update v new_itv;
-              VMap.add v new_itv a
-            with Not_found -> failwith ("variable not found: "^v))
-        | ACst (c,i) -> ignore (debot (I.meet x i)); a
+           let new_itv = debot (I.meet x (VMap.find_fail v a)) in
+           update v new_itv;
+           VMap.add v new_itv a
+        | AFloat (c,i) -> ignore (debot (I.meet x i)); a
+        | AInt (c,i) -> ignore (debot (I.meet x i)); a
         | AUnary (o,(e1,i1)) ->
            let j = match o with
              | NEG -> I.filter_neg i1 x
@@ -168,20 +175,18 @@ module Make (I:ITV) = struct
       refine a evalexpr
     in
     let (b1,i1), (b2,i2) = eval a e1, eval a e2 in
-    let j = match o with
-    | EQ  -> I.filter_eq i1 i2
-    | LEQ -> I.filter_leq i1 i2
-    | GEQ -> I.filter_geq i1 i2
-    | NEQ -> I.filter_neq i1 i2
-    | GT  -> I.filter_gt i1 i2
-    | LT  -> I.filter_lt i1 i2
+    let j1,j2 = match o with
+      | LT  -> debot (I.filter_lt i1 i2)
+      | LEQ -> debot (I.filter_leq i1 i2)
+      (* a > b <=> b < a*)
+      | GEQ -> let j2,j1 = debot (I.filter_leq i2 i1) in (j1,j2)
+      | GT  -> let j2,j1 = debot (I.filter_lt i2 i1) in (j1,j2)
+      | NEQ -> debot (I.filter_neq i1 i2)
+      | EQ  -> debot (I.filter_eq i1 i2)
     in
-    (fun a ->
-      let j1,j2 = debot j in
-      let a = refine_maxvar (refine_maxvar a (b1,j1)) (b2,j2) in
-      match !biggest_var with
-      | None -> failwith "no var in constraint"
-      | Some ((v,range) as var) -> a,var
-    ) a
+    let a = refine_maxvar (refine_maxvar a (b1,j1)) (b2,j2) in
+    match !biggest_var with
+    | None -> Tools.fail_fmt "no var in constraint"
+    | Some ((v,range) as var) -> a,var
 
 end

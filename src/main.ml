@@ -37,6 +37,7 @@ end
 
 (* interval domain instance. Only large constraints *)
 module SBox      = GoS (Cartesian.BoxF)(Box_drawer)
+module SBoxMix   = GoS (Cartesian.BoxMix)(Boxmix_drawer)
 
 (* module SBox      = GoS2 (Wrapper.WCBoxF)(Wrapper_drawer) *)
 
@@ -97,11 +98,10 @@ let go () =
   if !debug then Vpl_domain.enable_debug();
   match !domain with
   | "box"   -> SBox.go prob
+  | "boxmix"-> SBoxMix.go prob
   | "oct"   -> SOctCP.go prob
   | "poly"  -> begin
-    if !step_by_step
-    then SBS_POLY.solving prob
-    else SPolyCP.go prob
+      if !step_by_step then SBS_POLY.solving prob else SPolyCP.go prob
     end
   | "vpl" -> begin
         Vpl_domain.start_profile();
@@ -109,6 +109,6 @@ let go () =
         Vpl_domain.stop_profile();
         Vpl_domain.report()
     end
-  | _ -> "domain undefined "^(!domain)^". should be one among : box, poly, oct, vpl" |> failwith
+  | _ -> "domain undefined "^(!domain)^". should be one among : box, boxmix, poly, oct, vpl" |> failwith
 
 let _ = go()

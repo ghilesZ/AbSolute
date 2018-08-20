@@ -87,8 +87,9 @@ module Make (Abs : AbstractCP) = struct
       else Nb filtered
     with Bot_found -> Bot
 
-  let split abs cstrs = Abs.split abs
-  (* TODO: add other splits *)
+  let split abs cstrs =
+    (* Format.printf "split\n%!"; *)
+    Abs.split abs
 
   module Topology = struct
     (* This module defines the topology of a problem : *)
@@ -97,7 +98,7 @@ module Make (Abs : AbstractCP) = struct
     type t = {
         (* over-approx of the solution space *)
         sols:Abs.t;
-        (*Foreach constraint we associate the over-approx of its complementary*)
+        (* Foreach constraint we associate the over-approx of its complementary *)
         complementary: (Csp.bexpr list) * (Abs.t list)
       }
 
@@ -109,12 +110,15 @@ module Make (Abs : AbstractCP) = struct
         ) cstrs compl
 
     (* we build a topology within an abstract element *)
-    (* we only keep the constraints/complementary element that the element
-     does not satisfy yet *)
+    (* we only keep the cstrs/complementary that an element does not satisfy *)
     (* return Bot if the element doesnt satisfy at all the constraints *)
     let build abs constrs : t bot =
       try
-        let abs' = List.fold_left filter abs constrs in
+        let abs' =
+          List.fold_left (fun a c ->
+              filter a c
+            ) abs constrs
+        in
         if Abs.is_bottom abs' then Bot
         else
           let complementary =
@@ -130,6 +134,7 @@ module Make (Abs : AbstractCP) = struct
 
   (* consistency computation *)
   let consistency abs constrs : consistency =
+    (* Format.printf "consistency\n%!"; *)
     let open Topology in
     match build abs constrs with
     | Nb {sols;complementary=[],[]} -> Full sols
